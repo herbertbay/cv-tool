@@ -8,7 +8,7 @@ import { useAuth } from '../lib/auth-context';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { setUserFromAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +23,8 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await register(email.trim(), password);
-      await refresh();
+      const data = await register(email.trim(), password);
+      setUserFromAuth(data.user);
       router.push('/');
       router.refresh();
     } catch (err) {

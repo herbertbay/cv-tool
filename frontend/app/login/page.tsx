@@ -8,7 +8,7 @@ import { useAuth } from '../lib/auth-context';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { refresh } = useAuth();
+  const { setUserFromAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +19,8 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email.trim(), password);
-      await refresh();
+      const data = await login(email.trim(), password);
+      setUserFromAuth(data.user);
       router.push('/');
       router.refresh();
     } catch (err) {

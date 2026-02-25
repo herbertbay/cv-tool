@@ -13,6 +13,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
   refresh: () => Promise<void>;
+  setUserFromAuth: (user: AuthUser) => void;
   logout: () => Promise<void>;
 };
 
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data?.user ?? null);
   }, []);
 
+  const setUserFromAuth = useCallback((u: AuthUser) => setUser(u), []);
   const logout = useCallback(async () => {
     await apiLogout();
     setUser(null);
@@ -44,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refresh, logout }}>
+    <AuthContext.Provider value={{ user, loading, refresh, setUserFromAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );

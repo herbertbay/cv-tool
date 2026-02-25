@@ -91,14 +91,13 @@ SESSION_MAX_AGE = 30 * 24 * 3600  # 30 days
 
 def _session_cookie_kwargs(request: Request | None = None) -> dict:
     """Cookie kwargs so session works cross-origin (frontend on different Railway subdomain)."""
-    # Use SameSite=None; Secure when frontend URL is set (production) or when request is from another origin
+    # SameSite=None (RFC capital N) + Secure required for cross-origin credentialed requests
     if settings.frontend_url:
-        return {"samesite": "none", "secure": True}
+        return {"samesite": "None", "secure": True}
     if request:
         origin = request.headers.get("origin") or ""
-        # If request is from another origin (e.g. different Railway subdomain), cookie must be cross-origin
         if origin and not origin.startswith("http://127.0.0.1") and not origin.startswith("http://localhost"):
-            return {"samesite": "none", "secure": True}
+            return {"samesite": "None", "secure": True}
     return {"samesite": "lax", "secure": False}
 
 
