@@ -75,7 +75,10 @@ def tailor_cv_and_letter(
         "dates, schools, and certifications must stay exactly as in the candidate profile. (2) Use and "
         "highlight keywords from the job description so the CV ranks high in ATS without changing facts. "
         "(3) Rephrase only the summary and experience descriptions to emphasize relevance and include "
-        "job-description wording where it truthfully applies. Output all content in " + lang_name + ". "
+        "job-description wording where it truthfully applies. (4) In the EXPERIENCE section only: never add "
+        "explicit references to the job or company (e.g. avoid phrases like 'essential for the role at X', "
+        "'relevant to this position', 'which aligns with the job at Y'). Show relevance implicitly through "
+        "achievements and keywords; do not spell out that something is relevant to the role. Output all content in " + lang_name + ". "
         "Return valid JSON only, no markdown code blocks."
     )
 
@@ -92,7 +95,7 @@ def tailor_cv_and_letter(
 
 Respond with a single JSON object (no markdown, no code block) with exactly these keys:
 1) "tailored_summary": A short professional summary (3-5 sentences) in {lang_name}, tailored to this job. Use wording and keywords from the job description where they truthfully apply. Do not invent facts.
-2) "tailored_experience": A list with one object per position. Each object: "title", "company", "start_date", "end_date", "description". Copy title, company, start_date, end_date exactly from the profile. Rewrite only "description" to emphasize relevance and include job-description keywords where accurate; do not change facts.
+2) "tailored_experience": A list with one object per position. Each object: "title", "company", "start_date", "end_date", "description". Copy title, company, start_date, end_date exactly from the profile. Rewrite only "description" to emphasize relevance and include job-description keywords where accurate; do not change facts. Do NOT add phrases that explicitly reference the job or employer (e.g. no "essential for the role at [Company]", "relevant to this position", "which aligns with the job"). Let relevance be implicit.
 3) "motivation_letter": A professional motivation/cover letter (3-5 short paragraphs) in {lang_name}, referencing the role and the candidate's fit.
 4) "keywords_to_highlight": A list of 5-15 keywords or short phrases from the job description to highlight in the PDF (for ATS and emphasis). Return as a JSON array of strings.
 """

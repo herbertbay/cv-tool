@@ -51,7 +51,7 @@ export default function ProfilePage() {
       return;
     }
     getProfile()
-      .then((p) => setProfile({ ...emptyProfile, ...p }))
+      .then((data) => setProfile({ ...emptyProfile, ...data.profile }))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user]);

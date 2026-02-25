@@ -143,25 +143,77 @@ export async function parseCV(file: File): Promise<Profile> {
   return res.json();
 }
 
-/** Get profile for current user. Requires auth. */
-export async function getProfile(): Promise<Profile> {
+export type UserData = {
+  profile: Profile;
+  additional_urls: string[];
+  personal_summary: string;
+  onboarding_complete?: boolean;
+};
+
+/** Get profile, additional_urls, and personal_summary for current user. Requires auth. */
+export async function getProfile(): Promise<UserData> {
   const res = await fetch(`${API_BASE}/profile`, fetchOptions);
   checkAuth(res);
   if (!res.ok) throw new Error('Failed to load profile');
-  return res.json();
+  const data = await res.json();
+  return {
+    profile: data.profile ?? emptyProfileStub(),
+    additional_urls: Array.isArray(data.additional_urls) ? data.additional_urls : [],
+    personal_summary: typeof data.personal_summary === 'string' ? data.personal_summary : '',
+    onboarding_complete: Boolean(data.onboarding_complete),
+  };
 }
 
-/** Save profile for current user. Requires auth. */
-export async function putProfile(profile: Profile): Promise<Profile> {
+function emptyProfileStub(): Profile {
+  return {
+    full_name: '',
+    headline: null,
+    summary: '',
+    email: null,
+    phone: null,
+    address: null,
+    linkedin_url: null,
+    photo_base64: null,
+    experience: [],
+    education: [],
+    skills: [],
+    certifications: [],
+    languages: [],
+  };
+}
+
+/** Update and persist profile and/or additional_urls and/or personal_summary and/or onboarding_complete. Requires auth. */
+export async function putUserData(updates: {
+  profile?: Profile;
+  additional_urls?: string[];
+  personal_summary?: string;
+  onboarding_complete?: boolean;
+}): Promise<UserData> {
+  const body: Record<string, unknown> = {};
+  if (updates.profile !== undefined) body.profile = updates.profile;
+  if (updates.additional_urls !== undefined) body.additional_urls = updates.additional_urls;
+  if (updates.personal_summary !== undefined) body.personal_summary = updates.personal_summary;
+  if (updates.onboarding_complete !== undefined) body.onboarding_complete = updates.onboarding_complete;
   const res = await fetch(`${API_BASE}/profile`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(profile),
+    body: JSON.stringify(body),
     ...fetchOptions,
   });
   checkAuth(res);
-  if (!res.ok) throw new Error('Failed to save profile');
-  return res.json();
+  if (!res.ok) throw new Error('Failed to save');
+  const data = await res.json();
+  return {
+    profile: data.profile ?? emptyProfileStub(),
+    additional_urls: Array.isArray(data.additional_urls) ? data.additional_urls : [],
+    personal_summary: typeof data.personal_summary === 'string' ? data.personal_summary : '',
+    onboarding_complete: Boolean(data.onboarding_complete),
+  };
+}
+
+/** Save profile only (convenience). Requires auth. */
+export async function putProfile(profile: Profile): Promise<UserData> {
+  return putUserData({ profile });
 }
 
 /** Fetch job description from URL or use raw text */

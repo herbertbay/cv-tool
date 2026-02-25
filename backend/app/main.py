@@ -12,7 +12,9 @@ from fastapi.responses import Response as HttpResponse
 from app.config import settings
 from app.database import (
     get_profile as db_get_profile,
+    get_user_data as db_get_user_data,
     save_profile as db_save_profile,
+    save_user_data as db_save_user_data,
     create_user as db_create_user,
     get_user_by_id as db_get_user_by_id,
     get_user_by_email as db_get_user_by_email,
@@ -192,21 +194,51 @@ async def parse_cv(request: Request, file: UploadFile = File(...)):
 
 @app.get("/api/profile")
 async def api_get_profile(request: Request):
-    """Return profile for the authenticated user."""
+    """Return profile, additional_urls, and personal_summary for the authenticated user."""
     user_id = require_user(request)
-    profile = db_get_profile(user_id)
-    return profile.model_dump() if profile else _empty_profile_dict()
+    data = db_get_user_data(user_id)
+    if not data:
+        return {
+            "profile": _empty_profile_dict(),
+            "additional_urls": [],
+            "personal_summary": "",
+            "onboarding_complete": False,
+        }
+    return {
+        "profile": data["profile"].model_dump(),
+        "additional_urls": data["additional_urls"],
+        "personal_summary": data["personal_summary"],
+        "onboarding_complete": data.get("onboarding_complete", False),
+    }
 
 
 @app.put("/api/profile")
 async def api_put_profile(request: Request, body: dict = Body(...)):
     """
-    Accept profile edits and return them. Does NOT persist to DB.
-    Only CV upload (POST /api/parse-cv) updates the stored profile.
+    Update and persist profile, additional_urls, and/or personal_summary.
+    Send only the fields you want to update.
     """
-    require_user(request)
-    profile = Profile(**body)
-    return profile.model_dump()
+    user_id = require_user(request)
+    profile = body.get("profile")
+    additional_urls = body.get("additional_urls")
+    personal_summary = body.get("personal_summary")
+    onboarding_complete = body.get("onboarding_complete")
+    if profile is not None:
+        profile = Profile(**profile)
+    db_save_user_data(
+        user_id,
+        profile=profile,
+        additional_urls=additional_urls,
+        personal_summary=personal_summary,
+        onboarding_complete=onboarding_complete,
+    )
+    data = db_get_user_data(user_id)
+    return {
+        "profile": data["profile"].model_dump(),
+        "additional_urls": data["additional_urls"],
+        "personal_summary": data["personal_summary"],
+        "onboarding_complete": data.get("onboarding_complete", False),
+    }
 
 
 def _empty_profile_dict() -> dict:
