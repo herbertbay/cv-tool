@@ -65,8 +65,16 @@ _cors_origins = [
     "http://localhost:3001",
     "http://127.0.0.1:3001",
 ]
+# Production frontend (Railway); also allow any origin set via env
 if settings.frontend_url:
-    _cors_origins.append(settings.frontend_url.rstrip("/"))
+    for url in settings.frontend_url.strip().split(","):
+        u = url.strip().rstrip("/")
+        if u and u not in _cors_origins:
+            _cors_origins.append(u)
+# Allow Railway app subdomain by default so CORS works without env
+_railway_frontend = "https://cv-tool-production-711b.up.railway.app"
+if _railway_frontend not in _cors_origins:
+    _cors_origins.append(_railway_frontend)
 
 app.add_middleware(
     CORSMiddleware,
