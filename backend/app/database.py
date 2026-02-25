@@ -9,9 +9,10 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
+from app.config import settings
 from app.models import Profile
 
-DB_PATH = Path(__file__).parent.parent / "cv_tool.db"
+DB_PATH = Path(settings.db_path) if settings.db_path else Path(__file__).parent.parent / "cv_tool.db"
 
 
 def _get_conn():

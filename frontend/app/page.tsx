@@ -192,11 +192,12 @@ export default function HomePage() {
     setGenerateError(null);
     setGenerateProgress('Preparing…');
     try {
-      setGenerateProgress('Generating tailored CV and motivation letter…');
+      const hasJob = !!jobDescription.trim();
+      setGenerateProgress(hasJob ? 'Generating tailored CV and motivation letter…' : 'Generating tailored CV…');
       const urls = userData?.additional_urls?.filter((u) => u?.trim().startsWith('http')) ?? [];
       const res = await generateCV({
         profile,
-        job_description: jobDescription.trim() || '(No job description provided)',
+        job_description: jobDescription.trim(),
         personal_summary: userData?.personal_summary?.trim() || undefined,
         additional_urls: urls,
         language,
@@ -575,9 +576,11 @@ function CreateCVModal({
                 <a href={downloadPdfUrl(result.session_id)} target="_blank" rel="noopener noreferrer" className="inline-flex justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
                   Download CV (PDF)
                 </a>
-                <a href={downloadLetterPdfUrl(result.session_id)} target="_blank" rel="noopener noreferrer" className="inline-flex justify-center rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
-                  Download motivation letter (PDF)
-                </a>
+                {result.motivation_letter?.trim() && (
+                  <a href={downloadLetterPdfUrl(result.session_id)} target="_blank" rel="noopener noreferrer" className="inline-flex justify-center rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+                    Download motivation letter (PDF)
+                  </a>
+                )}
               </div>
             </div>
           )}

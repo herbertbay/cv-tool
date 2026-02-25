@@ -89,15 +89,15 @@ def tailor_cv_and_letter(
 {additional_context or "None provided."}
 
 ## Job description (use its keywords for tailoring and for keywords_to_highlight)
-{job_description}
+{job_description or "(none)"}
 
 ---
 
 Respond with a single JSON object (no markdown, no code block) with exactly these keys:
 1) "tailored_summary": A short professional summary (3-5 sentences) in {lang_name}, tailored to this job. Use wording and keywords from the job description where they truthfully apply. Do not invent facts.
 2) "tailored_experience": A list with one object per position. Each object: "title", "company", "start_date", "end_date", "description". Copy title, company, start_date, end_date exactly from the profile. Rewrite only "description" to emphasize relevance and include job-description keywords where accurate; do not change facts. Do NOT add phrases that explicitly reference the job or employer (e.g. no "essential for the role at [Company]", "relevant to this position", "which aligns with the job"). Let relevance be implicit.
-3) "motivation_letter": A professional motivation/cover letter (3-5 short paragraphs) in {lang_name}, referencing the role and the candidate's fit.
-4) "keywords_to_highlight": A list of 5-15 keywords or short phrases from the job description to highlight in the PDF (for ATS and emphasis). Return as a JSON array of strings.
+3) "motivation_letter": A professional motivation/cover letter (3-5 short paragraphs) in {lang_name}, referencing the role and the candidate's fit. If the job description is empty or missing (e.g. "(none)"), set "motivation_letter" to "" (empty string); do not generate a letter.
+4) "keywords_to_highlight": A list of 5-15 keywords or short phrases from the job description to highlight in the PDF (for ATS and emphasis). Return as a JSON array of strings. If no job description, return [].
 """
 
     client = _get_client()

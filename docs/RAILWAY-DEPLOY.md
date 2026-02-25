@@ -56,7 +56,20 @@ Set the **backend** env var `FRONTEND_URL` to your frontend’s full URL (e.g. `
 
 ---
 
-## 5. Why you saw 502
+## 5. Why accounts disappear (SQLite is not persisted)
+
+The backend uses **SQLite** and stores the database file (`cv_tool.db`) inside the container. On Railway, the container filesystem is **ephemeral**: every **deploy** or **restart** can start a new container with an empty filesystem, so the database (and all user accounts and profiles) is **lost**. You are not being “logged out and account deleted” by the app — the whole DB is reset.
+
+- **Symptom:** You had an account, then after a while (or after a redeploy) you are logged out and “Sign in” says the email is not recognized (account no longer exists).
+- **Fix (choose one):**
+  1. **Railway volume:** In the backend service, add a **Volume** and mount it to a path (e.g. `/data`). Set the backend env var **`DB_PATH=/data/cv_tool.db`**. The app will store the SQLite file there so it survives restarts and redeploys.
+  2. **PostgreSQL:** Add a Postgres database in your Railway project, set `DATABASE_URL` on the backend, and switch the app to use Postgres for users and profiles instead of SQLite. (The app does not support Postgres yet; it would require code changes.)
+
+Until you add a volume or Postgres, treat the deployed app as **demo-only**: accounts and data can be lost at any deploy or restart.
+
+---
+
+## 6. Why you saw 502
 
 - **`start.sh`** is for your machine only. It uses `venv/bin/activate` (no venv on Railway) and runs two processes. Railway runs **one** process per service and sets `PORT`.
 - If the start command was `./start.sh`, the container failed (venv missing) and nothing listened on `PORT` → 502.
@@ -64,7 +77,7 @@ Set the **backend** env var `FRONTEND_URL` to your frontend’s full URL (e.g. `
 
 ---
 
-## 6. PDF parsing (uploaded CVs)
+## 7. PDF parsing (uploaded CVs)
 
 - **Same code as local:** PDF text extraction and AI structuring run the same on Railway. No separate “scraping” service.
 - **Best results:** Set `OPENAI_API_KEY` on the backend. CV uploads are parsed with GPT first; if that fails (e.g. timeout, rate limit), the app falls back to heuristic parsing and logs a warning.
@@ -73,7 +86,7 @@ Set the **backend** env var `FRONTEND_URL` to your frontend’s full URL (e.g. `
 
 ---
 
-## 7. Checklist
+## 8. Checklist
 
 - [ ] Backend service: root `backend`, start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, env `OPENAI_API_KEY` and `SECRET_KEY`.
 - [ ] Backend domain generated; URL copied.

@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     secret_key: str = "dev-secret-change-in-production"
     # Frontend URL for CORS (e.g. https://your-app.up.railway.app)
     frontend_url: str = ""
+    # Optional: path for SQLite DB (e.g. /data/cv_tool.db on Railway with a volume). If empty, use backend/cv_tool.db.
+    db_path: str = ""
 
 
 settings = Settings()

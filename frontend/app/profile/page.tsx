@@ -532,7 +532,7 @@ export default function ProfilePage() {
           >
             Save profile
           </button>
-          {saved && <span className="text-sm text-green-600">Saved locally for this browser. Your stored profile is updated only when you upload a new CV.</span>}
+          {saved && <span className="text-sm text-green-600">Saved to your account.</span>}
           {saveError && <span className="text-sm text-red-600">{saveError}</span>}
         </div>
 

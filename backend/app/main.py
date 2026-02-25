@@ -2,6 +2,7 @@
 FastAPI application: CV and motivation letter generation API.
 CV upload only; user from cookie; profile in local DB; motivation letter as separate PDF.
 """
+import logging
 import time
 from contextlib import asynccontextmanager
 
@@ -10,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response as HttpResponse
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 from app.database import (
     get_profile as db_get_profile,
     get_user_data as db_get_user_data,
@@ -375,10 +378,12 @@ async def generate_cv(req: GenerateCVRequest):
             additional_urls=extra_urls,
         )
         set_session_pdf(session_id, cv_pdf_bytes)
-        letter_pdf_bytes = generate_letter_pdf(profile=profile, motivation_letter=motivation_letter)
-        set_session_letter_pdf(session_id, letter_pdf_bytes)
-    except Exception:
-        pass
+        if motivation_letter and motivation_letter.strip():
+            letter_pdf_bytes = generate_letter_pdf(profile=profile, motivation_letter=motivation_letter)
+            set_session_letter_pdf(session_id, letter_pdf_bytes)
+    except Exception as e:
+        logger.exception("PDF generation failed")
+        raise HTTPException(500, "PDF generation failed. Please try again.") from e
 
     return GenerateCVResponse(
         session_id=session_id,
