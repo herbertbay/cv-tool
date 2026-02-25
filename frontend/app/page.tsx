@@ -13,6 +13,7 @@ import {
   downloadLetterPdf,
   downloadPdfUrl,
   downloadLetterPdfUrl,
+  openPreviewCvHtml,
   type Profile,
   type UserData,
   type GenerateCVResponse,
@@ -505,6 +506,13 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
             className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Create CV & motivation letter
+          </button>
+          <button
+            type="button"
+            onClick={() => openPreviewCvHtml('cv_executive.html').catch((e) => window.alert(e.message))}
+            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Preview CV (HTML)
           </button>
         </div>
       </div>

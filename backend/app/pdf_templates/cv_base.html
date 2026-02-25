@@ -17,7 +17,6 @@
     .header {
       display: flex;
       align-items: flex-start;
-      gap: 2rem;
       margin-bottom: 1rem;
       padding-bottom: 0.75rem;
       border-bottom: 2px solid #2563eb;
@@ -28,8 +27,9 @@
       object-fit: cover;
       border-radius: 4px;
       flex-shrink: 0;
+      margin-right: 2rem;
     }
-    .header-text { flex: 1; }
+    .header-text { flex: 1; min-width: 0; }
     .name { font-size: 18pt; font-weight: 700; margin: 0 0 0.2em 0; color: #1e40af; }
     .headline { font-size: 10pt; color: #475569; margin: 0 0 0.4em 0; }
     .contact { font-size: 9pt; color: #64748b; }

@@ -97,18 +97,15 @@ def _prepare_template_context(
     }
 
 
-def generate_cv_pdf(
+def render_cv_html(
     profile: Profile,
     tailored_summary: str,
     tailored_experience: list[dict],
     keywords_to_highlight: list[str],
     template_name: str = "cv_base.html",
     additional_urls: list[str] | None = None,
-) -> bytes:
-    """
-    Render CV only (no motivation letter) to PDF bytes.
-    Empty categories are omitted in the template.
-    """
+) -> str:
+    """Render CV template to HTML string (for preview or PDF input)."""
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES_DIR)),
         autoescape=select_autoescape(["html", "xml"]),
@@ -123,7 +120,29 @@ def generate_cv_pdf(
         keywords_to_highlight=keywords_to_highlight,
         additional_urls=additional_urls,
     )
-    html_str = template.render(**ctx)
+    return template.render(**ctx)
+
+
+def generate_cv_pdf(
+    profile: Profile,
+    tailored_summary: str,
+    tailored_experience: list[dict],
+    keywords_to_highlight: list[str],
+    template_name: str = "cv_base.html",
+    additional_urls: list[str] | None = None,
+) -> bytes:
+    """
+    Render CV only (no motivation letter) to PDF bytes.
+    Empty categories are omitted in the template.
+    """
+    html_str = render_cv_html(
+        profile=profile,
+        tailored_summary=tailored_summary,
+        tailored_experience=tailored_experience,
+        keywords_to_highlight=keywords_to_highlight,
+        template_name=template_name,
+        additional_urls=additional_urls,
+    )
     pdf_buffer = BytesIO()
     HTML(string=html_str).write_pdf(pdf_buffer, font_config=font_config)
     return pdf_buffer.getvalue()

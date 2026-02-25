@@ -343,3 +343,20 @@ export function downloadPdfUrl(sessionId: string): string {
 export function downloadLetterPdfUrl(sessionId: string): string {
   return `${API_BASE}/download-letter/${sessionId}`;
 }
+
+/** URL for CV HTML preview endpoint */
+export function previewCvHtmlUrl(template: string = 'cv_base.html'): string {
+  return `${API_BASE}/preview-cv-html?template=${encodeURIComponent(template)}`;
+}
+
+/** Fetch CV HTML with credentials and open in new window (works cross-origin). */
+export async function openPreviewCvHtml(template: string = 'cv_base.html'): Promise<void> {
+  const res = await fetch(previewCvHtmlUrl(template), fetchOptions);
+  if (!res.ok) throw new Error(res.status === 401 ? 'Sign in to preview' : 'Preview failed');
+  const html = await res.text();
+  const w = window.open('', '_blank');
+  if (w) {
+    w.document.write(html);
+    w.document.close();
+  }
+}

@@ -9,7 +9,7 @@ from io import BytesIO
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Body, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response as HttpResponse
+from fastapi.responses import Response as HttpResponse, HTMLResponse
 
 from app.config import settings
 
@@ -44,7 +44,7 @@ from app.linkedin_parser import parse_linkedin_json
 from app.pdf_profile_parser import parse_pdf_to_profile
 from app.url_fetcher import fetch_job_description, fetch_additional_urls
 from app.ai_service import tailor_cv_and_letter
-from app.pdf_generator import generate_cv_pdf, generate_letter_pdf
+from app.pdf_generator import generate_cv_pdf, generate_letter_pdf, render_cv_html
 from app.session_store import (
     create_session_id,
     save_session,
@@ -427,6 +427,37 @@ async def list_generated_cvs(request: Request):
         }
         for r in rows
     ]
+
+
+@app.get("/api/preview-cv-html")
+async def preview_cv_html(request: Request, template: str = "cv_base.html"):
+    """
+    Return the CV as HTML for preview in the browser (same layout as PDF).
+    Requires auth. Query param: template=cv_base.html or cv_executive.html.
+    """
+    user_id = require_user(request)
+    data = db_get_user_data(user_id)
+    if not data or not data.get("profile"):
+        raise HTTPException(404, "No profile found. Upload a CV first.")
+    profile = data["profile"]
+    allowed = {"cv_base.html", "cv_executive.html"}
+    if template not in allowed:
+        template = "cv_base.html"
+    # Use profile experience as tailored content for preview
+    tailored_experience = [
+        e.model_dump() if hasattr(e, "model_dump") else dict(e)
+        for e in (profile.experience or [])
+    ]
+    additional_urls = data.get("additional_urls") or []
+    html_str = render_cv_html(
+        profile=profile,
+        tailored_summary=profile.summary or "",
+        tailored_experience=tailored_experience,
+        keywords_to_highlight=[],
+        template_name=template,
+        additional_urls=additional_urls,
+    )
+    return HTMLResponse(html_str)
 
 
 @app.get("/api/session/{session_id}")
