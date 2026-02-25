@@ -13,6 +13,7 @@ import {
   type Profile,
   type GenerateCVResponse,
 } from './lib/api';
+import { useAuth } from './lib/auth-context';
 
 const LANGUAGES = [
   { value: 'en', label: 'English' },
@@ -55,6 +56,7 @@ function clearDraft() {
 }
 
 export default function HomePage() {
+  const { user, logout } = useAuth();
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -79,7 +81,7 @@ export default function HomePage() {
     (profile.certifications?.length ?? 0) > 0 ||
     (profile.languages?.length ?? 0) > 0;
 
-  // Load profile: DB (from last CV upload) or local draft from profile page
+  // Load profile: when logged in from DB, else from local draft
   useEffect(() => {
     if (profileLoaded) return;
     const draft = loadDraft();
@@ -88,11 +90,15 @@ export default function HomePage() {
       setProfileLoaded(true);
       return;
     }
+    if (!user) {
+      setProfileLoaded(true);
+      return;
+    }
     getProfile()
       .then((p) => setProfile({ ...emptyProfile, ...p }))
       .catch(() => {})
       .finally(() => setProfileLoaded(true));
-  }, [profileLoaded]);
+  }, [profileLoaded, user]);
 
   const handleCVUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -213,18 +219,47 @@ export default function HomePage() {
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-slate-800">CV-Tool</h1>
-          <nav className="flex gap-4">
+          <nav className="flex items-center gap-4">
             <Link
               href="/profile"
               className="text-slate-600 hover:text-slate-900"
             >
               Edit profile
             </Link>
+            {user ? (
+              <>
+                <span className="text-sm text-slate-500">{user.email}</span>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="text-sm text-slate-600 hover:text-slate-900"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="text-slate-600 hover:text-slate-900">
+                  Sign in
+                </Link>
+                <Link href="/register" className="text-slate-600 hover:text-slate-900">
+                  Sign up
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8">
+        {!user && (
+          <div className="mb-6 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700">
+            <Link href="/login" className="font-medium text-blue-600 hover:underline">
+              Sign in
+            </Link>
+            {' '}to save your CV to your account and load it on any device.
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left: Inputs */}
           <div className="space-y-6">

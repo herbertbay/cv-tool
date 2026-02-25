@@ -4,10 +4,21 @@
  */
 
 // Use direct backend URL; avoids dev-proxy socket resets from Next.js rewrites.
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const BASE =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:8000';
+const API_BASE = `${BASE}/api`;
 
 const fetchOptions: RequestInit = { credentials: 'include' };
+
+/** Callback when any request returns 401 (e.g. session expired). Set by AuthProvider. */
+let onUnauthorized: (() => void) | null = null;
+export function setOnUnauthorized(fn: (() => void) | null) {
+  onUnauthorized = fn;
+}
+
+function checkAuth(res: Response) {
+  if (res.status === 401) onUnauthorized?.();
+}
 
 export type Profile = {
   full_name: string;
@@ -63,7 +74,58 @@ export type GenerateCVResponse = {
   status: string;
 };
 
-/** Parse CV (PDF or JSON) via backend */
+// --- Auth ---
+
+export type AuthUser = { id: string; email: string };
+
+export async function getMe(): Promise<{ user: AuthUser } | null> {
+  const res = await fetch(`${BASE}/api/auth/me`, fetchOptions);
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error('Failed to get user');
+  return res.json();
+}
+
+export async function login(
+  email: string,
+  password: string
+): Promise<{ user: AuthUser }> {
+  const res = await fetch(`${BASE}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+    ...fetchOptions,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Login failed');
+  }
+  return res.json();
+}
+
+export async function register(
+  email: string,
+  password: string
+): Promise<{ user: AuthUser }> {
+  const res = await fetch(`${BASE}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+    ...fetchOptions,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Registration failed');
+  }
+  return res.json();
+}
+
+export async function logout(): Promise<void> {
+  await fetch(`${BASE}/api/auth/logout`, { method: 'POST', ...fetchOptions });
+}
+
+// --- Profile (require auth) ---
+
+/** Parse CV (PDF or JSON) via backend. Requires auth. */
 export async function parseCV(file: File): Promise<Profile> {
   const form = new FormData();
   form.append('file', file);
@@ -72,21 +134,24 @@ export async function parseCV(file: File): Promise<Profile> {
     body: form,
     ...fetchOptions,
   });
+  checkAuth(res);
   if (!res.ok) {
+    if (res.status === 401) throw new Error('Please sign in to upload and save your CV.');
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || 'Failed to parse file');
   }
   return res.json();
 }
 
-/** Get profile for current user (from cookie) */
+/** Get profile for current user. Requires auth. */
 export async function getProfile(): Promise<Profile> {
   const res = await fetch(`${API_BASE}/profile`, fetchOptions);
+  checkAuth(res);
   if (!res.ok) throw new Error('Failed to load profile');
   return res.json();
 }
 
-/** Save profile for current user (cookie) */
+/** Save profile for current user. Requires auth. */
 export async function putProfile(profile: Profile): Promise<Profile> {
   const res = await fetch(`${API_BASE}/profile`, {
     method: 'PUT',
@@ -94,6 +159,7 @@ export async function putProfile(profile: Profile): Promise<Profile> {
     body: JSON.stringify(profile),
     ...fetchOptions,
   });
+  checkAuth(res);
   if (!res.ok) throw new Error('Failed to save profile');
   return res.json();
 }

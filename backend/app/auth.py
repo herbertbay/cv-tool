@@ -1,18 +1,19 @@
 """Minimal auth: password hashing and signed session cookie."""
 from typing import Optional
 
+import bcrypt
 import itsdangerous
-from passlib.context import CryptContext
-
-pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    return pwd_ctx.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_ctx.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 
 def create_session_token(user_id: str, secret_key: str) -> str:

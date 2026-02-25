@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { getProfile, putProfile, type Profile } from '../lib/api';
+import { useAuth } from '../lib/auth-context';
 
 const DRAFT_KEY = 'cv-tool-profile-draft';
 
@@ -23,8 +24,10 @@ const emptyProfile: Profile = {
 };
 
 export default function ProfilePage() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,11 +46,15 @@ export default function ProfilePage() {
         /* ignore */
       }
     }
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     getProfile()
       .then((p) => setProfile({ ...emptyProfile, ...p }))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   const update = (part: Partial<Profile>) => {
     setProfile((p) => ({ ...p, ...part }));
@@ -171,16 +178,18 @@ export default function ProfilePage() {
   };
 
   const handleSave = useCallback(async () => {
+    setSaveError(null);
     try {
       if (typeof window !== 'undefined') {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(profile));
       }
       await putProfile(profile);
       setSaved(true);
-    } catch {
+    } catch (err) {
       setSaved(false);
+      setSaveError(user ? 'Failed to save.' : 'Please sign in to save your profile to your account.');
     }
-  }, [profile]);
+  }, [profile, user]);
 
   if (loading) {
     return (
@@ -202,6 +211,12 @@ export default function ProfilePage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-8">
+        {!user && (
+          <div className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700">
+            <Link href="/login" className="font-medium text-blue-600 hover:underline">Sign in</Link>
+            {' '}to save your profile to your account.
+          </div>
+        )}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold text-slate-800">Basic info</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -498,6 +513,7 @@ export default function ProfilePage() {
             Save profile
           </button>
           {saved && <span className="text-sm text-green-600">Saved locally for this browser. Your stored profile is updated only when you upload a new CV.</span>}
+          {saveError && <span className="text-sm text-red-600">{saveError}</span>}
         </div>
       </main>
     </div>
