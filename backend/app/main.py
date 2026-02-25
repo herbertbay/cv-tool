@@ -427,8 +427,10 @@ async def test_pdf():
     """Render a minimal PDF to verify WeasyPrint works (e.g. on Railway). Returns PDF or 500 with error."""
     try:
         from weasyprint import HTML
+        from weasyprint.text.fonts import FontConfiguration
+        font_config = FontConfiguration()
         pdf_buffer = BytesIO()
-        HTML(string="<html><body><p>Test</p></body></html>").write_pdf(pdf_buffer)
+        HTML(string="<html><body><p>Test</p></body></html>").write_pdf(pdf_buffer, font_config=font_config)
         return HttpResponse(
             content=pdf_buffer.getvalue(),
             media_type="application/pdf",
@@ -436,7 +438,8 @@ async def test_pdf():
         )
     except Exception as e:
         logger.exception("test-pdf failed")
-        raise HTTPException(500, f"PDF render failed: {type(e).__name__}") from e
+        msg = str(e).strip() or type(e).__name__
+        raise HTTPException(500, f"PDF render failed: {type(e).__name__} — {msg[:200]}") from e
 
 
 @app.get("/api/download-pdf/{session_id}")
