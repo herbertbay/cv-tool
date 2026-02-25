@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     frontend_url: str = ""
     # Optional: path for SQLite DB (e.g. /data/cv_tool.db on Railway with a volume). If empty, use backend/cv_tool.db.
     db_path: str = ""
+    # Directory for persisted generated PDFs (e.g. /data/generated_pdfs). If empty, use backend/generated_pdfs.
+    generated_pdfs_dir: str = ""
 
 
 settings = Settings()

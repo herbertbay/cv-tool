@@ -52,6 +52,15 @@ def init_db() -> None:
             except sqlite3.OperationalError as e:
                 if "duplicate column" not in str(e).lower():
                     raise
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS cv_generations (
+                session_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                cv_path TEXT NOT NULL,
+                letter_path TEXT
+            )
+        """)
         conn.commit()
 
 
@@ -197,11 +206,48 @@ def save_user_data(
         conn.commit()
 
 
+def insert_cv_generation(user_id: str, session_id: str, cv_path: str, letter_path: Optional[str] = None) -> None:
+    """Record a generated CV/letter for the user (PDFs already written to paths)."""
+    import time
+    init_db()
+    with _get_conn() as conn:
+        conn.execute(
+            "INSERT INTO cv_generations (session_id, user_id, created_at, cv_path, letter_path) VALUES (?, ?, ?, ?, ?)",
+            (session_id, user_id, time.strftime("%Y-%m-%d %H:%M:%S"), cv_path, letter_path),
+        )
+        conn.commit()
+
+
+def get_cv_generations_by_user(user_id: str) -> list[dict]:
+    """Return list of cv_generations for user (session_id, created_at, cv_path, letter_path), newest first."""
+    init_db()
+    with _get_conn() as conn:
+        rows = conn.execute(
+            "SELECT session_id, created_at, cv_path, letter_path FROM cv_generations WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,),
+        ).fetchall()
+    return [{"session_id": r["session_id"], "created_at": r["created_at"], "cv_path": r["cv_path"], "letter_path": r["letter_path"]} for r in rows]
+
+
+def get_cv_generation(session_id: str, user_id: str) -> Optional[dict]:
+    """Return cv_generation row if session exists and belongs to user."""
+    init_db()
+    with _get_conn() as conn:
+        row = conn.execute(
+            "SELECT session_id, created_at, cv_path, letter_path FROM cv_generations WHERE session_id = ? AND user_id = ?",
+            (session_id, user_id),
+        ).fetchone()
+    if not row:
+        return None
+    return {"session_id": row["session_id"], "created_at": row["created_at"], "cv_path": row["cv_path"], "letter_path": row["letter_path"]}
+
+
 def delete_user(user_id: str) -> None:
-    """Permanently delete user and all their data (profile). Order: profiles first (FK), then users."""
+    """Permanently delete user and all their data (profile, cv_generations). Order: profiles, cv_generations, then users."""
     init_db()
     with _get_conn() as conn:
         conn.execute("DELETE FROM profiles WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM cv_generations WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
         conn.commit()
 

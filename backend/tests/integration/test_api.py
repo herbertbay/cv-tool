@@ -16,6 +16,16 @@ def client():
     return TestClient(app)
 
 
+@pytest.fixture
+def auth_client(client: TestClient):
+    """Client with a logged-in user (session cookie). Use for endpoints that require auth."""
+    r = client.post("/api/auth/register", json={"email": "cvtest@example.com", "password": "password123"})
+    if r.status_code == 400 and "already" in (r.json().get("detail") or "").lower():
+        r = client.post("/api/auth/login", json={"email": "cvtest@example.com", "password": "password123"})
+    assert r.status_code == 200, r.text
+    return client
+
+
 def test_health(client: TestClient):
     """GET /health returns 200, status ok, and openai_configured (for Railway deploy check)."""
     r = client.get("/health")
@@ -26,9 +36,9 @@ def test_health(client: TestClient):
     assert isinstance(data["openai_configured"], bool)
 
 
-def test_parse_cv_success(client: TestClient, sample_linkedin_json: str):
+def test_parse_cv_success(auth_client: TestClient, sample_linkedin_json: str):
     """POST /api/parse-cv with valid JSON returns profile."""
-    r = client.post(
+    r = auth_client.post(
         "/api/parse-cv",
         files={"file": ("profile.json", io.BytesIO(sample_linkedin_json.encode()), "application/json")},
     )
@@ -41,9 +51,9 @@ def test_parse_cv_success(client: TestClient, sample_linkedin_json: str):
     assert "Python" in data["skills"]
 
 
-def test_parse_cv_wrong_extension(client: TestClient):
+def test_parse_cv_wrong_extension(auth_client: TestClient):
     """POST /api/parse-cv with non-PDF/JSON file returns 400."""
-    r = client.post(
+    r = auth_client.post(
         "/api/parse-cv",
         files={"file": ("data.txt", io.BytesIO(b"not json"), "text/plain")},
     )
@@ -52,45 +62,46 @@ def test_parse_cv_wrong_extension(client: TestClient):
     assert "PDF" in detail or "JSON" in detail or "file" in detail.lower()
 
 
-def test_parse_cv_invalid_json(client: TestClient):
+def test_parse_cv_invalid_json(auth_client: TestClient):
     """POST /api/parse-cv with invalid JSON returns 400."""
-    r = client.post(
+    r = auth_client.post(
         "/api/parse-cv",
         files={"file": ("x.json", io.BytesIO(b"{ invalid }"), "application/json")},
     )
     assert r.status_code == 400
 
 
-def test_get_profile_returns_empty_or_profile(client: TestClient):
+def test_get_profile_returns_empty_or_profile(auth_client: TestClient):
     """GET /api/profile returns profile dict (empty if new user)."""
-    r = client.get("/api/profile")
+    r = auth_client.get("/api/profile")
     assert r.status_code == 200
     data = r.json()
-    assert "full_name" in data
-    assert "experience" in data
-    assert "skills" in data
+    assert "profile" in data
+    assert "full_name" in data["profile"]
+    assert "experience" in data["profile"]
+    assert "skills" in data["profile"]
 
 
-def test_put_profile_returns_profile(client: TestClient, sample_profile_dict: dict):
-    """PUT /api/profile returns profile (no DB write; only CV upload updates DB)."""
+def test_put_profile_returns_profile(auth_client: TestClient, sample_profile_dict: dict):
+    """PUT /api/profile updates and returns profile."""
     sample_profile_dict["full_name"] = "Edited User"
-    r = client.put("/api/profile", json=sample_profile_dict)
+    r = auth_client.put("/api/profile", json={"profile": sample_profile_dict})
     assert r.status_code == 200
-    assert r.json()["full_name"] == "Edited User"
+    assert r.json()["profile"]["full_name"] == "Edited User"
 
 
-def test_parse_cv_saves_to_db(client: TestClient, sample_linkedin_json: str):
+def test_parse_cv_saves_to_db(auth_client: TestClient, sample_linkedin_json: str):
     """POST /api/parse-cv saves parsed profile to DB; GET /api/profile returns it."""
-    r = client.post(
+    r = auth_client.post(
         "/api/parse-cv",
         files={"file": ("profile.json", io.BytesIO(sample_linkedin_json.encode()), "application/json")},
     )
     assert r.status_code == 200
     assert r.json()["full_name"] == "Alice Smith"
-    r2 = client.get("/api/profile")
+    r2 = auth_client.get("/api/profile")
     assert r2.status_code == 200
-    assert r2.json()["full_name"] == "Alice Smith"
-    assert "Python" in r2.json()["skills"]
+    assert r2.json()["profile"]["full_name"] == "Alice Smith"
+    assert "Python" in r2.json()["profile"]["skills"]
 
 
 def test_fetch_job_description_text(client: TestClient):
@@ -124,7 +135,7 @@ def test_generate_cv_success(
     mock_pdf: MagicMock,
     mock_tailor: MagicMock,
     mock_letter_pdf: MagicMock,
-    client: TestClient,
+    auth_client: TestClient,
     sample_profile_dict: dict,
 ):
     """POST /api/generate-cv with valid body returns session and tailored content."""
@@ -136,7 +147,7 @@ def test_generate_cv_success(
         "Dear hiring manager, ...",
         ["Python", "API"],
     )
-    r = client.post(
+    r = auth_client.post(
         "/api/generate-cv",
         json={
             "profile": sample_profile_dict,
@@ -163,14 +174,14 @@ def test_generate_cv_pdf_attached_to_session(
     mock_pdf: MagicMock,
     mock_tailor: MagicMock,
     mock_letter_pdf: MagicMock,
-    client: TestClient,
+    auth_client: TestClient,
     sample_profile_dict: dict,
 ):
     """After generate-cv, session has CV PDF and letter PDF; download works."""
     mock_pdf.return_value = b"%PDF-fake-bytes"
     mock_letter_pdf.return_value = b"%PDF-letter-bytes"
     mock_tailor.return_value = ("S", [{"title": "E", "company": "C", "start_date": "2020", "end_date": "Present", "description": "D"}], "L", [])
-    r = client.post(
+    r = auth_client.post(
         "/api/generate-cv",
         json={
             "profile": sample_profile_dict,
@@ -182,26 +193,24 @@ def test_generate_cv_pdf_attached_to_session(
     assert r.status_code == 200
     session_id = r.json()["session_id"]
     # Get session
-    r2 = client.get(f"/api/session/{session_id}")
+    r2 = auth_client.get(f"/api/session/{session_id}")
     assert r2.status_code == 200
     assert r2.json()["has_pdf"] is True
-    # Download CV PDF
-    r3 = client.get(f"/api/download-pdf/{session_id}")
+    # Download CV PDF (requires auth)
+    r3 = auth_client.get(f"/api/download-pdf/{session_id}")
     assert r3.status_code == 200
     assert r3.headers["content-type"] == "application/pdf"
     assert r3.content == b"%PDF-fake-bytes"
     # Download letter PDF
-    r4 = client.get(f"/api/download-letter/{session_id}")
+    r4 = auth_client.get(f"/api/download-letter/{session_id}")
     assert r4.status_code == 200
     assert r4.content == b"%PDF-letter-bytes"
 
 
-@patch("app.main.settings")
-def test_generate_cv_missing_openai_key(mock_settings: MagicMock, client: TestClient, sample_profile_dict: dict):
+@patch("app.main.settings.openai_api_key", "")
+def test_generate_cv_missing_openai_key(auth_client: TestClient, sample_profile_dict: dict):
     """When OPENAI_API_KEY is not set, generate-cv returns 503."""
-    mock_settings.openai_api_key = ""
-    mock_settings.session_ttl_seconds = 3600
-    r = client.post(
+    r = auth_client.post(
         "/api/generate-cv",
         json={
             "profile": sample_profile_dict,
@@ -219,22 +228,25 @@ def test_get_session_not_found(client: TestClient):
     assert r.status_code == 404
 
 
-def test_download_pdf_not_found(client: TestClient):
-    """GET /api/download-pdf/{id} for unknown id returns 404."""
-    r = client.get("/api/download-pdf/00000000-0000-0000-0000-000000000000")
+def test_download_pdf_not_found(auth_client: TestClient):
+    """GET /api/download-pdf/{id} for unknown id returns 404 (auth required)."""
+    r = auth_client.get("/api/download-pdf/00000000-0000-0000-0000-000000000000")
     assert r.status_code == 404
 
 
+@patch("app.main.generate_letter_pdf")
 @patch("app.main.tailor_cv_and_letter")
 def test_download_pdf_no_pdf_ready(
     mock_tailor: MagicMock,
-    client: TestClient,
+    mock_letter: MagicMock,
+    auth_client: TestClient,
     sample_profile_dict: dict,
 ):
-    """When PDF generation failed, download returns 404."""
+    """When PDF generation fails, generate-cv returns 500 (no session returned)."""
+    mock_letter.return_value = b"%PDF"
     mock_tailor.return_value = ("S", [{"title": "E", "company": "C", "start_date": "2020", "end_date": "Present", "description": "D"}], "L", [])
     with patch("app.main.generate_cv_pdf", side_effect=Exception("WeasyPrint failed")):
-        r = client.post(
+        r = auth_client.post(
             "/api/generate-cv",
             json={
                 "profile": sample_profile_dict,
@@ -243,16 +255,13 @@ def test_download_pdf_no_pdf_ready(
                 "language": "en",
             },
         )
-    assert r.status_code == 200
-    session_id = r.json()["session_id"]
-    r2 = client.get(f"/api/download-pdf/{session_id}")
-    assert r2.status_code == 404
+    assert r.status_code == 500
 
 
-def test_update_profile_post(client: TestClient, sample_profile_dict: dict):
+def test_update_profile_post(auth_client: TestClient, sample_profile_dict: dict):
     """POST /api/profile with ProfileUpdateRequest saves and returns profile."""
     sample_profile_dict["full_name"] = "Updated Name"
-    r = client.post("/api/profile", json={"profile": sample_profile_dict})
+    r = auth_client.post("/api/profile", json={"profile": sample_profile_dict})
     assert r.status_code == 200
     assert r.json()["full_name"] == "Updated Name"
 

@@ -23,7 +23,11 @@ from app.database import (
     get_user_by_id as db_get_user_by_id,
     get_user_by_email as db_get_user_by_email,
     delete_user as db_delete_user,
+    insert_cv_generation as db_insert_cv_generation,
+    get_cv_generations_by_user as db_get_cv_generations_by_user,
+    get_cv_generation as db_get_cv_generation,
 )
+from app.generated_storage import save_cv_pdf as storage_save_cv_pdf, load_pdf_bytes as storage_load_pdf_bytes
 from app.auth import (
     hash_password,
     verify_password,
@@ -317,12 +321,13 @@ async def fetch_extra_urls(body: dict = Body(...)):
 
 
 @app.post("/api/generate-cv", response_model=GenerateCVResponse)
-async def generate_cv(req: GenerateCVRequest):
+async def generate_cv(request: Request, req: GenerateCVRequest):
     """
     Tailor profile to job description and generate motivation letter.
-    Fetches job/URLs if needed, calls AI, stores session, generates PDF.
+    Requires auth. Fetches job/URLs if needed, calls AI, stores session, generates PDF, persists to DB and filesystem.
     Returns session_id and tailored content; PDF can be downloaded via /api/download-pdf/{session_id}.
     """
+    user_id = require_user(request)
     try:
         job_text = req.job_description
         # If job looks like URL, fetch
@@ -380,9 +385,14 @@ async def generate_cv(req: GenerateCVRequest):
             additional_urls=extra_urls,
         )
         set_session_pdf(session_id, cv_pdf_bytes)
+        letter_pdf_bytes = None
         if motivation_letter and motivation_letter.strip():
             letter_pdf_bytes = generate_letter_pdf(profile=profile, motivation_letter=motivation_letter)
             set_session_letter_pdf(session_id, letter_pdf_bytes)
+
+        # Persist to filesystem and DB for listing and download after session expiry
+        cv_path, letter_path = storage_save_cv_pdf(session_id, cv_pdf_bytes, letter_pdf_bytes)
+        db_insert_cv_generation(user_id, session_id, cv_path, letter_path)
 
         return GenerateCVResponse(
             session_id=session_id,
@@ -401,6 +411,22 @@ async def generate_cv(req: GenerateCVRequest):
             500,
             f"Generation failed. Please try again or simplify the profile. (Error: {err_type})",
         ) from e
+
+
+@app.get("/api/generated-cvs")
+async def list_generated_cvs(request: Request):
+    """Return list of generated CVs for the current user (session_id, created_at, has_letter_pdf)."""
+    user_id = require_user(request)
+    rows = db_get_cv_generations_by_user(user_id)
+    return [
+        {
+            "session_id": r["session_id"],
+            "created_at": r["created_at"],
+            "has_cv": True,
+            "has_letter_pdf": bool(r.get("letter_path")),
+        }
+        for r in rows
+    ]
 
 
 @app.get("/api/session/{session_id}")
@@ -443,14 +469,24 @@ async def test_pdf():
 
 
 @app.get("/api/download-pdf/{session_id}")
-async def download_pdf(session_id: str):
-    """Return generated CV PDF only for the given session."""
+async def download_pdf(session_id: str, request: Request):
+    """Return generated CV PDF for the given session. Requires auth; serves from session or persisted file."""
+    user_id = require_user(request)
     session = get_session(session_id)
-    if not session:
-        raise HTTPException(404, "Session not found")
-    pdf_bytes = session.get("pdf_bytes")
+    if session:
+        pdf_bytes = session.get("pdf_bytes")
+        if pdf_bytes:
+            return HttpResponse(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="cv_{session_id[:8]}.pdf"'},
+            )
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen:
+        raise HTTPException(404, "Session not found or access denied")
+    pdf_bytes = storage_load_pdf_bytes(gen["cv_path"])
     if not pdf_bytes:
-        raise HTTPException(404, "PDF not ready for this session")
+        raise HTTPException(404, "PDF file not found")
     return HttpResponse(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -459,14 +495,24 @@ async def download_pdf(session_id: str):
 
 
 @app.get("/api/download-letter/{session_id}")
-async def download_letter(session_id: str):
-    """Return motivation letter PDF only for the given session."""
+async def download_letter(session_id: str, request: Request):
+    """Return motivation letter PDF for the given session. Requires auth; serves from session or persisted file."""
+    user_id = require_user(request)
     session = get_session(session_id)
-    if not session:
-        raise HTTPException(404, "Session not found")
-    pdf_bytes = session.get("letter_pdf_bytes")
+    if session:
+        pdf_bytes = session.get("letter_pdf_bytes")
+        if pdf_bytes:
+            return HttpResponse(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="motivation_letter_{session_id[:8]}.pdf"'},
+            )
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen or not gen.get("letter_path"):
+        raise HTTPException(404, "Letter PDF not found or access denied")
+    pdf_bytes = storage_load_pdf_bytes(gen["letter_path"])
     if not pdf_bytes:
-        raise HTTPException(404, "Letter PDF not ready for this session")
+        raise HTTPException(404, "Letter PDF file not found")
     return HttpResponse(
         content=pdf_bytes,
         media_type="application/pdf",

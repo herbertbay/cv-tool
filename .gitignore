@@ -19,6 +19,7 @@ backend/dist/
 backend/build/
 backend/cv_tool.db
 backend/*.db
+backend/generated_pdfs/
 backend/.env
 backend/.env.local
 backend/.env.*.local

@@ -30,6 +30,7 @@ The backend uses **WeasyPrint** for PDFs, which needs system libraries (Pango, C
   - `SECRET_KEY` = random string (e.g. `openssl rand -hex 32`)
   - `FRONTEND_URL` = your **frontend** Railway URL (set this after you create the frontend service and generate its domain; e.g. `https://cv-tool-web-production-xxxx.up.railway.app`) so the API allows CORS from the frontend
   - If you add Postgres later: `DATABASE_URL`
+  - (Optional) **GENERATED_PDFS_DIR** = path for stored CV/letter PDFs (e.g. `/data/generated_pdfs`). If set, generated PDFs are saved there and listed on the default page; add a Volume mounted at that path so they survive redeploys.
 - After deploy, open the backend service → **Settings → Generate Domain**. Copy the URL (e.g. `https://cv-tool-api-production-xxxx.up.railway.app`). You need it for the frontend.
 
 ---

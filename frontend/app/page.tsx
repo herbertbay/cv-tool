@@ -8,11 +8,15 @@ import {
   putUserData,
   fetchJobDescription,
   generateCV,
+  getGeneratedCVs,
+  downloadPdf,
+  downloadLetterPdf,
   downloadPdfUrl,
   downloadLetterPdfUrl,
   type Profile,
   type UserData,
   type GenerateCVResponse,
+  type GeneratedCVItem,
 } from './lib/api';
 import { useAuth } from './lib/auth-context';
 
@@ -70,6 +74,7 @@ export default function HomePage() {
   const [generateProgress, setGenerateProgress] = useState('');
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerateCVResponse | null>(null);
+  const [refreshGeneratedList, setRefreshGeneratedList] = useState(0);
 
   const loadUserData = useCallback(async () => {
     if (!user) return;
@@ -204,6 +209,7 @@ export default function HomePage() {
         template,
       });
       setResult(res);
+      setRefreshGeneratedList((t) => t + 1);
       setGenerateProgress('');
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed');
@@ -276,6 +282,7 @@ export default function HomePage() {
           <DefaultPageUI
             userData={userData!}
             onOpenCreate={handleOpenCreateModal}
+            refreshTrigger={refreshGeneratedList}
           />
         )}
 
@@ -298,8 +305,8 @@ export default function HomePage() {
               setCreateModalOpen(false);
               setResult(null);
             }}
-            downloadPdfUrl={downloadPdfUrl}
-            downloadLetterPdfUrl={downloadLetterPdfUrl}
+            onDownloadPdf={downloadPdf}
+            onDownloadLetter={downloadLetterPdf}
           />
         )}
       </main>
@@ -423,8 +430,47 @@ function OnboardingUI({
 }
 
 // ——— Default page (summary + actions) ———
-function DefaultPageUI({ userData, onOpenCreate }: { userData: UserData; onOpenCreate: () => void }) {
+function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: UserData; onOpenCreate: () => void; refreshTrigger: number }) {
   const p = userData.profile;
+  const [generatedList, setGeneratedList] = useState<GeneratedCVItem[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setListLoading(true);
+    getGeneratedCVs()
+      .then((list) => { if (!cancelled) setGeneratedList(list); })
+      .catch(() => { if (!cancelled) setGeneratedList([]); })
+      .finally(() => { if (!cancelled) setListLoading(false); });
+    return () => { cancelled = true; };
+  }, [refreshTrigger]);
+
+  const handleDownloadPdf = useCallback(async (sessionId: string) => {
+    setDownloadError(null);
+    try {
+      await downloadPdf(sessionId);
+    } catch {
+      setDownloadError('Download failed');
+    }
+  }, []);
+  const handleDownloadLetter = useCallback(async (sessionId: string) => {
+    setDownloadError(null);
+    try {
+      await downloadLetterPdf(sessionId);
+    } catch {
+      setDownloadError('Download failed');
+    }
+  }, []);
+
+  const formatDate = (createdAt: string) => {
+    try {
+      const d = new Date(createdAt);
+      return isNaN(d.getTime()) ? createdAt : d.toLocaleDateString(undefined, { dateStyle: 'medium' }) + ' ' + d.toLocaleTimeString(undefined, { timeStyle: 'short' });
+    } catch {
+      return createdAt;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -461,6 +507,42 @@ function DefaultPageUI({ userData, onOpenCreate }: { userData: UserData; onOpenC
             Create CV & motivation letter
           </button>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">Generated CVs & motivation letters</h2>
+        {listLoading && <p className="text-sm text-slate-500">Loading…</p>}
+        {!listLoading && generatedList.length === 0 && (
+          <p className="text-sm text-slate-500">No generated CVs yet. Use “Create CV & motivation letter” above.</p>
+        )}
+        {!listLoading && generatedList.length > 0 && (
+          <ul className="space-y-3">
+            {generatedList.map((item) => (
+              <li key={item.session_id} className="flex flex-wrap items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+                <span className="text-sm text-slate-600">{formatDate(item.created_at)}</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadPdf(item.session_id)}
+                    className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+                  >
+                    Download CV (PDF)
+                  </button>
+                  {item.has_letter_pdf && (
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadLetter(item.session_id)}
+                      className="inline-flex items-center rounded-lg bg-slate-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
+                    >
+                      Download letter (PDF)
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {downloadError && <p className="mt-2 text-sm text-red-600">{downloadError}</p>}
       </div>
     </div>
   );
@@ -499,8 +581,8 @@ function CreateCVModal({
   onFetchJob: () => void;
   onGenerate: () => void;
   onClose: () => void;
-  downloadPdfUrl: (id: string) => string;
-  downloadLetterPdfUrl: (id: string) => string;
+  onDownloadPdf: (sessionId: string) => Promise<void>;
+  onDownloadLetter: (sessionId: string) => Promise<void>;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -573,13 +655,21 @@ function CreateCVModal({
             <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
               <p className="text-sm font-medium text-slate-700">Done. Download your files:</p>
               <div className="flex flex-col gap-2">
-                <a href={downloadPdfUrl(result.session_id)} target="_blank" rel="noopener noreferrer" className="inline-flex justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+                <button
+                  type="button"
+                  onClick={() => onDownloadPdf(result.session_id)}
+                  className="inline-flex justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                >
                   Download CV (PDF)
-                </a>
+                </button>
                 {result.motivation_letter?.trim() && (
-                  <a href={downloadLetterPdfUrl(result.session_id)} target="_blank" rel="noopener noreferrer" className="inline-flex justify-center rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => onDownloadLetter(result.session_id)}
+                    className="inline-flex justify-center rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                  >
                     Download motivation letter (PDF)
-                  </a>
+                  </button>
                 )}
               </div>
             </div>

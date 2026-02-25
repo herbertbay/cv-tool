@@ -141,7 +141,7 @@
   <h2>Certifications</h2>
   <div class="section">
     {% for c in profile.certifications %}
-    <div class="job"><span class="job-title">{{ c.name }}</span>{% if c.authority %} — {{ c.authority }}{% endif %}{% if c.date %} ({{ c.date }}){% endif %}</div>
+    <div class="job"><span class="job-title">{{ c.name }}</span>{% if c.authority and c.authority != 'null' and c.authority|trim %} — {{ c.authority }}{% endif %}{% if c.date and c.date != 'null' and c.date|trim %} ({{ c.date }}){% endif %}</div>
     {% endfor %}
   </div>
   {% endif %}

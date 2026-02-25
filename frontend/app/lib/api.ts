@@ -293,12 +293,53 @@ export async function getSession(
   return res.json();
 }
 
-/** Download CV PDF for session */
+/** List of generated CVs for the current user */
+export type GeneratedCVItem = {
+  session_id: string;
+  created_at: string;
+  has_cv: boolean;
+  has_letter_pdf: boolean;
+};
+
+export async function getGeneratedCVs(): Promise<GeneratedCVItem[]> {
+  const res = await fetch(`${API_BASE}/generated-cvs`, fetchOptions);
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error('Failed to load generated CVs');
+  return res.json();
+}
+
+/** Download CV PDF for session (uses fetch with credentials so auth works cross-origin) */
+export async function downloadPdf(sessionId: string, filename?: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/download-pdf/${sessionId}`, fetchOptions);
+  if (!res.ok) throw new Error('Download failed');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename ?? `cv_${sessionId.slice(0, 8)}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Download motivation letter PDF for session */
+export async function downloadLetterPdf(sessionId: string, filename?: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/download-letter/${sessionId}`, fetchOptions);
+  if (!res.ok) throw new Error('Download failed');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename ?? `motivation_letter_${sessionId.slice(0, 8)}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** URL for CV PDF (for same-origin or when opening in same tab with cookie). Use downloadPdf() for cross-origin. */
 export function downloadPdfUrl(sessionId: string): string {
   return `${API_BASE}/download-pdf/${sessionId}`;
 }
 
-/** Download motivation letter PDF for session */
+/** URL for motivation letter PDF */
 export function downloadLetterPdfUrl(sessionId: string): string {
   return `${API_BASE}/download-letter/${sessionId}`;
 }
