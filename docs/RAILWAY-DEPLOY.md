@@ -17,14 +17,14 @@ Create **two** services in your Railway project:
 
 ## 2. Backend service
 
-- **Root directory:** `backend` (in Railway: Settings → set "Root Directory" to `backend`).
-- **Build command:**  
-  `pip install -r requirements.txt`  
-  (Railway may auto-detect this for Python.)
-- **Start command:**  
-  `uvicorn app.main:app --host 0.0.0.0 --port $PORT`  
-  Or leave start empty and add a **Procfile** in `backend/` with:  
-  `web: uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+The backend uses **WeasyPrint** for PDFs, which needs system libraries (Pango, Cairo) not in Railway’s default image. Use the **Dockerfile** in `backend/` so those are installed.
+
+- **Root directory:** `backend`.
+- **Use Dockerfile:** In Railway, the backend service should build from the Dockerfile in `backend/`. If Railway asks for a build type or “Dockerfile path”, use the Dockerfile in the service root (no extra path). Do **not** set a custom Build Command when using the Dockerfile; the Dockerfile defines the build and start.
+- If you are **not** using the Dockerfile (no custom image):  
+  Build: `pip install -r requirements.txt`.  
+  Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.  
+  (Without the Dockerfile, the app will crash on import with WeasyPrint/system library errors.)
 - **Environment variables (Settings → Variables):**
   - `OPENAI_API_KEY` = your OpenAI key
   - `SECRET_KEY` = random string (e.g. `openssl rand -hex 32`)
