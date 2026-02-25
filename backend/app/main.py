@@ -89,6 +89,19 @@ SESSION_COOKIE = "cv-tool-session"
 SESSION_MAX_AGE = 30 * 24 * 3600  # 30 days
 
 
+def _session_cookie_kwargs(request: Request | None = None) -> dict:
+    """Cookie kwargs so session works cross-origin (frontend on different Railway subdomain)."""
+    # Use SameSite=None; Secure when frontend URL is set (production) or when request is from another origin
+    if settings.frontend_url:
+        return {"samesite": "none", "secure": True}
+    if request:
+        origin = request.headers.get("origin") or ""
+        # If request is from another origin (e.g. different Railway subdomain), cookie must be cross-origin
+        if origin and not origin.startswith("http://127.0.0.1") and not origin.startswith("http://localhost"):
+            return {"samesite": "none", "secure": True}
+    return {"samesite": "lax", "secure": False}
+
+
 def get_current_user_id(request: Request) -> str | None:
     """Return authenticated user_id from session cookie, or None."""
     token = request.cookies.get(SESSION_COOKIE)
@@ -114,7 +127,7 @@ def health():
 
 
 @app.post("/api/auth/register")
-async def register(response: Response, body: dict = Body(...)):
+async def register(request: Request, response: Response, body: dict = Body(...)):
     """Register with email and password. Logs in on success."""
     email = (body.get("email") or "").strip()
     password = body.get("password") or ""
@@ -131,15 +144,15 @@ async def register(response: Response, body: dict = Body(...)):
         value=token,
         max_age=SESSION_MAX_AGE,
         httponly=True,
-        samesite="lax",
         path="/",
+        **_session_cookie_kwargs(request),
     )
     user = db_get_user_by_id(user_id)
     return {"user": {"id": user["id"], "email": user["email"]}}
 
 
 @app.post("/api/auth/login")
-async def login(response: Response, body: dict = Body(...)):
+async def login(request: Request, response: Response, body: dict = Body(...)):
     """Login with email and password."""
     email = (body.get("email") or "").strip()
     password = body.get("password") or ""
@@ -154,8 +167,8 @@ async def login(response: Response, body: dict = Body(...)):
         value=token,
         max_age=SESSION_MAX_AGE,
         httponly=True,
-        samesite="lax",
         path="/",
+        **_session_cookie_kwargs(request),
     )
     return {"user": {"id": user["id"], "email": user["email"]}}
 
