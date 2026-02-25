@@ -5,6 +5,7 @@ CV upload only; user from cookie; profile in local DB; motivation letter as sepa
 import logging
 import time
 from contextlib import asynccontextmanager
+from io import BytesIO
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Body, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -353,9 +354,10 @@ async def generate_cv(req: GenerateCVRequest):
         )
 
         session_id = create_session_id()
+        profile_dict = req.profile.model_dump() if isinstance(req.profile, Profile) else req.profile
         save_session(
             session_id=session_id,
-            profile=req.profile,
+            profile=profile_dict,
             tailored_summary=tailored_summary,
             tailored_experience=tailored_experience,
             motivation_letter=motivation_letter,
@@ -394,7 +396,11 @@ async def generate_cv(req: GenerateCVRequest):
         raise
     except Exception as e:
         logger.exception("generate-cv failed")
-        raise HTTPException(500, "Generation failed. Please try again or simplify the profile.") from e
+        err_type = type(e).__name__
+        raise HTTPException(
+            500,
+            f"Generation failed. Please try again or simplify the profile. (Error: {err_type})",
+        ) from e
 
 
 @app.get("/api/session/{session_id}")
@@ -414,6 +420,23 @@ async def get_session_info(session_id: str):
         "motivation_letter": session.get("motivation_letter"),
         "keywords_to_highlight": session.get("keywords_to_highlight"),
     }
+
+
+@app.get("/api/test-pdf")
+async def test_pdf():
+    """Render a minimal PDF to verify WeasyPrint works (e.g. on Railway). Returns PDF or 500 with error."""
+    try:
+        from weasyprint import HTML
+        pdf_buffer = BytesIO()
+        HTML(string="<html><body><p>Test</p></body></html>").write_pdf(pdf_buffer)
+        return HttpResponse(
+            content=pdf_buffer.getvalue(),
+            media_type="application/pdf",
+            headers={"Content-Disposition": 'attachment; filename="test.pdf"'},
+        )
+    except Exception as e:
+        logger.exception("test-pdf failed")
+        raise HTTPException(500, f"PDF render failed: {type(e).__name__}") from e
 
 
 @app.get("/api/download-pdf/{session_id}")
