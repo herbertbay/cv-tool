@@ -322,52 +322,52 @@ async def generate_cv(req: GenerateCVRequest):
     Fetches job/URLs if needed, calls AI, stores session, generates PDF.
     Returns session_id and tailored content; PDF can be downloaded via /api/download-pdf/{session_id}.
     """
-    job_text = req.job_description
-    # If job looks like URL, fetch
-    if job_text.strip().startswith("http"):
-        job_text = fetch_job_description(job_text)
-
-    additional_context_parts = []
-    if req.additional_urls_content:
-        for url, content in req.additional_urls_content.items():
-            if content:
-                additional_context_parts.append(f"[Content from {url}]\n{content[:8000]}")
-    elif req.additional_urls:
-        fetched = fetch_additional_urls(req.additional_urls)
-        for url, content in fetched.items():
-            if content:
-                additional_context_parts.append(f"[Content from {url}]\n{content[:8000]}")
-    additional_context = "\n\n".join(additional_context_parts)
-
-    profile = req.profile if isinstance(req.profile, Profile) else Profile(**req.profile)
-    if not settings.openai_api_key:
-        raise HTTPException(503, "OPENAI_API_KEY is not configured")
-
-    tailored_summary, tailored_experience, motivation_letter, keywords = tailor_cv_and_letter(
-        profile=profile,
-        job_description=job_text,
-        personal_summary_override=req.personal_summary,
-        additional_context=additional_context,
-        language=req.language,
-    )
-
-    session_id = create_session_id()
-    save_session(
-        session_id=session_id,
-        profile=req.profile,
-        tailored_summary=tailored_summary,
-        tailored_experience=tailored_experience,
-        motivation_letter=motivation_letter,
-        keywords_to_highlight=keywords,
-        pdf_bytes=None,
-    )
-
-    # Generate CV PDF and letter PDF (separate files)
-    allowed_templates = {"cv_base.html", "cv_executive.html"}
-    template_name = getattr(req, "template", "cv_base.html") or "cv_base.html"
-    if template_name not in allowed_templates:
-        template_name = "cv_base.html"
     try:
+        job_text = req.job_description
+        # If job looks like URL, fetch
+        if job_text.strip().startswith("http"):
+            job_text = fetch_job_description(job_text)
+
+        additional_context_parts = []
+        if req.additional_urls_content:
+            for url, content in req.additional_urls_content.items():
+                if content:
+                    additional_context_parts.append(f"[Content from {url}]\n{content[:8000]}")
+        elif req.additional_urls:
+            fetched = fetch_additional_urls(req.additional_urls)
+            for url, content in fetched.items():
+                if content:
+                    additional_context_parts.append(f"[Content from {url}]\n{content[:8000]}")
+        additional_context = "\n\n".join(additional_context_parts)
+
+        profile = req.profile if isinstance(req.profile, Profile) else Profile(**req.profile)
+        if not settings.openai_api_key:
+            raise HTTPException(503, "OPENAI_API_KEY is not configured")
+
+        tailored_summary, tailored_experience, motivation_letter, keywords = tailor_cv_and_letter(
+            profile=profile,
+            job_description=job_text,
+            personal_summary_override=req.personal_summary,
+            additional_context=additional_context,
+            language=req.language,
+        )
+
+        session_id = create_session_id()
+        save_session(
+            session_id=session_id,
+            profile=req.profile,
+            tailored_summary=tailored_summary,
+            tailored_experience=tailored_experience,
+            motivation_letter=motivation_letter,
+            keywords_to_highlight=keywords,
+            pdf_bytes=None,
+        )
+
+        # Generate CV PDF and letter PDF (separate files)
+        allowed_templates = {"cv_base.html", "cv_executive.html"}
+        template_name = getattr(req, "template", "cv_base.html") or "cv_base.html"
+        if template_name not in allowed_templates:
+            template_name = "cv_base.html"
         extra_urls = [u for u in (req.additional_urls or []) if u and str(u).strip().startswith(("http://", "https://"))]
         cv_pdf_bytes = generate_cv_pdf(
             profile=profile,
@@ -381,18 +381,20 @@ async def generate_cv(req: GenerateCVRequest):
         if motivation_letter and motivation_letter.strip():
             letter_pdf_bytes = generate_letter_pdf(profile=profile, motivation_letter=motivation_letter)
             set_session_letter_pdf(session_id, letter_pdf_bytes)
-    except Exception as e:
-        logger.exception("PDF generation failed")
-        raise HTTPException(500, "PDF generation failed. Please try again.") from e
 
-    return GenerateCVResponse(
-        session_id=session_id,
-        tailored_summary=tailored_summary,
-        tailored_experience=tailored_experience,
-        motivation_letter=motivation_letter,
-        suggested_skills_highlight=keywords,
-        status="success",
-    )
+        return GenerateCVResponse(
+            session_id=session_id,
+            tailored_summary=tailored_summary,
+            tailored_experience=tailored_experience,
+            motivation_letter=motivation_letter,
+            suggested_skills_highlight=keywords,
+            status="success",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("generate-cv failed")
+        raise HTTPException(500, "Generation failed. Please try again or simplify the profile.") from e
 
 
 @app.get("/api/session/{session_id}")

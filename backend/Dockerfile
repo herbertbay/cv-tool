@@ -1,7 +1,7 @@
 # WeasyPrint needs system libs (Pango, Cairo, GObject). Railway's default image doesn't have them.
 FROM python:3.13-slim-bookworm
 
-# Install WeasyPrint system dependencies (see https://doc.courtbouillon.org/weasyprint/stable/first_steps.html)
+# WeasyPrint: system libs + fonts (Docker has no fonts by default; WeasyPrint fails without them)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libcairo2 \
@@ -10,7 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdk-pixbuf2.0-0 \
     libffi-dev \
     shared-mime-info \
-    && rm -rf /var/lib/apt/lists/*
+    fontconfig \
+    fonts-liberation \
+    fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/* \
+    && fc-cache -fv
 
 WORKDIR /app
 
