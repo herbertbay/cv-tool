@@ -196,6 +196,15 @@ def save_user_data(
         conn.commit()
 
 
+def delete_user(user_id: str) -> None:
+    """Permanently delete user and all their data (profile). Order: profiles first (FK), then users."""
+    init_db()
+    with _get_conn() as conn:
+        conn.execute("DELETE FROM profiles WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+
+
 def ensure_user_id(user_id: Optional[str]) -> str:
     """Return user_id if valid, else new UUID."""
     if user_id and len(user_id) == 36:

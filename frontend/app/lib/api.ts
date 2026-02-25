@@ -129,6 +129,12 @@ export async function logout(): Promise<void> {
   await fetch(`${BASE}/api/auth/logout`, { method: 'POST', ...fetchOptions });
 }
 
+/** Permanently delete account and all data. Requires auth. Clears session on success. */
+export async function deleteAccount(): Promise<void> {
+  const res = await fetch(`${BASE}/api/auth/delete-account`, { method: 'POST', ...fetchOptions });
+  if (!res.ok) throw new Error('Failed to delete account');
+}
+
 // --- Profile (require auth) ---
 
 /** Parse CV (PDF or JSON) via backend. Requires auth. */

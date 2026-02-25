@@ -1,8 +1,11 @@
 """
 Extract profile data from uploaded PDF (e.g. LinkedIn "Save as PDF" or CV PDF).
 Uses PyPDF to extract text, then heuristics + optional AI to structure into Profile.
+On Railway: same code path as local; OPENAI_API_KEY must be set for AI parsing.
+If text extraction is poor (e.g. image-based PDFs), only heuristics or AI on minimal text apply.
 """
 import json
+import logging
 import re
 from io import BytesIO
 
@@ -12,32 +15,55 @@ from app.models import Profile, Position, EducationEntry, CertificationEntry
 from app.ai_service import _get_client
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
+# Minimum chars to consider extraction successful; below this we try layout mode
+_MIN_TEXT_LENGTH = 30
+
 
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
-    """Extract raw text from PDF."""
+    """
+    Extract raw text from PDF. Tries default extraction first; if result is very short,
+    retries with layout mode (helps some PDFs where default order is wrong or empty).
+    """
     reader = PdfReader(BytesIO(pdf_bytes))
-    lines = []
+    texts = []
+    texts_layout = []
     for page in reader.pages:
-        text = page.extract_text()
-        if text:
-            lines.append(text)
-    return "\n".join(lines)
+        t = page.extract_text()
+        if t:
+            texts.append(t)
+        try:
+            t_layout = page.extract_text(extraction_mode="layout")
+            if t_layout:
+                texts_layout.append(t_layout)
+        except Exception as e:
+            logger.debug("PDF layout extraction failed for a page: %s", e)
+    out = "\n".join(texts).strip()
+    out_layout = "\n".join(texts_layout).strip() if texts_layout else ""
+    if len(out_layout) > len(out) and len(out_layout) >= _MIN_TEXT_LENGTH:
+        return out_layout
+    return out
 
 
 def parse_pdf_to_profile(pdf_bytes: bytes, use_ai: bool = True) -> Profile:
     """
     Parse PDF content into Profile.
     First extracts text, then uses AI (if OPENAI_API_KEY set) to structure, else heuristics.
+    On Railway: ensure OPENAI_API_KEY is set for best results; if AI fails we fall back to heuristics and log.
     """
     text = extract_text_from_pdf(pdf_bytes)
     if not text or len(text.strip()) < 20:
-        raise ValueError("PDF appears empty or could not extract text")
+        raise ValueError("PDF appears empty or could not extract text. Try a text-based PDF (e.g. exported from LinkedIn or Word).")
 
     if use_ai and settings.openai_api_key:
         try:
             return _parse_with_ai(text)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("PDF parse: AI structuring failed, using heuristics: %s", e)
+    else:
+        if use_ai and not settings.openai_api_key:
+            logger.info("PDF parse: OPENAI_API_KEY not set, using heuristics only")
     return _parse_with_heuristics(text)
 
 

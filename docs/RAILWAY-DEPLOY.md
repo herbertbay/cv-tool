@@ -64,7 +64,16 @@ Set the **backend** env var `FRONTEND_URL` to your frontend’s full URL (e.g. `
 
 ---
 
-## 6. Checklist
+## 6. PDF parsing (uploaded CVs)
+
+- **Same code as local:** PDF text extraction and AI structuring run the same on Railway. No separate “scraping” service.
+- **Best results:** Set `OPENAI_API_KEY` on the backend. CV uploads are parsed with GPT first; if that fails (e.g. timeout, rate limit), the app falls back to heuristic parsing and logs a warning.
+- **Empty or poor extraction:** Some PDFs (e.g. image-only/scanned, or unusual encodings) yield little or no text. The backend tries default extraction then layout-mode extraction; if the PDF is still empty, the user sees an error suggesting a text-based PDF (e.g. LinkedIn “Save as PDF” or Word export).
+- **Railway logs:** If PDF parsing is “not working at its fullest”, check backend logs for `PDF parse: AI structuring failed` or `OPENAI_API_KEY not set` to see whether AI is being used or heuristics only.
+
+---
+
+## 7. Checklist
 
 - [ ] Backend service: root `backend`, start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, env `OPENAI_API_KEY` and `SECRET_KEY`.
 - [ ] Backend domain generated; URL copied.
@@ -72,3 +81,5 @@ Set the **backend** env var `FRONTEND_URL` to your frontend’s full URL (e.g. `
 - [ ] Frontend domain generated.
 - [ ] Backend env `FRONTEND_URL` set to frontend URL (for CORS).
 - [ ] Open frontend URL in browser and test.
+- [ ] (Optional) Verify `OPENAI_API_KEY`: `curl https://your-backend.up.railway.app/health` should include `"openai_configured": true`.
+- [ ] (Optional) Test CV upload: PDF parsing uses OpenAI when `OPENAI_API_KEY` is set; check logs if results are weak.

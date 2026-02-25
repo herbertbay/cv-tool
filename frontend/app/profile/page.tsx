@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { getProfile, putProfile, type Profile } from '../lib/api';
+import { useRouter } from 'next/navigation';
+import { getProfile, putProfile, deleteAccount, type Profile } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 
 const DRAFT_KEY = 'cv-tool-profile-draft';
@@ -24,11 +25,15 @@ const emptyProfile: Profile = {
 };
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInProgress, setDeleteInProgress] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -190,6 +195,21 @@ export default function ProfilePage() {
       setSaveError(user ? 'Failed to save.' : 'Please sign in to save your profile to your account.');
     }
   }, [profile, user]);
+
+  const handleDeleteAccount = useCallback(async () => {
+    setDeleteError(null);
+    setDeleteInProgress(true);
+    try {
+      await deleteAccount();
+      if (typeof window !== 'undefined') localStorage.removeItem(DRAFT_KEY);
+      await logout();
+      router.push('/');
+      router.refresh();
+    } catch {
+      setDeleteError('Failed to delete account. Try again.');
+      setDeleteInProgress(false);
+    }
+  }, [logout, router]);
 
   if (loading) {
     return (
@@ -515,6 +535,52 @@ export default function ProfilePage() {
           {saved && <span className="text-sm text-green-600">Saved locally for this browser. Your stored profile is updated only when you upload a new CV.</span>}
           {saveError && <span className="text-sm text-red-600">{saveError}</span>}
         </div>
+
+        {user && (
+          <div className="rounded-xl border border-red-200 bg-red-50/50 p-6">
+            <h2 className="text-lg font-semibold text-slate-800 mb-2">Delete account</h2>
+            <p className="text-sm text-slate-600 mb-4">
+              Permanently delete your account and all stored data (profile, URLs, photo). This cannot be undone.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              Delete account
+            </button>
+          </div>
+        )}
+
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title">
+            <div className="rounded-xl bg-white p-6 shadow-xl max-w-md w-full">
+              <h2 id="delete-dialog-title" className="text-lg font-semibold text-slate-800 mb-2">Delete account?</h2>
+              <p className="text-sm text-slate-600 mb-6">
+                This will permanently delete your account and all your data. You will need to sign up again to use CV-Tool. This cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteError(null); }}
+                  disabled={deleteInProgress}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleteInProgress}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {deleteInProgress ? 'Deleting…' : 'Delete account'}
+                </button>
+              </div>
+              {deleteError && <p className="mt-3 text-sm text-red-600">{deleteError}</p>}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -17,10 +17,13 @@ def client():
 
 
 def test_health(client: TestClient):
-    """GET /health returns 200 and status ok."""
+    """GET /health returns 200, status ok, and openai_configured (for Railway deploy check)."""
     r = client.get("/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok"}
+    data = r.json()
+    assert data["status"] == "ok"
+    assert "openai_configured" in data
+    assert isinstance(data["openai_configured"], bool)
 
 
 def test_parse_cv_success(client: TestClient, sample_linkedin_json: str):

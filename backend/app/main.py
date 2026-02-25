@@ -18,6 +18,7 @@ from app.database import (
     create_user as db_create_user,
     get_user_by_id as db_get_user_by_id,
     get_user_by_email as db_get_user_by_email,
+    delete_user as db_delete_user,
 )
 from app.auth import (
     hash_password,
@@ -101,6 +102,11 @@ def _session_cookie_kwargs(request: Request | None = None) -> dict:
     return {"samesite": "lax", "secure": False}
 
 
+def _session_cookie_delete_kwargs(request: Request | None = None) -> dict:
+    """Kwargs for delete_cookie so it clears the cookie in same cross-origin scenario."""
+    return {"path": "/", **_session_cookie_kwargs(request)}
+
+
 def get_current_user_id(request: Request) -> str | None:
     """Return authenticated user_id from session cookie, or None."""
     token = request.cookies.get(SESSION_COOKIE)
@@ -119,7 +125,11 @@ def require_user(request: Request) -> str:
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    """Health check for Railway/deploy. openai_configured is True when OPENAI_API_KEY is set."""
+    return {
+        "status": "ok",
+        "openai_configured": bool(settings.openai_api_key),
+    }
 
 
 # --- Auth ---
@@ -185,9 +195,18 @@ async def auth_me(request: Request):
 
 
 @app.post("/api/auth/logout")
-async def logout(response: Response):
+async def logout(request: Request, response: Response):
     """Clear session cookie."""
-    response.delete_cookie(key=SESSION_COOKIE, path="/")
+    response.delete_cookie(key=SESSION_COOKIE, **_session_cookie_delete_kwargs(request))
+    return {"ok": True}
+
+
+@app.post("/api/auth/delete-account")
+async def delete_account(request: Request, response: Response):
+    """Permanently delete the current user's account and all data. Requires auth."""
+    user_id = require_user(request)
+    db_delete_user(user_id)
+    response.delete_cookie(key=SESSION_COOKIE, **_session_cookie_delete_kwargs(request))
     return {"ok": True}
 
 
