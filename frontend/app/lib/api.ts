@@ -4,8 +4,14 @@
  */
 
 // Use direct backend URL; avoids dev-proxy socket resets from Next.js rewrites.
-const BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:8000';
+// Must be a full URL (e.g. https://your-backend.up.railway.app) so requests go to the API, not relative to the frontend.
+function getApiBase(): string {
+  const raw = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/api\/?$/, '') || '';
+  if (!raw) return 'http://localhost:8000';
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  return `https://${raw}`;
+}
+const BASE = getApiBase();
 const API_BASE = `${BASE}/api`;
 
 const fetchOptions: RequestInit = { credentials: 'include' };
