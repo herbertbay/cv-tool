@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Motivation Letter - {{ full_name }}</title>
+  <style>
+    @page { size: A4; margin: 2cm; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #1a1a1a;
+      max-width: 21cm;
+      margin: 0 auto;
+    }
+    .letter-text { text-align: justify; white-space: pre-line; }
+  </style>
+</head>
+<body>
+  <div class="letter-text">{{ motivation_letter }}</div>
+</body>
+</html>

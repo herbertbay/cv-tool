@@ -1,0 +1,505 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { getProfile, putProfile, type Profile } from '../lib/api';
+
+const DRAFT_KEY = 'cv-tool-profile-draft';
+
+const emptyProfile: Profile = {
+  full_name: '',
+  headline: null,
+  summary: '',
+  email: null,
+  phone: null,
+  address: null,
+  linkedin_url: null,
+  photo_base64: null,
+  experience: [],
+  education: [],
+  skills: [],
+  certifications: [],
+  languages: [],
+};
+
+export default function ProfilePage() {
+  const [profile, setProfile] = useState<Profile>(emptyProfile);
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (raw) {
+          const draft = JSON.parse(raw);
+          if (draft && (draft.full_name || draft.summary || draft.experience?.length)) {
+            setProfile({ ...emptyProfile, ...draft });
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    getProfile()
+      .then((p) => setProfile({ ...emptyProfile, ...p }))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const update = (part: Partial<Profile>) => {
+    setProfile((p) => ({ ...p, ...part }));
+    setSaved(false);
+  };
+
+  const updateExperience = (index: number, field: string, value: string) => {
+    setProfile((p) => {
+      const next = [...(p.experience || [])];
+      if (!next[index]) next[index] = { title: '', company: '', start_date: null, end_date: null, description: null, location: null };
+      (next[index] as Record<string, unknown>)[field] = value || null;
+      return { ...p, experience: next };
+    });
+    setSaved(false);
+  };
+
+  const addExperience = () => {
+    setProfile((p) => ({
+      ...p,
+      experience: [...(p.experience || []), { title: '', company: '', start_date: null, end_date: null, description: null, location: null }],
+    }));
+    setSaved(false);
+  };
+
+  const removeExperience = (index: number) => {
+    setProfile((p) => ({
+      ...p,
+      experience: p.experience.filter((_, i) => i !== index),
+    }));
+    setSaved(false);
+  };
+
+  const updateEducation = (index: number, field: string, value: string) => {
+    setProfile((p) => {
+      const next = [...(p.education || [])];
+      if (!next[index]) next[index] = { school: '', degree: null, field: null, start_date: null, end_date: null, description: null };
+      (next[index] as Record<string, unknown>)[field] = value || null;
+      return { ...p, education: next };
+    });
+    setSaved(false);
+  };
+
+  const addEducation = () => {
+    setProfile((p) => ({
+      ...p,
+      education: [...(p.education || []), { school: '', degree: null, field: null, start_date: null, end_date: null, description: null }],
+    }));
+    setSaved(false);
+  };
+
+  const removeEducation = (index: number) => {
+    setProfile((p) => ({
+      ...p,
+      education: p.education.filter((_, i) => i !== index),
+    }));
+    setSaved(false);
+  };
+
+  const setSkills = (text: string) => {
+    const skills = text.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+    update({ skills });
+  };
+
+  const addCertification = () => {
+    setProfile((p) => ({
+      ...p,
+      certifications: [...(p.certifications || []), { name: '', authority: null, date: null, url: null }],
+    }));
+    setSaved(false);
+  };
+
+  const updateCertification = (index: number, field: string, value: string | null) => {
+    setProfile((p) => {
+      const next = [...(p.certifications || [])];
+      if (!next[index]) next[index] = { name: '', authority: null, date: null, url: null };
+      (next[index] as Record<string, unknown>)[field] = value;
+      return { ...p, certifications: next };
+    });
+    setSaved(false);
+  };
+
+  const removeCertification = (index: number) => {
+    setProfile((p) => ({
+      ...p,
+      certifications: (p.certifications || []).filter((_, i) => i !== index),
+    }));
+    setSaved(false);
+  };
+
+  const addLanguage = () => {
+    setProfile((p) => ({
+      ...p,
+      languages: [...(p.languages || []), ''],
+    }));
+    setSaved(false);
+  };
+
+  const updateLanguage = (index: number, value: string) => {
+    setProfile((p) => {
+      const next = [...(p.languages || [])];
+      next[index] = value;
+      return { ...p, languages: next };
+    });
+    setSaved(false);
+  };
+
+  const removeLanguage = (index: number) => {
+    setProfile((p) => ({
+      ...p,
+      languages: (p.languages || []).filter((_, i) => i !== index),
+    }));
+    setSaved(false);
+  };
+
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => update({ photo_base64: reader.result as string });
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = useCallback(async () => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(profile));
+      }
+      await putProfile(profile);
+      setSaved(true);
+    } catch {
+      setSaved(false);
+    }
+  }, [profile]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-600">Loading profile…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="border-b border-slate-200 bg-white shadow-sm">
+        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-slate-800">Edit profile</h1>
+          <Link href="/" className="text-slate-600 hover:text-slate-900">
+            ← Back to generator
+          </Link>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-4xl px-4 py-8 space-y-8">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-lg font-semibold text-slate-800">Basic info</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Full name</label>
+              <input
+                type="text"
+                value={profile.full_name}
+                onChange={(e) => update({ full_name: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Headline</label>
+              <input
+                type="text"
+                value={profile.headline ?? ''}
+                onChange={(e) => update({ headline: e.target.value || null })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Summary</label>
+              <textarea
+                value={profile.summary}
+                onChange={(e) => update({ summary: e.target.value })}
+                rows={4}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <input
+                type="email"
+                value={profile.email ?? ''}
+                onChange={(e) => update({ email: e.target.value || null })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+              <input
+                type="text"
+                value={profile.phone ?? ''}
+                onChange={(e) => update({ phone: e.target.value || null })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+              <input
+                type="text"
+                value={profile.address ?? ''}
+                onChange={(e) => update({ address: e.target.value || null })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">LinkedIn URL</label>
+              <input
+                type="url"
+                value={profile.linkedin_url ?? ''}
+                onChange={(e) => update({ linkedin_url: e.target.value || null })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Profile photo</label>
+              <input type="file" accept="image/*" onChange={handlePhoto} className="block w-full text-sm text-slate-600" />
+              {profile.photo_base64 && (
+                <img src={profile.photo_base64} alt="Profile" className="mt-2 h-20 w-20 object-cover rounded" />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-800">Experience</h2>
+            <button
+              type="button"
+              onClick={addExperience}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Add
+            </button>
+          </div>
+          {profile.experience.map((exp, i) => (
+            <div key={i} className="rounded-lg border border-slate-200 p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  placeholder="Title"
+                  value={exp.title}
+                  onChange={(e) => updateExperience(i, 'title', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="Company"
+                  value={exp.company}
+                  onChange={(e) => updateExperience(i, 'company', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="Start date (e.g. 2020-01)"
+                  value={exp.start_date ?? ''}
+                  onChange={(e) => updateExperience(i, 'start_date', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="End date or Present"
+                  value={exp.end_date ?? ''}
+                  onChange={(e) => updateExperience(i, 'end_date', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <textarea
+                placeholder="Description"
+                value={exp.description ?? ''}
+                onChange={(e) => updateExperience(i, 'description', e.target.value)}
+                rows={2}
+                className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => removeExperience(i)}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-800">Education</h2>
+            <button
+              type="button"
+              onClick={addEducation}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Add
+            </button>
+          </div>
+          {profile.education.map((edu, i) => (
+            <div key={i} className="rounded-lg border border-slate-200 p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  placeholder="School"
+                  value={edu.school}
+                  onChange={(e) => updateEducation(i, 'school', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="Degree"
+                  value={edu.degree ?? ''}
+                  onChange={(e) => updateEducation(i, 'degree', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="Field"
+                  value={edu.field ?? ''}
+                  onChange={(e) => updateEducation(i, 'field', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="Start date (e.g. 2018)"
+                  value={edu.start_date ?? ''}
+                  onChange={(e) => updateEducation(i, 'start_date', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="End date or Present"
+                  value={edu.end_date ?? ''}
+                  onChange={(e) => updateEducation(i, 'end_date', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <textarea
+                placeholder="Description"
+                value={edu.description ?? ''}
+                onChange={(e) => updateEducation(i, 'description', e.target.value)}
+                rows={2}
+                className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => removeEducation(i)}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <h2 className="text-lg font-semibold text-slate-800">Skills (comma- or semicolon-separated)</h2>
+          <textarea
+            value={profile.skills.join(', ')}
+            onChange={(e) => setSkills(e.target.value)}
+            rows={3}
+            placeholder="e.g. Python, JavaScript, Project Management"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-800">Certifications</h2>
+            <button
+              type="button"
+              onClick={addCertification}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Add
+            </button>
+          </div>
+          {(profile.certifications || []).map((c, i) => (
+            <div key={i} className="rounded-lg border border-slate-200 p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  placeholder="Name"
+                  value={c.name}
+                  onChange={(e) => updateCertification(i, 'name', e.target.value)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="Authority"
+                  value={c.authority ?? ''}
+                  onChange={(e) => updateCertification(i, 'authority', e.target.value || null)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="Date"
+                  value={c.date ?? ''}
+                  onChange={(e) => updateCertification(i, 'date', e.target.value || null)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+                <input
+                  placeholder="URL"
+                  value={c.url ?? ''}
+                  onChange={(e) => updateCertification(i, 'url', e.target.value || null)}
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeCertification(i)}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-800">Languages</h2>
+            <button
+              type="button"
+              onClick={addLanguage}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Add
+            </button>
+          </div>
+          {(profile.languages || []).map((lang, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                placeholder="e.g. English (Fluent)"
+                value={lang}
+                onChange={(e) => updateLanguage(i, e.target.value)}
+                className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => removeLanguage(i)}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
+          >
+            Save profile
+          </button>
+          {saved && <span className="text-sm text-green-600">Saved locally for this browser. Your stored profile is updated only when you upload a new CV.</span>}
+        </div>
+      </main>
+    </div>
+  );
+}

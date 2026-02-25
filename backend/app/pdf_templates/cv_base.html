@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="UTF-8" />
+  <title>CV - {{ profile.full_name }}</title>
+  <style>
+    @page { size: A4; margin: 1.5cm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 10pt;
+      line-height: 1.35;
+      color: #1a1a1a;
+      max-width: 21cm;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #2563eb;
+    }
+    .photo {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .header-text { flex: 1; }
+    .name { font-size: 18pt; font-weight: 700; margin: 0 0 0.2em 0; color: #1e40af; }
+    .headline { font-size: 10pt; color: #475569; margin: 0 0 0.4em 0; }
+    .contact { font-size: 9pt; color: #64748b; }
+    .contact span { margin-right: 0.75em; }
+    .contact a { color: #2563eb; text-decoration: none; }
+    .contact a:hover { text-decoration: underline; }
+    .link-icon { width: 10px; height: 10px; vertical-align: middle; margin-right: 0.25em; display: inline-block; }
+    .links-list { font-size: 9pt; color: #64748b; margin-top: 0.5em; }
+    .links-list a { color: #2563eb; text-decoration: none; }
+    .links-list a:hover { text-decoration: underline; }
+    .link-item { margin-bottom: 0.25em; }
+    h2 {
+      font-size: 11pt;
+      font-weight: 600;
+      color: #1e40af;
+      margin: 0.75em 0 0.35em 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .section { margin-bottom: 0.5em; }
+    .job, .edu-item { margin-bottom: 0.6em; }
+    .job-title, .edu-degree { font-weight: 600; }
+    .job-meta, .edu-meta { font-size: 9pt; color: #64748b; margin-bottom: 0.2em; }
+    .job-desc, .edu-desc { font-size: 9.5pt; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 0.35em; }
+    .skill-tag {
+      display: inline-block;
+      padding: 0.2em 0.5em;
+      background: #e0e7ff;
+      border-radius: 3px;
+      font-size: 9pt;
+    }
+    .skill-tag.highlight { background: #c7d2fe; font-weight: 600; }
+    .summary-text, .letter-text { text-align: justify; }
+    .letter-text { margin-top: 1em; white-space: pre-line; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    {% if photo_data_url %}
+    <img class="photo" src="{{ photo_data_url }}" alt="Photo" />
+    {% endif %}
+    <div class="header-text">
+      <h1 class="name">{{ profile.full_name }}</h1>
+      {% if profile.headline %}<p class="headline">{{ profile.headline }}</p>{% endif %}
+      <p class="contact">
+        {% if profile.email %}<span>{{ profile.email }}</span>{% endif %}
+        {% if profile.phone %}<span>{{ profile.phone }}</span>{% endif %}
+        {% if profile.address %}<span>{{ profile.address }}</span>{% endif %}
+        {% if profile.linkedin_url %}
+        <span>
+          <img class="link-icon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'%3E%3Cpath d='M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.25 6.5 1.75 1.75 0 016.5 8.25zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93-1.24 0-1.87.82-1.87 2.19V19h-3v-9h2.9v1.3h.04c.4-.75 1.4-1.54 2.94-1.54 3.14 0 3.72 2.06 3.72 4.75V19z'/%3E%3C/svg%3E" alt="" />
+          <a href="{{ profile.linkedin_url }}">LinkedIn</a>
+        </span>
+        {% endif %}
+      </p>
+      {% if additional_urls %}
+      <div class="links-list">
+        {% for url in additional_urls %}
+        <div class="link-item">
+          <img class="link-icon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'%3E%3Cpath d='M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z'/%3E%3C/svg%3E" alt="" />
+          <a href="{{ url }}">{{ url }}</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if tailored_summary %}
+  <h2>Summary</h2>
+  <div class="section summary-text">{{ tailored_summary|safe }}</div>
+  {% endif %}
+
+  {% if tailored_experience %}
+  <h2>Experience</h2>
+  {% for job in tailored_experience %}
+  <div class="job">
+    <div class="job-title">{{ job.title }} — {{ job.company }}</div>
+    <div class="job-meta">{{ job.start_date or '?' }} – {{ job.end_date or 'Present' }}{% if job.location %} · {{ job.location }}{% endif %}</div>
+    <div class="job-desc">{{ job.description|safe }}</div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if profile.skills %}
+  <h2>Skills</h2>
+  <div class="skills-list">
+    {% for skill in profile.skills %}
+    <span class="skill-tag {% if skill in keywords_to_highlight or (skill | keyword_match(keywords_to_highlight)) %}highlight{% endif %}">{{ skill }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if profile.education %}
+  <h2>Education</h2>
+  {% for e in profile.education %}
+  <div class="edu-item">
+    <div class="edu-degree">{{ e.degree or 'N/A' }}{% if e.field %} in {{ e.field }}{% endif %}, {{ e.school }}</div>
+    <div class="edu-meta">{{ e.start_date or '?' }} – {{ e.end_date or '?' }}</div>
+    {% if e.description %}<div class="edu-desc">{{ e.description }}</div>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if profile.certifications %}
+  <h2>Certifications</h2>
+  <div class="section">
+    {% for c in profile.certifications %}
+    <div class="job"><span class="job-title">{{ c.name }}</span>{% if c.authority %} — {{ c.authority }}{% endif %}{% if c.date %} ({{ c.date }}){% endif %}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if profile.languages %}
+  <h2>Languages</h2>
+  <div class="section">
+    {% for lang in profile.languages %}
+    <span class="skill-tag">{{ lang }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+</body>
+</html>

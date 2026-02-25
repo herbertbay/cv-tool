@@ -1,0 +1,43 @@
+{
+  "full_name": "Jane Doe",
+  "headline": "Senior Software Engineer",
+  "summary": "Experienced engineer with 8+ years in full-stack development and cloud architecture.",
+  "email": "jane.doe@example.com",
+  "phone": "+1 234 567 890",
+  "address": "San Francisco, CA",
+  "linkedin_url": "https://www.linkedin.com/in/janedoe",
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "Tech Corp Inc",
+      "start_date": "2020-01",
+      "end_date": "Present",
+      "description": "Lead development of microservices. Improved system reliability by 40%. Mentored junior developers.",
+      "location": "San Francisco, CA"
+    },
+    {
+      "title": "Software Engineer",
+      "company": "StartupXYZ",
+      "start_date": "2017-06",
+      "end_date": "2019-12",
+      "description": "Built REST APIs and React frontends. Collaborated with product and design teams.",
+      "location": "Remote"
+    }
+  ],
+  "education": [
+    {
+      "school": "State University",
+      "degree": "B.S. Computer Science",
+      "field": "Computer Science",
+      "start_date": "2013",
+      "end_date": "2017",
+      "description": "Relevant coursework: Algorithms, Databases, Distributed Systems"
+    }
+  ],
+  "skills": ["Python", "JavaScript", "React", "Node.js", "AWS", "PostgreSQL", "Docker", "REST APIs"],
+  "certifications": [
+    { "name": "AWS Solutions Architect", "authority": "Amazon", "date": "2022" },
+    { "name": "Professional Scrum Master I", "authority": "Scrum.org", "date": "2021" }
+  ],
+  "languages": ["English", "Spanish"]
+}
