@@ -528,6 +528,19 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
             {generatedList.map((item) => (
               <li key={item.session_id} className="flex flex-wrap items-center gap-3 py-2 border-b border-slate-100 last:border-0">
                 <span className="text-sm text-slate-600">{formatDate(item.created_at)}</span>
+                {item.language && (
+                  <span className="text-sm text-slate-500">
+                    {LANGUAGES.find((l) => l.value === item.language)?.label ?? item.language}
+                  </span>
+                )}
+                {item.job_description != null && item.job_description !== '' && (
+                  <span
+                    className="max-w-[12rem] truncate text-sm text-slate-500 cursor-help border-b border-dotted border-slate-400"
+                    title={item.job_description}
+                  >
+                    {item.job_description.length > 20 ? `${item.job_description.slice(0, 20)}…` : item.job_description}
+                  </span>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="button"

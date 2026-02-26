@@ -299,6 +299,8 @@ export type GeneratedCVItem = {
   created_at: string;
   has_cv: boolean;
   has_letter_pdf: boolean;
+  job_description?: string;
+  language?: string;
 };
 
 export async function getGeneratedCVs(): Promise<GeneratedCVItem[]> {

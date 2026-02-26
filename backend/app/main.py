@@ -392,7 +392,12 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
 
         # Persist to filesystem and DB for listing and download after session expiry
         cv_path, letter_path = storage_save_cv_pdf(session_id, cv_pdf_bytes, letter_pdf_bytes)
-        db_insert_cv_generation(user_id, session_id, cv_path, letter_path)
+        job_snippet = (job_text or "").strip()[:2000]  # store up to 2000 chars for history
+        db_insert_cv_generation(
+            user_id, session_id, cv_path, letter_path,
+            job_description=job_snippet or None,
+            language=getattr(req, "language", None) or "en",
+        )
 
         return GenerateCVResponse(
             session_id=session_id,
@@ -424,6 +429,8 @@ async def list_generated_cvs(request: Request):
             "created_at": r["created_at"],
             "has_cv": True,
             "has_letter_pdf": bool(r.get("letter_path")),
+            "job_description": r.get("job_description") or "",
+            "language": r.get("language") or "",
         }
         for r in rows
     ]
