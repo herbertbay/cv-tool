@@ -230,11 +230,6 @@ export default function HomePage() {
             Optimal CV
           </Link>
           <nav className="flex items-center gap-4">
-            {showDefaultPage && (
-              <Link href="/profile" className="text-slate-600 hover:text-slate-900">
-                Edit profile
-              </Link>
-            )}
             {user ? (
               <>
                 <span className="text-sm text-slate-500">{user.email}</span>
@@ -469,7 +464,21 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
   const formatDate = (createdAt: string) => {
     try {
       const d = new Date(createdAt);
-      return isNaN(d.getTime()) ? createdAt : d.toLocaleDateString(undefined, { dateStyle: 'medium' }) + ' ' + d.toLocaleTimeString(undefined, { timeStyle: 'short' });
+      if (isNaN(d.getTime())) return createdAt;
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      const diffMins = Math.floor(diffMs / 60_000);
+      const diffHours = Math.floor(diffMs / 3_600_000);
+      const diffDays = Math.floor(diffMs / 86_400_000);
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+      if (diffHours < 24 && now.getDate() === d.getDate()) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear()) return 'yesterday';
+      if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) === 1 ? '' : 's'} ago`;
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
     } catch {
       return createdAt;
     }
@@ -567,7 +576,7 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
                     <button
                       type="button"
                       onClick={() => handleDownloadPdf(item.session_id)}
-                      className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+                      className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 transition-colors min-w-[6.5rem]"
                     >
                       CV (PDF)
                     </button>
@@ -575,12 +584,12 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
                       <button
                         type="button"
                         onClick={() => handleDownloadLetter(item.session_id)}
-                        className="inline-flex items-center rounded-lg bg-slate-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 transition-colors"
+                        className="inline-flex items-center justify-center rounded-lg bg-slate-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 transition-colors min-w-[6.5rem]"
                       >
                         Letter (PDF)
                       </button>
                     ) : (
-                      <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-400">
+                      <span className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-400 min-w-[6.5rem]">
                         No letter
                       </span>
                     )}
