@@ -7,6 +7,9 @@ export function LandingPage() {
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20 lg:py-24">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
             <div>
+              <p className="text-sm font-medium uppercase tracking-wider text-blue-700 mb-3">
+                Tired of being ghosted by recruiters? Get a CV that gets you noticed.
+              </p>
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                 Your resume, tailored to every job you apply to
               </h1>
@@ -80,7 +83,7 @@ export function LandingPage() {
             One profile, countless applications
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-            Generic resumes get overlooked. Job-specific CVs get shortlisted. We help you speak the language of each role.
+            Generic resumes get overlooked. Job-specific CVs get shortlisted. Stop getting ignored—stand out with Optimal CV.
           </p>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <FeatureBlock
@@ -137,11 +140,14 @@ export function LandingPage() {
 
       <section className="bg-blue-900 py-12 sm:py-16">
         <div className="mx-auto max-w-6xl px-6 text-center">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">
-            Ready to get shortlisted?
+          <p className="text-blue-200 text-sm font-medium uppercase tracking-wider">
+            Tired of silence after applying?
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+            Make your next CV impossible to ignore
           </h2>
           <p className="mt-3 text-blue-100 max-w-xl mx-auto">
-            Join job seekers who tailor their application to every role. One profile, professional CVs and letters for each job.
+            Join job seekers who tailor their application to every role. One profile, professional CVs and letters for each job—with Optimal CV.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
