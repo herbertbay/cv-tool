@@ -5,8 +5,9 @@
 :root {
   --foreground: #0f172a;
   --background: #f1f5f9;
-  --accent: #0f172a;
-  --accent-hover: #1e293b;
+  --accent: #1e40af;
+  --accent-hover: #1d4ed8;
+  --accent-muted: #3b82f6;
 }
 
 body {

@@ -227,7 +227,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-lg font-semibold tracking-tight text-slate-800 hover:text-slate-900 transition-colors">
+          <Link href="/" className="text-lg font-semibold tracking-tight text-slate-800 hover:text-blue-800 transition-colors">
             Optimal CV
           </Link>
           <nav className="flex items-center gap-4">
@@ -240,8 +240,8 @@ export default function HomePage() {
               </>
             ) : (
               <>
-                <Link href="/login" className="text-slate-600 hover:text-slate-900">Sign in</Link>
-                <Link href="/register" className="text-slate-600 hover:text-slate-900">Sign up</Link>
+                <Link href="/login" className="text-slate-600 hover:text-blue-700 transition-colors">Sign in</Link>
+                <Link href="/register" className="text-slate-600 hover:text-blue-700 transition-colors">Sign up</Link>
               </>
             )}
           </nav>
@@ -393,7 +393,7 @@ function OnboardingUI({
             type="button"
             onClick={onNextFromUrls}
             disabled={saving}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Next: Add photo'}
           </button>
@@ -420,7 +420,7 @@ function OnboardingUI({
             type="button"
             onClick={onComplete}
             disabled={saving}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save and continue'}
           </button>
@@ -551,36 +551,34 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 border-l-4 border-l-blue-700">
           <h2 className="text-base font-semibold text-slate-800">Your information</h2>
         </div>
         <div className="p-6">
-        <div className="flex flex-col sm:flex-row gap-8">
-          {p.photo_base64 && (
-            <div className="flex-shrink-0">
-              <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 w-28 h-28 shadow-inner">
-                <img src={p.photo_base64} alt="Profile" className="absolute inset-0 w-full h-full object-cover" />
+        {p.photo_base64 && (
+          <div className="flex justify-center mb-4">
+            <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 w-24 h-24 shadow-inner">
+              <img src={p.photo_base64} alt="Profile" className="absolute inset-0 w-full h-full object-cover" />
+            </div>
+          </div>
+        )}
+        <div className="grid gap-2 sm:grid-cols-2">
+          {infoItems.length === 0 ? (
+            <div className="flex gap-2 py-2 px-3 rounded-md bg-slate-50/80 border border-slate-100 sm:col-span-2">
+              <span className="flex-shrink-0 text-blue-600/80" aria-hidden><PersonIcon /></span>
+              <p className="text-sm text-slate-500">No information yet. Edit your profile to add details.</p>
+            </div>
+          ) : infoItems.map(({ label, value, icon }) => (
+            <div key={label} className="flex gap-2 py-2 px-3 rounded-md bg-slate-50/80 border border-slate-100">
+              <span className="flex-shrink-0 text-blue-600/90 mt-0.5" aria-hidden>{icon}</span>
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
+                <p className="text-sm text-slate-800 mt-0.5 break-words leading-snug">{value}</p>
               </div>
             </div>
-          )}
-          <div className="min-w-0 flex-1 grid gap-4 sm:grid-cols-2">
-            {infoItems.length === 0 ? (
-              <div className="flex gap-3 p-3 rounded-lg bg-slate-50/80 border border-slate-100 sm:col-span-2">
-                <span className="flex-shrink-0 text-slate-400" aria-hidden><PersonIcon /></span>
-                <p className="text-sm text-slate-500">No information yet. Edit your profile to add details.</p>
-              </div>
-            ) : infoItems.map(({ label, value, icon }) => (
-              <div key={label} className="flex gap-3 p-3 rounded-lg bg-slate-50/80 border border-slate-100">
-                <span className="flex-shrink-0 text-slate-400 mt-0.5" aria-hidden>{icon}</span>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
-                  <p className="text-sm text-slate-800 mt-0.5 break-words">{value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href="/profile"
             className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
@@ -590,7 +588,7 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
           <button
             type="button"
             onClick={onOpenCreate}
-            className="inline-flex items-center rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 transition-colors"
+            className="inline-flex items-center rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 transition-colors"
           >
             Create CV & motivation letter
           </button>
@@ -606,7 +604,7 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 border-l-4 border-l-slate-300">
           <h2 className="text-base font-semibold text-slate-800">Generated CVs & motivation letters</h2>
         </div>
         <div className="p-6">
@@ -772,7 +770,7 @@ function CreateCVModal({
               type="button"
               onClick={onGenerate}
               disabled={!!progress}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
             >
               {progress ? 'Working…' : 'Generate'}
             </button>

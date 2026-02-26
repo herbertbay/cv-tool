@@ -76,19 +76,19 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
           >
             {loading ? 'Creating account…' : 'Sign up'}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-slate-600">
           Already have an account?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link href="/login" className="text-blue-700 hover:underline font-medium">
             Sign in
           </Link>
         </p>
       </div>
-      <Link href="/" className="mt-4 text-sm text-slate-500 hover:text-slate-700">
+      <Link href="/" className="mt-4 text-sm text-slate-500 hover:text-blue-700 transition-colors">
         ← Back to Optimal CV
       </Link>
     </div>

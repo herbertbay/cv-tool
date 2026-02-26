@@ -16,13 +16,13 @@ export function LandingPage() {
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center rounded-lg bg-slate-800 px-6 py-3 text-base font-medium text-white hover:bg-slate-900 transition-colors"
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-800 px-6 py-3 text-base font-medium text-white hover:bg-blue-900 transition-colors"
                 >
                   Get started free
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
                 >
                   Sign in
                 </Link>
@@ -35,7 +35,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-slate-50 py-16 sm:py-20" aria-labelledby="how-it-works-heading">
+      <section className="bg-blue-50/50 py-16 sm:py-20" aria-labelledby="how-it-works-heading">
         <div className="mx-auto max-w-6xl px-6">
           <h2 id="how-it-works-heading" className="text-2xl font-bold text-slate-900 sm:text-3xl text-center">
             How it works
@@ -66,7 +66,7 @@ export function LandingPage() {
           <div className="mt-10 text-center">
             <Link
               href="/register"
-              className="inline-flex items-center rounded-lg bg-slate-800 px-6 py-3 text-base font-medium text-white hover:bg-slate-900 transition-colors"
+              className="inline-flex items-center rounded-lg bg-blue-800 px-6 py-3 text-base font-medium text-white hover:bg-blue-900 transition-colors"
             >
               Create your first tailored CV
             </Link>
@@ -135,24 +135,24 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-slate-800 py-12 sm:py-16">
+      <section className="bg-blue-900 py-12 sm:py-16">
         <div className="mx-auto max-w-6xl px-6 text-center">
           <h2 className="text-2xl font-bold text-white sm:text-3xl">
             Ready to get shortlisted?
           </h2>
-          <p className="mt-3 text-slate-300 max-w-xl mx-auto">
+          <p className="mt-3 text-blue-100 max-w-xl mx-auto">
             Join job seekers who tailor their application to every role. One profile, professional CVs and letters for each job.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
               href="/register"
-              className="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-base font-medium text-slate-800 hover:bg-slate-100 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-base font-medium text-blue-900 hover:bg-blue-50 transition-colors"
             >
               Get started free
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-500 text-white px-6 py-3 text-base font-medium hover:bg-slate-700 transition-colors"
+              className="inline-flex items-center justify-center rounded-lg border border-blue-400/60 text-white px-6 py-3 text-base font-medium hover:bg-blue-800 transition-colors"
             >
               Sign in
             </Link>
@@ -183,10 +183,10 @@ function StepCard({
 }: { step: number; title: string; description: string; icon: React.ReactNode }) {
   return (
     <div className="relative rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-sm font-medium text-white">
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-800 text-sm font-medium text-white">
         {step}
       </span>
-      <div className="mt-4 flex justify-center text-slate-400">{icon}</div>
+      <div className="mt-4 flex justify-center text-blue-600/80">{icon}</div>
       <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
       <p className="mt-2 text-slate-600">{description}</p>
     </div>
@@ -200,7 +200,7 @@ function FeatureBlock({
 }: { title: string; description: string; icon: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex justify-center text-slate-500">{icon}</div>
+      <div className="flex justify-center text-blue-600/90">{icon}</div>
       <h3 className="mt-3 text-base font-semibold text-slate-900">{title}</h3>
       <p className="mt-2 text-sm text-slate-600">{description}</p>
     </div>
