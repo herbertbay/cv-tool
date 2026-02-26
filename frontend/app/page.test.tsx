@@ -43,7 +43,7 @@ beforeEach(() => {
 describe('HomePage', () => {
   it('renders header and main form', () => {
     render(<HomePage />);
-    expect(screen.getByText('CV-Tool')).toBeInTheDocument();
+    expect(screen.getByText('Optimal CV')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /edit profile/i })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Paste job description...')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Extra context or summary to include in your CV...')).toBeInTheDocument();

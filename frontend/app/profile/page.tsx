@@ -222,10 +222,10 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-800">Edit profile</h1>
+        <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-slate-800">Edit profile</h1>
           <Link href="/" className="text-slate-600 hover:text-slate-900">
-            ← Back to generator
+            ← Back to Optimal CV
           </Link>
         </div>
       </header>
@@ -557,7 +557,7 @@ export default function ProfilePage() {
             <div className="rounded-xl bg-white p-6 shadow-xl max-w-md w-full">
               <h2 id="delete-dialog-title" className="text-lg font-semibold text-slate-800 mb-2">Delete account?</h2>
               <p className="text-sm text-slate-600 mb-6">
-                This will permanently delete your account and all your data. You will need to sign up again to use CV-Tool. This cannot be undone.
+                This will permanently delete your account and all your data. You will need to sign up again to use Optimal CV. This cannot be undone.
               </p>
               <div className="flex gap-3 justify-end">
                 <button

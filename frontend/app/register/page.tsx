@@ -89,7 +89,7 @@ export default function RegisterPage() {
         </p>
       </div>
       <Link href="/" className="mt-4 text-sm text-slate-500 hover:text-slate-700">
-        ← Back to CV-Tool
+        ← Back to Optimal CV
       </Link>
     </div>
   );

@@ -4,9 +4,9 @@
 
 :root {
   --foreground: #0f172a;
-  --background: #f8fafc;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
+  --background: #f1f5f9;
+  --accent: #0f172a;
+  --accent-hover: #1e293b;
 }
 
 body {

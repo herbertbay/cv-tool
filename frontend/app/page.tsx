@@ -225,8 +225,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-800">CV-Tool</h1>
+        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="text-lg font-semibold tracking-tight text-slate-800 hover:text-slate-900 transition-colors">
+            Optimal CV
+          </Link>
           <nav className="flex items-center gap-4">
             {showDefaultPage && (
               <Link href="/profile" className="text-slate-600 hover:text-slate-900">
@@ -250,7 +252,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-6 py-8">
         {!user && (
           <div className="mb-6 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700">
             <Link href="/login" className="font-medium text-blue-600 hover:underline">Sign in</Link> to save your CV and use the full flow.
@@ -475,8 +477,11 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Your information</h2>
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+          <h2 className="text-base font-semibold text-slate-800">Your information</h2>
+        </div>
+        <div className="p-6">
         <div className="flex flex-col sm:flex-row gap-6">
           {p.photo_base64 && (
             <img src={p.photo_base64} alt="Profile" className="h-24 w-24 rounded-full object-cover border border-slate-200 flex-shrink-0" />
@@ -493,77 +498,99 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
             )}
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap gap-3">
           <Link
             href="/profile"
-            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
           >
             Edit information
           </Link>
           <button
             type="button"
             onClick={onOpenCreate}
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="inline-flex items-center rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900 transition-colors"
           >
             Create CV & motivation letter
           </button>
           <button
             type="button"
             onClick={() => openPreviewCvHtml('cv_executive.html').catch((e) => window.alert(e.message))}
-            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
           >
             Preview CV (HTML)
           </button>
         </div>
+        </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Generated CVs & motivation letters</h2>
-        {listLoading && <p className="text-sm text-slate-500">Loading…</p>}
-        {!listLoading && generatedList.length === 0 && (
-          <p className="text-sm text-slate-500">No generated CVs yet. Use “Create CV & motivation letter” above.</p>
-        )}
-        {!listLoading && generatedList.length > 0 && (
-          <ul className="space-y-3">
-            {generatedList.map((item) => (
-              <li key={item.session_id} className="flex flex-wrap items-center gap-3 py-2 border-b border-slate-100 last:border-0">
-                <span className="text-sm text-slate-600">{formatDate(item.created_at)}</span>
-                {item.language && (
-                  <span className="text-sm text-slate-500">
-                    {LANGUAGES.find((l) => l.value === item.language)?.label ?? item.language}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+          <h2 className="text-base font-semibold text-slate-800">Generated CVs & motivation letters</h2>
+        </div>
+        <div className="p-6">
+          {listLoading && <p className="text-sm text-slate-500 py-4">Loading…</p>}
+          {!listLoading && generatedList.length === 0 && (
+            <p className="text-sm text-slate-500 py-4">No generated CVs yet. Use &quot;Create CV & motivation letter&quot; above.</p>
+          )}
+          {!listLoading && generatedList.length > 0 && (
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div
+                className="grid gap-4 items-center px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200"
+                style={{ gridTemplateColumns: 'minmax(140px, 1fr) minmax(80px, 0.6fr) minmax(160px, 2fr) minmax(200px, auto)' }}
+              >
+                <span>Date</span>
+                <span>Language</span>
+                <span>Job description</span>
+                <span className="text-right">Actions</span>
+              </div>
+              {generatedList.map((item) => (
+                <div
+                  key={item.session_id}
+                  className="grid gap-4 items-center px-4 py-3 text-sm border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors"
+                  style={{ gridTemplateColumns: 'minmax(140px, 1fr) minmax(80px, 0.6fr) minmax(160px, 2fr) minmax(200px, auto)' }}
+                >
+                  <span className="text-slate-700 tabular-nums">{formatDate(item.created_at)}</span>
+                  <span className="text-slate-600">
+                    {item.language ? (LANGUAGES.find((l) => l.value === item.language)?.label ?? item.language) : '—'}
                   </span>
-                )}
-                {item.job_description != null && item.job_description !== '' && (
-                  <span
-                    className="max-w-[12rem] truncate text-sm text-slate-500 cursor-help border-b border-dotted border-slate-400"
-                    title={item.job_description}
-                  >
-                    {item.job_description.length > 20 ? `${item.job_description.slice(0, 20)}…` : item.job_description}
-                  </span>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadPdf(item.session_id)}
-                    className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-                  >
-                    Download CV (PDF)
-                  </button>
-                  {item.has_letter_pdf && (
+                  {item.job_description != null && item.job_description !== '' ? (
+                    <span
+                      className="text-slate-600 truncate cursor-help border-b border-dotted border-slate-300 max-w-full"
+                      title={item.job_description}
+                    >
+                      {item.job_description.length > 20 ? `${item.job_description.slice(0, 20)}…` : item.job_description}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                  <div className="flex gap-2 justify-end flex-shrink-0">
                     <button
                       type="button"
-                      onClick={() => handleDownloadLetter(item.session_id)}
-                      className="inline-flex items-center rounded-lg bg-slate-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
+                      onClick={() => handleDownloadPdf(item.session_id)}
+                      className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
                     >
-                      Download letter (PDF)
+                      CV (PDF)
                     </button>
-                  )}
+                    {item.has_letter_pdf ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadLetter(item.session_id)}
+                        className="inline-flex items-center rounded-lg bg-slate-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 transition-colors"
+                      >
+                        Letter (PDF)
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-400">
+                        No letter
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-        {downloadError && <p className="mt-2 text-sm text-red-600">{downloadError}</p>}
+              ))}
+            </div>
+          )}
+          {downloadError && <p className="mt-3 text-sm text-red-600">{downloadError}</p>}
+        </div>
       </div>
     </div>
   );
