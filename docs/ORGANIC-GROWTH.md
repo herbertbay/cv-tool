@@ -2,6 +2,54 @@
 
 Ideas to grow Optimal CV through SEO, content, and word-of-mouth without (or before) paid spend.
 
+For **business model** (profitable pricing given short usage windows) and **retention after they find a job**, see [BUSINESS-MODEL.md](./BUSINESS-MODEL.md).
+
+---
+
+## Things to implement (checklist)
+
+### Product & in-app
+
+- [ ] **CV/ATS match score tool** — Standalone page: paste job description + CV text (or upload), get a match score + 3–5 tips. No signup required; CTA “Get a tailored CV” → signup.
+- [ ] **Job description keyword extractor** — Paste job ad → list of suggested keywords for your CV. Free, no account; CTA to Optimal CV.
+- [ ] **Share CTA after generating a CV** — “Share Optimal CV with a friend” with one-click copy link or share to LinkedIn/Twitter.
+- [ ] **Optional “Created with Optimal CV” on PDF** — Toggle in settings; off by default for paid tier.
+- [ ] **Referral tracking** — Referral codes or UTM params; track which channel/user drives signups.
+- [ ] **Welcome email sequence** — (1) Confirm + “Create your first tailored CV”; (2) “Tip: paste the job description”; (3) “Your CV is ready — use it for the next application.”
+- [ ] **Re-engagement email** — If no generation in 2–3 weeks: “Ready for your next application? Add a new job and we’ll tailor your CV again.”
+- [ ] **Monthly email** — One short career/CV tip or product update.
+
+### Website & SEO
+
+- [ ] **“Resources” or “Blog” section** — Add to site and link from footer.
+- [ ] **5–10 “CV for [Job Title]” pages** — e.g. CV for Software Engineer, Marketing Manager. Each: short intro, 3–5 tips, CTA to Optimal CV. Job title as H1 and in meta.
+- [ ] **2–3 “how to” articles** — e.g. “How to tailor your CV to a job description”, “How to pass ATS screening”, “Best CV format for [year]”. Link to product where relevant.
+- [ ] **Internal linking** — Every article and job page links to main app (Get started / Build your CV).
+- [ ] **Sitemap** — Add and submit for key pages.
+- [ ] **Schema markup** — FAQ and/or HowTo where it fits.
+- [ ] **Canonical URLs & indexability** — Confirm landing and key pages are correct and fast.
+
+### Social proof & content
+
+- [ ] **Testimonials** — Collect 3–5 one-sentence quotes from users (with permission). Add to landing and/or app.
+- [ ] **“X people have created tailored CVs”** — Add counter or line on landing if you have the number.
+- [ ] **Founder story post** — “Why I built a CV tool that tailors to every job” on Medium, LinkedIn, or your blog.
+- [ ] **Comparison page** — “Optimal CV vs. [X]” or “Best tools to tailor your CV in [year]” (fair, factual).
+- [ ] **Templates/examples page** — e.g. “10 CV summary examples for [role]” or “Cover letter openings that get read” with CTA to Optimal CV.
+- [ ] **One data-led piece per quarter** — e.g. “State of hiring” or “CV screening” with original data; pitch to career sites/newsletters.
+- [ ] **“Featured in” / “As used by”** — When you get a mention, add logo or quote to the site.
+
+### Community & distribution
+
+- [ ] **Reddit presence** — r/resumes, r/careerguidance, r/jobs, etc. Helpful comments first; mention Optimal CV only when it fits. Aim for one valuable comment per day.
+- [ ] **LinkedIn** — Short posts (“One change that made my CV get more callbacks”, “Why I tailor my CV for every application”); link to tool or product in comment/bio.
+- [ ] **Quora / Q&A** — Answer “How do I improve my CV?” and “How do I tailor my resume?” with actionable answers + soft plug where relevant.
+
+### Messaging (already on landing; reuse elsewhere)
+
+- [ ] Use pain-point lines in ads/social: “Ghosted after applying?” / “Stop sending the same CV to every job. Stand out with Optimal CV.”
+- [ ] Keep hero, why-tailor, and final CTA copy consistent (see Messaging section below).
+
 ---
 
 ## Messaging (pain → solution)
