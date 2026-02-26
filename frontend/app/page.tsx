@@ -572,8 +572,8 @@ function CreateCVModal({
   onFetchJob,
   onGenerate,
   onClose,
-  downloadPdfUrl,
-  downloadLetterPdfUrl,
+  onDownloadPdf,
+  onDownloadLetter,
 }: {
   jobDescription: string;
   setJobDescription: (v: string) => void;
