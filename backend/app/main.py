@@ -3,11 +3,12 @@ FastAPI application: CV and motivation letter generation API.
 CV upload only; user from cookie; profile in local DB; motivation letter as separate PDF.
 """
 import logging
+import secrets
 import time
 from contextlib import asynccontextmanager
 from io import BytesIO
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Body, Request, Response
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response as HttpResponse, HTMLResponse
 
@@ -27,6 +28,9 @@ from app.database import (
     insert_cv_generation as db_insert_cv_generation,
     get_cv_generations_by_user as db_get_cv_generations_by_user,
     get_cv_generation as db_get_cv_generation,
+    insert_ats_match_result as db_insert_ats_match_result,
+    get_ats_match_result as db_get_ats_match_result,
+    delete_ats_match_result as db_delete_ats_match_result,
 )
 from app.generated_storage import save_cv_pdf as storage_save_cv_pdf, load_pdf_bytes as storage_load_pdf_bytes
 from app.auth import (
@@ -37,6 +41,7 @@ from app.auth import (
 )
 from app.models import (
     Profile,
+    Position,
     GenerateCVRequest,
     GenerateCVResponse,
     ProfileUpdateRequest,
@@ -44,7 +49,7 @@ from app.models import (
 from app.linkedin_parser import parse_linkedin_json
 from app.pdf_profile_parser import parse_pdf_to_profile
 from app.url_fetcher import fetch_job_description, fetch_additional_urls
-from app.ai_service import tailor_cv_and_letter
+from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score
 from app.pdf_generator import generate_cv_pdf, generate_letter_pdf, render_cv_html
 from app.session_store import (
     create_session_id,
@@ -335,6 +340,136 @@ async def fetch_extra_urls(body: dict = Body(...)):
     urls = body.get("urls") or []
     result = fetch_additional_urls(urls)
     return {"contents": result}
+
+
+# --- ATS match score tool (modular: uses same parse_pdf_to_profile, fetch_job_description) ---
+
+
+@app.post("/api/ats-match")
+async def ats_match_prepare(
+    cv_file: UploadFile = File(...),
+    job_description: str = Form(""),
+):
+    """
+    Parse CV (PDF) and job description (text or URL), calculate ATS match score.
+    Does not return the score; stores it and returns result_token. User must authenticate
+    to fetch the score via GET /api/ats-match.
+    Uses same parse_pdf_to_profile and fetch_job_description as CV generation.
+    """
+    if not cv_file.filename or not cv_file.filename.lower().endswith(".pdf"):
+        raise HTTPException(400, "Expected a PDF file for the CV")
+    job_input = (job_description or "").strip()
+    if not job_input:
+        raise HTTPException(400, "Job description (text or URL) is required")
+    raw = await cv_file.read()
+    try:
+        profile = parse_pdf_to_profile(raw)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    job_text = job_input
+    if job_input.startswith("http://") or job_input.startswith("https://"):
+        job_text = fetch_job_description(job_input)
+        if not job_text.strip():
+            raise HTTPException(400, "Could not fetch job description from URL")
+    if not settings.openai_api_key:
+        raise HTTPException(503, "OPENAI_API_KEY is not configured")
+    result = calculate_ats_match_score(profile, job_text)
+    token = secrets.token_urlsafe(32)
+    db_insert_ats_match_result(
+        token=token,
+        profile_json=profile.model_dump_json(),
+        job_text=job_text[:10000],
+        score=result["score"],
+    )
+    return {"result_token": token, "message": "Score calculated. Sign in to view it."}
+
+
+@app.get("/api/ats-match")
+async def ats_match_result(request: Request, result_token: str = ""):
+    """
+    Return stored ATS match result. Requires authentication.
+    """
+    user_id = get_current_user_id(request)
+    if not user_id:
+        raise HTTPException(401, "Sign in to view your ATS match score")
+    if not result_token or not result_token.strip():
+        raise HTTPException(400, "result_token is required")
+    row = db_get_ats_match_result(result_token.strip())
+    if not row:
+        raise HTTPException(404, "Result expired or not found. Submit your CV and job again.")
+    return {
+        "score": row["score"],
+        "job_preview": row["job_text"][:500] + ("…" if len(row["job_text"]) > 500 else ""),
+    }
+
+
+@app.post("/api/ats-match/optimize")
+async def ats_match_optimize(request: Request, body: dict = Body(...)):
+    """
+    Load stored result, generate tailored CV content, recalculate score, return improvement.
+    Requires authentication.
+    """
+    user_id = get_current_user_id(request)
+    if not user_id:
+        raise HTTPException(401, "Sign in to see your optimized score")
+    token = (body.get("result_token") or "").strip()
+    if not token:
+        raise HTTPException(400, "result_token is required")
+    row = db_get_ats_match_result(token)
+    if not row:
+        raise HTTPException(404, "Result expired or not found.")
+    import json
+    profile = Profile.model_validate(json.loads(row["profile_json"]))
+    job_text = row["job_text"]
+    original_score = row["score"]
+    if not settings.openai_api_key:
+        raise HTTPException(503, "OPENAI_API_KEY is not configured")
+    tailored_summary, tailored_experience, _, _ = tailor_cv_and_letter(
+        profile=profile,
+        job_description=job_text,
+        personal_summary_override=None,
+        additional_context="",
+        language="en",
+    )
+    exp_list = []
+    if tailored_experience:
+        for p in tailored_experience:
+            exp_list.append(Position(
+                title=p.get("title", ""),
+                company=p.get("company", ""),
+                start_date=p.get("start_date"),
+                end_date=p.get("end_date"),
+                description=p.get("description"),
+                location=p.get("location"),
+            ))
+    tailored_profile = Profile(
+        full_name=profile.full_name,
+        headline=profile.headline,
+        summary=tailored_summary,
+        email=profile.email,
+        phone=profile.phone,
+        address=profile.address,
+        linkedin_url=profile.linkedin_url,
+        photo_base64=profile.photo_base64,
+        experience=exp_list or profile.experience,
+        education=profile.education,
+        skills=profile.skills,
+        certifications=profile.certifications,
+        languages=profile.languages,
+    )
+    new_result = calculate_ats_match_score(tailored_profile, job_text)
+    new_score = new_result["score"]
+    improvement = new_score - original_score if original_score > 0 else 0
+    improvement_pct = round((improvement / original_score) * 100) if original_score > 0 else 0
+    db_delete_ats_match_result(token)
+    return {
+        "original_score": original_score,
+        "new_score": new_score,
+        "improvement": improvement,
+        "improvement_pct": improvement_pct,
+        "tailored_summary": tailored_summary,
+        "tailored_experience": tailored_experience,
+    }
 
 
 @app.post("/api/generate-cv", response_model=GenerateCVResponse)

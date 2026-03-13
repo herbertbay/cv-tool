@@ -69,6 +69,15 @@ def init_db() -> None:
             except sqlite3.OperationalError as e:
                 if "duplicate column" not in str(e).lower():
                     raise
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ats_match_results (
+                token TEXT PRIMARY KEY,
+                profile_json TEXT NOT NULL,
+                job_text TEXT NOT NULL,
+                score INTEGER NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
         conn.commit()
 
 
@@ -265,6 +274,50 @@ def get_cv_generation(session_id: str, user_id: str) -> Optional[dict]:
     if not row:
         return None
     return {"session_id": row["session_id"], "created_at": row["created_at"], "cv_path": row["cv_path"], "letter_path": row["letter_path"]}
+
+
+def insert_ats_match_result(token: str, profile_json: str, job_text: str, score: int) -> None:
+    """Store ATS match result for later retrieval (1h TTL implied; call prune_ats_match_results)."""
+    init_db()
+    import time
+    created = time.strftime("%Y-%m-%d %H:%M:%S")
+    with _get_conn() as conn:
+        conn.execute(
+            "INSERT INTO ats_match_results (token, profile_json, job_text, score, created_at) VALUES (?, ?, ?, ?, ?)",
+            (token, profile_json, job_text, score, created),
+        )
+        conn.commit()
+
+
+def get_ats_match_result(token: str) -> Optional[dict]:
+    """Return ats_match_result row or None. Prunes results older than 24h on read."""
+    init_db()
+    import time
+    cutoff = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() - 24 * 3600))
+    with _get_conn() as conn:
+        conn.execute("DELETE FROM ats_match_results WHERE created_at < ?", (cutoff,))
+        conn.commit()
+        row = conn.execute(
+            "SELECT token, profile_json, job_text, score, created_at FROM ats_match_results WHERE token = ?",
+            (token,),
+        ).fetchone()
+    if not row:
+        return None
+    return {
+        "token": row["token"],
+        "profile_json": row["profile_json"],
+        "job_text": row["job_text"],
+        "score": row["score"],
+        "created_at": row["created_at"],
+    }
+
+
+def delete_ats_match_result(token: str) -> None:
+    """Remove result after use (e.g. after optimize)."""
+    init_db()
+    with _get_conn() as conn:
+        conn.execute("DELETE FROM ats_match_results WHERE token = ?", (token,))
+        conn.commit()
 
 
 def get_admin_stats() -> dict:

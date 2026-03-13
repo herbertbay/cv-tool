@@ -1,13 +1,16 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { register } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { setUserFromAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +28,7 @@ export default function RegisterPage() {
     try {
       const data = await register(email.trim(), password);
       setUserFromAuth(data.user);
-      router.push('/');
+      router.push(redirectTo.startsWith('/') ? redirectTo : '/');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -83,7 +86,7 @@ export default function RegisterPage() {
         </form>
         <p className="mt-4 text-center text-sm text-slate-600">
           Already have an account?{' '}
-          <Link href="/login" className="text-blue-700 hover:underline font-medium">
+          <Link href={redirectTo !== '/' ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login'} className="text-blue-700 hover:underline font-medium">
             Sign in
           </Link>
         </p>
@@ -92,5 +95,17 @@ export default function RegisterPage() {
         ← Back to Optimal CV
       </Link>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">Loading…</p>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

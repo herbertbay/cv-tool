@@ -129,6 +129,65 @@ export async function logout(): Promise<void> {
   await fetch(`${BASE}/api/auth/logout`, { method: 'POST', ...fetchOptions });
 }
 
+// --- ATS match score tool ---
+
+export type AtsMatchPrepareResponse = { result_token: string; message: string };
+export type AtsMatchResultResponse = { score: number; job_preview: string };
+export type AtsMatchOptimizeResponse = {
+  original_score: number;
+  new_score: number;
+  improvement: number;
+  improvement_pct: number;
+  tailored_summary: string;
+  tailored_experience: Array<Record<string, unknown>>;
+};
+
+/** Submit CV + job description, get result_token. No auth. Score stored; sign in to view. */
+export async function atsMatchPrepare(cvFile: File, jobDescription: string): Promise<AtsMatchPrepareResponse> {
+  const form = new FormData();
+  form.append('cv_file', cvFile);
+  form.append('job_description', jobDescription);
+  const res = await fetch(`${API_BASE}/ats-match`, {
+    method: 'POST',
+    body: form,
+    ...fetchOptions,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Failed to analyze');
+  }
+  return res.json();
+}
+
+/** Get stored ATS score. Requires auth. */
+export async function atsMatchResult(resultToken: string): Promise<AtsMatchResultResponse> {
+  const res = await fetch(`${API_BASE}/ats-match?result_token=${encodeURIComponent(resultToken)}`, fetchOptions);
+  checkAuth(res);
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('Sign in to view your score');
+    if (res.status === 404) throw new Error('Result expired. Please submit again.');
+    throw new Error('Failed to load result');
+  }
+  return res.json();
+}
+
+/** Generate optimized CV content and new score. Requires auth. */
+export async function atsMatchOptimize(resultToken: string): Promise<AtsMatchOptimizeResponse> {
+  const res = await fetch(`${API_BASE}/ats-match/optimize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ result_token: resultToken }),
+    ...fetchOptions,
+  });
+  checkAuth(res);
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('Sign in to optimize');
+    if (res.status === 404) throw new Error('Result expired. Please submit again.');
+    throw new Error('Failed to optimize');
+  }
+  return res.json();
+}
+
 /** Permanently delete account and all data. Requires auth. Clears session on success. */
 export async function deleteAccount(): Promise<void> {
   const res = await fetch(`${BASE}/api/auth/delete-account`, { method: 'POST', ...fetchOptions });

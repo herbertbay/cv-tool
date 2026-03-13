@@ -172,6 +172,7 @@ export function LandingPage() {
             Optimal CV
           </Link>
           <nav className="flex items-center gap-6 text-sm text-slate-600">
+            <Link href="/ats-match" className="hover:text-slate-900">Check ATS score</Link>
             <Link href="/login" className="hover:text-slate-900">Sign in</Link>
             <Link href="/register" className="hover:text-slate-900">Sign up</Link>
           </nav>

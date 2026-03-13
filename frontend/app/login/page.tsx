@@ -1,13 +1,16 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { login } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { setUserFromAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +24,7 @@ export default function LoginPage() {
     try {
       const data = await login(email.trim(), password);
       setUserFromAuth(data.user);
-      router.push('/');
+      router.push(redirectTo.startsWith('/') ? redirectTo : '/');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -78,7 +81,7 @@ export default function LoginPage() {
         </form>
         <p className="mt-4 text-center text-sm text-slate-600">
           No account?{' '}
-          <Link href="/register" className="text-blue-700 hover:underline font-medium">
+          <Link href={redirectTo !== '/' ? `/register?redirect=${encodeURIComponent(redirectTo)}` : '/register'} className="text-blue-700 hover:underline font-medium">
             Sign up
           </Link>
         </p>
@@ -87,5 +90,17 @@ export default function LoginPage() {
         ← Back to Optimal CV
       </Link>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">Loading…</p>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

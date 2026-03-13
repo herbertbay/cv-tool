@@ -231,6 +231,7 @@ export default function HomePage() {
             Optimal CV
           </Link>
           <nav className="flex items-center gap-4">
+            <Link href="/ats-match" className="text-slate-600 hover:text-blue-700 transition-colors">Check ATS score</Link>
             {user ? (
               <>
                 <span className="text-sm text-slate-500">{user.email}</span>
