@@ -1,5 +1,9 @@
 {
-  "/register/page": "app/register/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/admin/stats/page": "app/admin/stats/page.js",
+  "/api/admin/stats/route": "app/api/admin/stats/route.js",
   "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
+  "/register/page": "app/register/page.js",
   "/profile/page": "app/profile/page.js"
 }

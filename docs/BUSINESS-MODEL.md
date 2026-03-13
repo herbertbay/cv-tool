@@ -12,7 +12,7 @@ Because usage is concentrated in a couple of months, revenue per user should be 
 
 - **Model:** Charge per tailored CV/letter generated (e.g. $3–7 per generation), or per “batch” (e.g. $15 for 5 generations in 30 days).
 - **Why it’s profitable:** Users pay when they get value (each application). No need to justify a monthly fee when they might only apply for 2–4 weeks. High willingness to pay at the moment of need.
-- **Free tier:** 1 free CV (or 1 free per month) to prove value; then pay per use. Converts job seekers at peak intent.
+- **Free tier:** 1 free CV to prove value; then pay per use. Converts job seekers at peak intent.
 - **Upsell:** “You have 2 applications left this week — add 5 more for $X” when they hit the limit.
 
 ### Option B: Short, fixed “job hunt” subscription
@@ -23,7 +23,7 @@ Because usage is concentrated in a couple of months, revenue per user should be 
 
 ### Option C: Hybrid (best of both)
 
-- **Free:** 1 tailored CV (or 1 per month).
+- **Free:** 1 tailored CV.
 - **Pay-per-use:** $4–6 per generation after that, or **“Job hunt pass”**: $24 for 30 days unlimited.
 - **Result:** Light users pay per use; heavy applicants buy the pass. You capture both and maximize revenue in the 1–3 month window.
 

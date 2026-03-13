@@ -267,6 +267,22 @@ def get_cv_generation(session_id: str, user_id: str) -> Optional[dict]:
     return {"session_id": row["session_id"], "created_at": row["created_at"], "cv_path": row["cv_path"], "letter_path": row["letter_path"]}
 
 
+def get_admin_stats() -> dict:
+    """Return counts from users, profiles, cv_generations. For admin endpoint only."""
+    init_db()
+    with _get_conn() as conn:
+        user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        try:
+            profile_count = conn.execute("SELECT COUNT(*) FROM profiles").fetchone()[0]
+        except sqlite3.OperationalError:
+            profile_count = 0
+        try:
+            gen_count = conn.execute("SELECT COUNT(*) FROM cv_generations").fetchone()[0]
+        except sqlite3.OperationalError:
+            gen_count = 0
+    return {"users": user_count, "profiles": profile_count, "cv_generations": gen_count}
+
+
 def delete_user(user_id: str) -> None:
     """Permanently delete user and all their data (profile, cv_generations). Order: profiles, cv_generations, then users."""
     init_db()

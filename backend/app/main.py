@@ -23,6 +23,7 @@ from app.database import (
     get_user_by_id as db_get_user_by_id,
     get_user_by_email as db_get_user_by_email,
     delete_user as db_delete_user,
+    get_admin_stats as db_get_admin_stats,
     insert_cv_generation as db_insert_cv_generation,
     get_cv_generations_by_user as db_get_cv_generations_by_user,
     get_cv_generation as db_get_cv_generation,
@@ -138,6 +139,22 @@ def health():
         "status": "ok",
         "openai_configured": bool(settings.openai_api_key),
     }
+
+
+@app.get("/api/admin/stats")
+def admin_stats(request: Request, secret: str = ""):
+    """
+    Return user/profile/generation counts from the running app's DB.
+    Requires ADMIN_SECRET env set on the backend and matching ?secret= or X-Admin-Secret header.
+    Use this when `railway run` cannot see /data (one-off run often has no volume mounted).
+    """
+    expected = (getattr(settings, "admin_secret", None) or "").strip()
+    if not expected:
+        raise HTTPException(404, "Admin stats not configured")
+    provided = secret.strip() or (request.headers.get("X-Admin-Secret") or "").strip()
+    if provided != expected:
+        raise HTTPException(401, "Unauthorized")
+    return db_get_admin_stats()
 
 
 # --- Auth ---

@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     db_path: str = ""
     # Directory for persisted generated PDFs (e.g. /data/generated_pdfs). If empty, use backend/generated_pdfs.
     generated_pdfs_dir: str = ""
+    # Optional: if set, GET /api/admin/stats?secret=... returns user counts (same DB as running app; use when railway run has no volume).
+    admin_secret: str = ""
 
 
 settings = Settings()
