@@ -1,18 +1,19 @@
 /**
  * API client for the CV-Tool backend.
- * Base URL: /api-backend when using Next.js rewrites, or set NEXT_PUBLIC_API_URL.
+ * In production (NEXT_PUBLIC_API_URL set): uses same-origin proxy /api-proxy/* so session cookies work
+ * (cross-origin requests get cookies blocked by Safari/Chrome).
+ * In dev: uses direct backend URL or localhost.
  */
 
-// Use direct backend URL; avoids dev-proxy socket resets from Next.js rewrites.
-// Must be a full URL (e.g. https://your-backend.up.railway.app) so requests go to the API, not relative to the frontend.
-function getApiBase(): string {
+function getApiConfig(): { base: string; apiBase: string } {
   const raw = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/api\/?$/, '') || '';
-  if (!raw) return 'http://localhost:8000';
-  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-  return `https://${raw}`;
+  if (!raw) {
+    return { base: 'http://localhost:8000', apiBase: 'http://localhost:8000/api' };
+  }
+  // Use same-origin proxy in production to avoid third-party cookie blocking
+  return { base: '', apiBase: '/api-proxy' };
 }
-const BASE = getApiBase();
-const API_BASE = `${BASE}/api`;
+const { base: BASE, apiBase: API_BASE } = getApiConfig();
 
 const fetchOptions: RequestInit = { credentials: 'include' };
 
@@ -85,7 +86,7 @@ export type GenerateCVResponse = {
 export type AuthUser = { id: string; email: string };
 
 export async function getMe(): Promise<{ user: AuthUser } | null> {
-  const res = await fetch(`${BASE}/api/auth/me`, fetchOptions);
+  const res = await fetch(`${API_BASE}/auth/me`, fetchOptions);
   if (res.status === 401) return null;
   if (!res.ok) throw new Error('Failed to get user');
   return res.json();
@@ -95,7 +96,7 @@ export async function login(
   email: string,
   password: string
 ): Promise<{ user: AuthUser }> {
-  const res = await fetch(`${BASE}/api/auth/login`, {
+  const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
@@ -112,7 +113,7 @@ export async function register(
   email: string,
   password: string
 ): Promise<{ user: AuthUser }> {
-  const res = await fetch(`${BASE}/api/auth/register`, {
+  const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
@@ -126,7 +127,7 @@ export async function register(
 }
 
 export async function logout(): Promise<void> {
-  await fetch(`${BASE}/api/auth/logout`, { method: 'POST', ...fetchOptions });
+  await fetch(`${API_BASE}/auth/logout`, { method: 'POST', ...fetchOptions });
 }
 
 // --- ATS match score tool ---
@@ -190,7 +191,7 @@ export async function atsMatchOptimize(resultToken: string): Promise<AtsMatchOpt
 
 /** Permanently delete account and all data. Requires auth. Clears session on success. */
 export async function deleteAccount(): Promise<void> {
-  const res = await fetch(`${BASE}/api/auth/delete-account`, { method: 'POST', ...fetchOptions });
+  const res = await fetch(`${API_BASE}/auth/delete-account`, { method: 'POST', ...fetchOptions });
   if (!res.ok) throw new Error('Failed to delete account');
 }
 

@@ -54,7 +54,7 @@ The backend uses **WeasyPrint** for PDFs, which needs system libraries (Pango, C
 
 ## 4. CORS (backend)
 
-Set the **backend** env var `FRONTEND_URL` to your frontend’s full URL (e.g. `https://cv-tool-web-production-xxxx.up.railway.app`). The API uses this for CORS so the browser allows requests from your frontend. No code change needed.
+Set the **backend** env var `FRONTEND_URL` to your frontend’s full URL (e.g. `https://cv-tool-web-production-xxxx.up.railway.app`). The API uses this for CORS so the browser allows requests from your frontend. No code change needed. The frontend proxies API requests through same-origin `/api-proxy/*` so session cookies work (browsers block third-party cookies on cross-origin requests).
 
 ---
 
