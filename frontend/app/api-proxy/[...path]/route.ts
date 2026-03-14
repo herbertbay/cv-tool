@@ -48,15 +48,16 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
   const resHeaders = new Headers();
   res.headers.forEach((value, key) => {
     const lower = key.toLowerCase();
-    // Forward Set-Cookie so the browser stores the session (append each)
     if (lower === 'set-cookie') {
       resHeaders.append(key, value);
     } else {
       resHeaders.set(key, value);
     }
   });
-  const text = await res.text();
-  return new NextResponse(text, {
+  const resContentType = res.headers.get('content-type') || '';
+  const isBinary = /application\/pdf|application\/octet-stream/i.test(resContentType);
+  const responseBody: BodyInit = isBinary ? await res.arrayBuffer() : await res.text();
+  return new NextResponse(responseBody, {
     status: res.status,
     statusText: res.statusText,
     headers: resHeaders,

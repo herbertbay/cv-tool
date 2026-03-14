@@ -10,6 +10,7 @@ import {
   generateCV,
   downloadPdf,
   downloadLetterPdf,
+  putUserData,
   type AtsMatchResultResponse,
   type AtsMatchOptimizeResponse,
   type Profile,
@@ -127,6 +128,8 @@ function AtsMatchContent() {
       if (res.motivation_letter?.trim()) {
         await downloadLetterPdf(res.session_id);
       }
+      // Save profile so home page shows dashboard (generated CVs), not onboarding
+      await putUserData({ profile, onboarding_complete: true });
       setStep('done');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create CV');
@@ -308,12 +311,12 @@ function AtsMatchContent() {
           <div className="space-y-6">
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-lg font-medium text-slate-800">Your tailored CV and letter are ready</p>
-              <p className="mt-2 text-slate-600">Check your downloads. Use Optimal CV anytime to create job-specific CVs.</p>
+              <p className="mt-2 text-slate-600">Check your downloads. Your profile is saved—create more job-specific CVs anytime.</p>
               <Link
                 href="/"
                 className="mt-4 inline-flex rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900"
               >
-                Go to dashboard
+                View my CVs
               </Link>
             </div>
           </div>
