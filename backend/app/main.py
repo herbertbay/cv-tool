@@ -368,20 +368,28 @@ async def ats_match_prepare(
         raise HTTPException(400, str(e)) from e
     job_text = job_input
     if job_input.startswith("http://") or job_input.startswith("https://"):
-        job_text = fetch_job_description(job_input)
+        try:
+            job_text = fetch_job_description(job_input)
+        except Exception as e:
+            logger.warning("ats_match: fetch_job_description failed: %s", e)
+            raise HTTPException(400, "Could not fetch job description from URL") from e
         if not job_text.strip():
             raise HTTPException(400, "Could not fetch job description from URL")
     if not settings.openai_api_key:
         raise HTTPException(503, "OPENAI_API_KEY is not configured")
-    result = calculate_ats_match_score(profile, job_text)
-    token = secrets.token_urlsafe(32)
-    db_insert_ats_match_result(
-        token=token,
-        profile_json=profile.model_dump_json(),
-        job_text=job_text[:10000],
-        score=result["score"],
-    )
-    return {"result_token": token, "message": "Score calculated. Sign in to view it."}
+    try:
+        result = calculate_ats_match_score(profile, job_text)
+        token = secrets.token_urlsafe(32)
+        db_insert_ats_match_result(
+            token=token,
+            profile_json=profile.model_dump_json(),
+            job_text=job_text[:10000],
+            score=result["score"],
+        )
+        return {"result_token": token, "message": "Score calculated. Sign in to view it."}
+    except Exception as e:
+        logger.exception("ats_match_prepare failed: %s", e)
+        raise HTTPException(500, "ATS analysis failed. Check backend logs.") from e
 
 
 @app.get("/api/ats-match")
