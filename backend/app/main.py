@@ -193,35 +193,50 @@ async def register(request: Request, response: Response, body: dict = Body(...))
 @app.post("/api/auth/login")
 async def login(request: Request, response: Response, body: dict = Body(...)):
     """Login with email and password."""
-    email = (body.get("email") or "").strip()
-    password = body.get("password") or ""
-    if not email or not password:
-        raise HTTPException(400, "Email and password required")
-    user = db_get_user_by_email(email)
-    if not user or not verify_password(password, user["password_hash"]):
-        raise HTTPException(401, "Invalid email or password")
-    token = create_session_token(user["id"], settings.secret_key)
-    response.set_cookie(
-        key=SESSION_COOKIE,
-        value=token,
-        max_age=SESSION_MAX_AGE,
-        httponly=True,
-        path="/",
-        **_session_cookie_kwargs(request),
-    )
-    return {"user": {"id": user["id"], "email": user["email"]}}
+    try:
+        email = (body.get("email") or "").strip()
+        password = body.get("password") or ""
+        if not email or not password:
+            raise HTTPException(400, "Email and password required")
+        if not settings.secret_key:
+            logger.error("SECRET_KEY not configured")
+            raise HTTPException(500, "Server configuration error")
+        user = db_get_user_by_email(email)
+        if not user or not verify_password(password, user["password_hash"]):
+            raise HTTPException(401, "Invalid email or password")
+        token = create_session_token(user["id"], settings.secret_key)
+        response.set_cookie(
+            key=SESSION_COOKIE,
+            value=token,
+            max_age=SESSION_MAX_AGE,
+            httponly=True,
+            path="/",
+            **_session_cookie_kwargs(request),
+        )
+        return {"user": {"id": user["id"], "email": user["email"]}}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("login failed: %s", e)
+        raise HTTPException(500, "Login failed") from e
 
 
 @app.get("/api/auth/me")
 async def auth_me(request: Request):
     """Return current user or 401."""
-    user_id = get_current_user_id(request)
-    if not user_id:
-        raise HTTPException(401, "Not authenticated")
-    user = db_get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(401, "Not authenticated")
-    return {"user": {"id": user["id"], "email": user["email"]}}
+    try:
+        user_id = get_current_user_id(request)
+        if not user_id:
+            raise HTTPException(401, "Not authenticated")
+        user = db_get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(401, "Not authenticated")
+        return {"user": {"id": user["id"], "email": user["email"]}}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("auth/me failed: %s", e)
+        raise HTTPException(500, "Auth check failed") from e
 
 
 @app.post("/api/auth/logout")
