@@ -512,17 +512,14 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
 
         profile = req.profile if isinstance(req.profile, Profile) else Profile(**req.profile)
         # Use pre-computed tailored content from ATS optimize when provided
-        use_pre_tailored = all([
-            req.pre_tailored_summary is not None,
-            req.pre_tailored_experience is not None,
-            req.pre_motivation_letter is not None,
-            req.pre_keywords_to_highlight is not None,
-        ])
+        use_pre_tailored = (
+            req.pre_tailored_summary is not None and req.pre_tailored_experience is not None
+        )
         if use_pre_tailored:
             tailored_summary = req.pre_tailored_summary
             tailored_experience = req.pre_tailored_experience
-            motivation_letter = req.pre_motivation_letter
-            keywords = req.pre_keywords_to_highlight
+            motivation_letter = req.pre_motivation_letter or ""
+            keywords = req.pre_keywords_to_highlight if req.pre_keywords_to_highlight is not None else []
         else:
             if not settings.openai_api_key:
                 raise HTTPException(503, "OPENAI_API_KEY is not configured")
@@ -586,11 +583,11 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("generate-cv failed")
-        err_type = type(e).__name__
+        logger.exception("generate-cv failed: %s", e)
+        err_msg = str(e) or type(e).__name__
         raise HTTPException(
             500,
-            f"Generation failed. Please try again or simplify the profile. (Error: {err_type})",
+            f"Generation failed: {err_msg}",
         ) from e
 
 
