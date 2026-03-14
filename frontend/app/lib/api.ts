@@ -70,6 +70,11 @@ export type GenerateCVRequest = {
   additional_urls_content?: Record<string, string> | null;
   language: string;
   template?: string; // e.g. cv_base.html (modern)
+  /** Pre-computed from ATS optimize (skips AI tailoring) */
+  pre_tailored_summary?: string | null;
+  pre_tailored_experience?: Array<Record<string, unknown>> | null;
+  pre_motivation_letter?: string | null;
+  pre_keywords_to_highlight?: string[] | null;
 };
 
 export type GenerateCVResponse = {
@@ -141,6 +146,10 @@ export type AtsMatchOptimizeResponse = {
   improvement_pct: number;
   tailored_summary: string;
   tailored_experience: Array<Record<string, unknown>>;
+  motivation_letter?: string;
+  keywords_to_highlight?: string[];
+  tailored_profile?: Record<string, unknown>;
+  job_description?: string;
 };
 
 /** Submit CV + job description, get result_token. No auth. Score stored; sign in to view. */

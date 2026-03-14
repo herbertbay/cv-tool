@@ -432,7 +432,7 @@ async def ats_match_optimize(request: Request, body: dict = Body(...)):
     original_score = row["score"]
     if not settings.openai_api_key:
         raise HTTPException(503, "OPENAI_API_KEY is not configured")
-    tailored_summary, tailored_experience, _, _ = tailor_cv_and_letter(
+    tailored_summary, tailored_experience, motivation_letter, keywords = tailor_cv_and_letter(
         profile=profile,
         job_description=job_text,
         personal_summary_override=None,
@@ -477,6 +477,10 @@ async def ats_match_optimize(request: Request, body: dict = Body(...)):
         "improvement_pct": improvement_pct,
         "tailored_summary": tailored_summary,
         "tailored_experience": tailored_experience,
+        "motivation_letter": motivation_letter,
+        "keywords_to_highlight": keywords,
+        "tailored_profile": tailored_profile.model_dump(),
+        "job_description": job_text,
     }
 
 
@@ -507,16 +511,28 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
         additional_context = "\n\n".join(additional_context_parts)
 
         profile = req.profile if isinstance(req.profile, Profile) else Profile(**req.profile)
-        if not settings.openai_api_key:
-            raise HTTPException(503, "OPENAI_API_KEY is not configured")
-
-        tailored_summary, tailored_experience, motivation_letter, keywords = tailor_cv_and_letter(
-            profile=profile,
-            job_description=job_text,
-            personal_summary_override=req.personal_summary,
-            additional_context=additional_context,
-            language=req.language,
-        )
+        # Use pre-computed tailored content from ATS optimize when provided
+        use_pre_tailored = all([
+            req.pre_tailored_summary is not None,
+            req.pre_tailored_experience is not None,
+            req.pre_motivation_letter is not None,
+            req.pre_keywords_to_highlight is not None,
+        ])
+        if use_pre_tailored:
+            tailored_summary = req.pre_tailored_summary
+            tailored_experience = req.pre_tailored_experience
+            motivation_letter = req.pre_motivation_letter
+            keywords = req.pre_keywords_to_highlight
+        else:
+            if not settings.openai_api_key:
+                raise HTTPException(503, "OPENAI_API_KEY is not configured")
+            tailored_summary, tailored_experience, motivation_letter, keywords = tailor_cv_and_letter(
+                profile=profile,
+                job_description=job_text,
+                personal_summary_override=req.personal_summary,
+                additional_context=additional_context,
+                language=req.language,
+            )
 
         session_id = create_session_id()
         profile_dict = req.profile.model_dump() if isinstance(req.profile, Profile) else req.profile

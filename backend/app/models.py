@@ -57,6 +57,11 @@ class GenerateCVRequest(BaseModel):
     additional_urls_content: Optional[dict[str, str]] = None  # Optional: pre-fetched content
     language: str = "en"  # en, de, fr
     template: str = "cv_base.html"  # modern (cv_base), executive, creative
+    # Optional: pre-computed from ATS optimize (skips tailor_cv_and_letter)
+    pre_tailored_summary: Optional[str] = None
+    pre_tailored_experience: Optional[list[dict]] = None
+    pre_motivation_letter: Optional[str] = None
+    pre_keywords_to_highlight: Optional[list[str]] = None
 
 
 class GenerateCVResponse(BaseModel):
