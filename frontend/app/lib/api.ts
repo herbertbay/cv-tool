@@ -476,6 +476,48 @@ export async function updateJobApplication(
   if (!res.ok) throw new Error('Failed to update job application');
 }
 
+/** Tailored content for a generated CV (editable, persisted per session). */
+export type TailoredContent = {
+  session_id: string;
+  tailored_summary: string;
+  tailored_experience: Array<{ title?: string; company?: string; start_date?: string; end_date?: string; description?: string }>;
+  motivation_letter: string;
+  keywords_to_highlight: string[];
+  template: string;
+};
+
+export async function getTailoredContent(sessionId: string): Promise<TailoredContent> {
+  const res = await fetch(`${API_BASE}/cv-generations/${sessionId}/tailored`, fetchOptions);
+  checkAuth(res);
+  if (res.status === 404) throw new Error('Tailored content not found');
+  if (!res.ok) throw new Error('Failed to load tailored content');
+  return res.json();
+}
+
+export async function updateTailoredContent(
+  sessionId: string,
+  data: { tailored_summary?: string; tailored_experience?: TailoredContent['tailored_experience']; motivation_letter?: string }
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/cv-generations/${sessionId}/tailored`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    ...fetchOptions,
+  });
+  if (!res.ok) throw new Error('Failed to update tailored content');
+}
+
+export async function regenerateCv(sessionId: string, template?: string): Promise<{ ok: boolean; session_id: string }> {
+  const res = await fetch(`${API_BASE}/regenerate-cv`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, template: template || 'cv_base.html' }),
+    ...fetchOptions,
+  });
+  if (!res.ok) throw new Error('Failed to regenerate CV');
+  return res.json();
+}
+
 /** Download CV PDF for session (uses fetch with credentials so auth works cross-origin) */
 export async function downloadPdf(sessionId: string, filename?: string): Promise<void> {
   const res = await fetch(`${API_BASE}/download-pdf/${sessionId}`, fetchOptions);

@@ -28,6 +28,8 @@ from app.database import (
     insert_cv_generation as db_insert_cv_generation,
     get_cv_generations_by_user as db_get_cv_generations_by_user,
     get_cv_generation as db_get_cv_generation,
+    update_cv_generation_tailored as db_update_cv_generation_tailored,
+    update_cv_generation_template as db_update_cv_generation_template,
     insert_ats_match_result as db_insert_ats_match_result,
     get_ats_match_result as db_get_ats_match_result,
     delete_ats_match_result as db_delete_ats_match_result,
@@ -602,6 +604,11 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
             user_id, session_id, cv_path, letter_path,
             job_description=job_snippet or None,
             language=getattr(req, "language", None) or "en",
+            tailored_summary=tailored_summary,
+            tailored_experience=tailored_experience,
+            motivation_letter=motivation_letter,
+            keywords_to_highlight=keywords,
+            template=template_name,
         )
 
         return GenerateCVResponse(
@@ -888,6 +895,113 @@ async def download_letter(session_id: str, request: Request):
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="motivation_letter_{session_id[:8]}.pdf"'},
     )
+
+
+@app.get("/api/cv-generations/{session_id}/tailored")
+async def get_cv_generation_tailored(session_id: str, request: Request):
+    """Return persisted tailored content for a session (summary, experience, motivation letter). Requires auth; session must belong to user."""
+    user_id = require_user(request)
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen:
+        raise HTTPException(404, "Session not found or access denied")
+    return {
+        "session_id": session_id,
+        "tailored_summary": gen.get("tailored_summary") or "",
+        "tailored_experience": gen.get("tailored_experience") or [],
+        "motivation_letter": gen.get("motivation_letter") or "",
+        "keywords_to_highlight": gen.get("keywords_to_highlight") or [],
+        "template": gen.get("template") or "cv_base.html",
+    }
+
+
+@app.patch("/api/cv-generations/{session_id}/tailored")
+async def patch_cv_generation_tailored(session_id: str, request: Request, body: dict = Body(...)):
+    """Update tailored content for a session. Body: tailored_summary?, tailored_experience?, motivation_letter?. Requires auth."""
+    user_id = require_user(request)
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen:
+        raise HTTPException(404, "Session not found or access denied")
+    tailored_summary = body.get("tailored_summary") if "tailored_summary" in body else None
+    tailored_experience = body.get("tailored_experience") if "tailored_experience" in body else None
+    motivation_letter = body.get("motivation_letter") if "motivation_letter" in body else None
+    if tailored_summary is not None and not isinstance(tailored_summary, str):
+        tailored_summary = str(tailored_summary)
+    if tailored_experience is not None and not isinstance(tailored_experience, list):
+        tailored_experience = None
+    if motivation_letter is not None and not isinstance(motivation_letter, str):
+        motivation_letter = str(motivation_letter)
+    if tailored_summary is None and tailored_experience is None and motivation_letter is None:
+        raise HTTPException(400, "No valid fields to update")
+    ok = db_update_cv_generation_tailored(
+        session_id, user_id,
+        tailored_summary=tailored_summary,
+        tailored_experience=tailored_experience,
+        motivation_letter=motivation_letter,
+    )
+    if not ok:
+        raise HTTPException(404, "Update failed")
+    # Update in-memory session if present so next download uses new content
+    session = get_session(session_id)
+    if session:
+        if tailored_summary is not None:
+            session["tailored_summary"] = tailored_summary
+        if tailored_experience is not None:
+            session["tailored_experience"] = tailored_experience
+        if motivation_letter is not None:
+            session["motivation_letter"] = motivation_letter
+    return {"ok": True}
+
+
+@app.post("/api/regenerate-cv")
+async def regenerate_cv(request: Request, body: dict = Body(...)):
+    """Re-generate CV and optional letter PDF for a session. Body: session_id, template? (cv_base.html | cv_executive.html). Uses persisted tailored content and user profile. Requires auth."""
+    user_id = require_user(request)
+    session_id = (body.get("session_id") or "").strip()
+    if not session_id:
+        raise HTTPException(400, "session_id required")
+    template_name = (body.get("template") or "cv_base.html").strip()
+    if template_name not in ("cv_base.html", "cv_executive.html"):
+        template_name = "cv_base.html"
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen:
+        raise HTTPException(404, "Session not found or access denied")
+    tailored_summary = gen.get("tailored_summary") or ""
+    tailored_experience = gen.get("tailored_experience") or []
+    motivation_letter = gen.get("motivation_letter") or ""
+    keywords = gen.get("keywords_to_highlight") or []
+    data = db_get_user_data(user_id)
+    if not data or not data.get("profile"):
+        raise HTTPException(400, "User profile not found; cannot regenerate")
+    profile = Profile(**data["profile"])
+    extra_urls = [u for u in (data.get("additional_urls") or []) if u and str(u).strip().startswith(("http://", "https://"))]
+    show_powered_by = not _is_premium_user(user_id)
+    cv_pdf_bytes = generate_cv_pdf(
+        profile=profile,
+        tailored_summary=tailored_summary,
+        tailored_experience=tailored_experience,
+        keywords_to_highlight=keywords,
+        template_name=template_name,
+        additional_urls=extra_urls,
+        show_powered_by=show_powered_by,
+    )
+    letter_pdf_bytes = None
+    if motivation_letter and motivation_letter.strip():
+        letter_pdf_bytes = generate_letter_pdf(profile=profile, motivation_letter=motivation_letter, show_powered_by=show_powered_by)
+    save_session(
+        session_id=session_id,
+        profile=data["profile"],
+        tailored_summary=tailored_summary,
+        tailored_experience=tailored_experience,
+        motivation_letter=motivation_letter,
+        keywords_to_highlight=keywords,
+        pdf_bytes=cv_pdf_bytes,
+    )
+    set_session_pdf(session_id, cv_pdf_bytes)
+    if letter_pdf_bytes:
+        set_session_letter_pdf(session_id, letter_pdf_bytes)
+    cv_path, letter_path = storage_save_cv_pdf(session_id, cv_pdf_bytes, letter_pdf_bytes)
+    db_update_cv_generation_template(session_id, user_id, template_name)
+    return {"ok": True, "session_id": session_id}
 
 
 @app.post("/api/profile")

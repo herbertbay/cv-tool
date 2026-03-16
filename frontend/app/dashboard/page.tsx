@@ -16,7 +16,6 @@ import {
 } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { JobApplicationsHistory } from '../components/JobApplicationsHistory';
-import { DefaultPageUI } from '../components/DefaultPageUI';
 import { CreateCVModal } from '../components/CreateCVModal';
 
 const emptyProfile: Profile = {
@@ -185,7 +184,6 @@ function DashboardContent() {
         </div>
 
         <JobApplicationsHistory refreshTrigger={refreshTrigger} />
-        {userData && <DefaultPageUI userData={userData} onOpenCreate={handleOpenCreate} />}
       </main>
 
       {createModalOpen && (

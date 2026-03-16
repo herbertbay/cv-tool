@@ -6,14 +6,23 @@ import { useRouter, useParams } from 'next/navigation';
 import {
   getJobApplication,
   updateJobApplication,
+  getTailoredContent,
+  updateTailoredContent,
+  regenerateCv,
   downloadPdf,
   downloadLetterPdf,
   type JobApplication,
   type ApplicationStatus,
+  type TailoredContent,
 } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 
 const APPLICATION_STATUSES: ApplicationStatus[] = ['Interested', 'Applied', 'Interview', 'Rejected', 'Offer'];
+
+const CV_TEMPLATES = [
+  { value: 'cv_base.html', label: 'Modern' },
+  { value: 'cv_executive.html', label: 'Executive' },
+];
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '';
@@ -43,6 +52,11 @@ export default function ApplicationDetailPage() {
     application_date: '',
     job_url: '',
   });
+  const [tailored, setTailored] = useState<TailoredContent | null>(null);
+  const [tailoredLoading, setTailoredLoading] = useState(false);
+  const [tailoredSaving, setTailoredSaving] = useState(false);
+  const [regenerateProgress, setRegenerateProgress] = useState('');
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     if (!id || !user) return;
@@ -63,9 +77,23 @@ export default function ApplicationDetailPage() {
       .finally(() => setLoading(false));
   }, [id, user]);
 
+  const loadTailored = useCallback(() => {
+    if (!app?.session_id) return;
+    setTailoredLoading(true);
+    getTailoredContent(app.session_id)
+      .then(setTailored)
+      .catch(() => setTailored(null))
+      .finally(() => setTailoredLoading(false));
+  }, [app?.session_id]);
+
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (app?.session_id) loadTailored();
+    else setTailored(null);
+  }, [app?.session_id, loadTailored]);
 
   useEffect(() => {
     if (!user) {
@@ -91,6 +119,33 @@ export default function ApplicationDetailPage() {
       setSaving(false);
     }
   }, [id, app, edit]);
+
+  const handleSaveTailored = useCallback(async () => {
+    if (!app?.session_id || !tailored) return;
+    setTailoredSaving(true);
+    try {
+      await updateTailoredContent(app.session_id, {
+        tailored_summary: tailored.tailored_summary,
+        tailored_experience: tailored.tailored_experience,
+        motivation_letter: tailored.motivation_letter,
+      });
+    } finally {
+      setTailoredSaving(false);
+    }
+  }, [app?.session_id, tailored]);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!app?.session_id || !tailored) return;
+    setRegenerateError(null);
+    setRegenerateProgress('Regenerating PDFs…');
+    try {
+      await regenerateCv(app.session_id, tailored.template);
+      setRegenerateProgress('');
+    } catch (e) {
+      setRegenerateError(e instanceof Error ? e.message : 'Regenerate failed');
+      setRegenerateProgress('');
+    }
+  }, [app?.session_id, tailored]);
 
   const handleDownloadPdf = useCallback(async () => {
     if (!app?.session_id) return;
@@ -154,10 +209,10 @@ export default function ApplicationDetailPage() {
           <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700">← Back to dashboard</Link>
         </p>
 
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
             <h1 className="text-xl font-semibold text-slate-800">Job application</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Edit fields if something was missing, then download your CV and letter.</p>
+            <p className="text-sm text-slate-500 mt-0.5">Edit application details. Edit the tailored CV content below and re-generate to update your PDFs.</p>
           </div>
           <div className="p-6 space-y-4">
             <div>
@@ -231,10 +286,118 @@ export default function ApplicationDetailPage() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
+          </div>
+        </div>
 
-            {app.session_id && (
-              <div className="pt-6 border-t border-slate-200">
-                <h2 className="text-sm font-semibold text-slate-800 mb-3">Generated documents</h2>
+        {app.session_id && (
+          <>
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+                <h2 className="text-lg font-semibold text-slate-800">Tailored CV content</h2>
+                <p className="text-sm text-slate-500 mt-0.5">Edit the summary and experience used for this CV. Save, then re-generate below to update your PDF.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                {tailoredLoading && <p className="text-sm text-slate-500">Loading tailored content…</p>}
+                {!tailoredLoading && tailored && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored summary</label>
+                      <textarea
+                        value={tailored.tailored_summary}
+                        onChange={(e) => setTailored((p) => p ? { ...p, tailored_summary: e.target.value } : null)}
+                        rows={4}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        placeholder="Professional summary tailored to this job"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Experience (tailored descriptions)</label>
+                      <div className="space-y-3">
+                        {tailored.tailored_experience.map((exp, i) => (
+                          <div key={i} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50">
+                            <p className="text-xs font-medium text-slate-600 mb-1">
+                              {exp.title ?? '—'} at {exp.company ?? '—'} {exp.start_date ?? ''} – {exp.end_date ?? ''}
+                            </p>
+                            <textarea
+                              value={exp.description ?? ''}
+                              onChange={(e) => {
+                                const next = [...(tailored.tailored_experience || [])];
+                                next[i] = { ...next[i], description: e.target.value };
+                                setTailored((p) => p ? { ...p, tailored_experience: next } : null);
+                              }}
+                              rows={3}
+                              className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
+                              placeholder="Tailored description"
+                            />
+                          </div>
+                        ))}
+                        {(!tailored.tailored_experience || tailored.tailored_experience.length === 0) && (
+                          <p className="text-sm text-slate-500">No experience entries.</p>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Motivation letter</label>
+                      <textarea
+                        value={tailored.motivation_letter}
+                        onChange={(e) => setTailored((p) => p ? { ...p, motivation_letter: e.target.value } : null)}
+                        rows={8}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        placeholder="Motivation letter text"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSaveTailored}
+                      disabled={tailoredSaving}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
+                    >
+                      {tailoredSaving ? 'Saving…' : 'Save tailored content'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+                <h2 className="text-lg font-semibold text-slate-800">Re-generate PDFs</h2>
+                <p className="text-sm text-slate-500 mt-0.5">Choose a template and generate a new CV and letter PDF with your current tailored content.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                {tailored && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">CV template</label>
+                      <select
+                        value={tailored.template}
+                        onChange={(e) => setTailored((p) => p ? { ...p, template: e.target.value } : null)}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      >
+                        {CV_TEMPLATES.map((t) => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRegenerate}
+                      disabled={!!regenerateProgress}
+                      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {regenerateProgress || 'Re-generate CV & letter PDF'}
+                    </button>
+                    {regenerateError && <p className="text-sm text-red-600">{regenerateError}</p>}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+                <h2 className="text-lg font-semibold text-slate-800">Download</h2>
+              </div>
+              <div className="p-6">
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
@@ -253,18 +416,22 @@ export default function ApplicationDetailPage() {
                 </div>
                 {downloadError && <p className="mt-2 text-sm text-red-600">{downloadError}</p>}
               </div>
-            )}
+            </div>
+          </>
+        )}
 
-            {app.full_job_description && (
-              <div className="pt-4 border-t border-slate-100">
-                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Full job description</label>
-                <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-sm text-slate-700">
-                  {app.full_job_description}
-                </div>
+        {app.full_job_description && (
+          <div className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="px-6 py-3 border-b border-slate-100">
+              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Full job description</label>
+            </div>
+            <div className="p-6">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-sm text-slate-700">
+                {app.full_job_description}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
