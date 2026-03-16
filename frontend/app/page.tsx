@@ -22,6 +22,7 @@ import {
 } from './lib/api';
 import { useAuth } from './lib/auth-context';
 import { LandingPage } from './components/LandingPage';
+import { JobApplicationsHistory } from './components/JobApplicationsHistory';
 
 const LANGUAGES = [
   { value: 'en', label: 'English' },
@@ -287,6 +288,7 @@ function HomePageContent() {
 
         {user && showDefaultPage && !loading && (
           <div className="mx-auto max-w-6xl px-6 py-8">
+          <JobApplicationsHistory />
           <DefaultPageUI
             userData={userData!}
             onOpenCreate={handleOpenCreateModal}
