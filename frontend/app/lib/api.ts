@@ -419,6 +419,8 @@ export type JobApplication = {
   archived: boolean;
   full_job_description: string;
   session_id: string | null;
+  application_date: string | null;
+  job_url: string | null;
   created_at: string;
 };
 
@@ -438,6 +440,8 @@ export async function createJobApplication(data: {
   application_status?: ApplicationStatus;
   full_job_description?: string;
   session_id?: string;
+  application_date?: string;
+  job_url?: string;
   /** If true and full_job_description is set, backend runs OpenAI extraction to fill company_name, job_title, etc. */
   extract?: boolean;
 }): Promise<JobApplication> {
@@ -453,7 +457,7 @@ export async function createJobApplication(data: {
 
 export async function updateJobApplication(
   id: string,
-  data: { company_name?: string; job_title?: string; application_status?: ApplicationStatus; archived?: boolean }
+  data: { company_name?: string; job_title?: string; application_status?: ApplicationStatus; archived?: boolean; application_date?: string | null; job_url?: string | null }
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/job-applications/${id}`, {
     method: 'PATCH',

@@ -9,8 +9,6 @@ import {
   getJobApplications,
   createJobApplication,
   updateJobApplication,
-  downloadPdf,
-  downloadLetterPdf,
   type UserData,
   type GeneratedCVItem,
   type JobApplication,
@@ -66,7 +64,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [generatedList, setGeneratedList] = useState<GeneratedCVItem[]>([]);
   const [listLoading, setListLoading] = useState(true);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [jobApplications, setJobApplications] = useState<JobApplication[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
@@ -111,23 +108,6 @@ export default function DashboardPage() {
   useEffect(() => {
     loadJobApplications();
   }, [loadJobApplications]);
-
-  const handleDownloadPdf = useCallback(async (sessionId: string) => {
-    setDownloadError(null);
-    try {
-      await downloadPdf(sessionId);
-    } catch {
-      setDownloadError('Download failed');
-    }
-  }, []);
-  const handleDownloadLetter = useCallback(async (sessionId: string) => {
-    setDownloadError(null);
-    try {
-      await downloadLetterPdf(sessionId);
-    } catch {
-      setDownloadError('Download failed');
-    }
-  }, []);
 
   const handleAddApplication = useCallback(async () => {
     setAddSaving(true);
@@ -233,6 +213,12 @@ export default function DashboardPage() {
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-slate-800">History</h2>
             <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard/applications"
+                className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Applications overview
+              </Link>
               <label className="inline-flex items-center gap-2 text-sm text-slate-600">
                 <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
                 Show archived
@@ -359,8 +345,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-slate-800">Generated CVs & motivation letters</h2>
+            <Link
+              href="/dashboard/applications"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              View overview &amp; download
+            </Link>
           </div>
           <div className="p-6">
             {listLoading && <p className="text-sm text-slate-500 py-4">Loading…</p>}
@@ -371,18 +363,17 @@ export default function DashboardPage() {
               <div className="border border-slate-200 rounded-lg overflow-hidden">
                 <div
                   className="grid gap-4 items-center px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200"
-                  style={{ gridTemplateColumns: 'minmax(140px, 1fr) minmax(80px, 0.6fr) minmax(160px, 2fr) minmax(200px, auto)' }}
+                  style={{ gridTemplateColumns: 'minmax(140px, 1fr) minmax(80px, 0.6fr) minmax(160px, 2fr)' }}
                 >
                   <span>Date</span>
                   <span>Language</span>
                   <span>Job description</span>
-                  <span className="text-right">Actions</span>
                 </div>
                 {generatedList.map((item) => (
                   <div
                     key={item.session_id}
                     className="grid gap-4 items-center px-4 py-3 text-sm border-b border-slate-100 last:border-0 hover:bg-slate-50/50"
-                    style={{ gridTemplateColumns: 'minmax(140px, 1fr) minmax(80px, 0.6fr) minmax(160px, 2fr) minmax(200px, auto)' }}
+                    style={{ gridTemplateColumns: 'minmax(140px, 1fr) minmax(80px, 0.6fr) minmax(160px, 2fr)' }}
                   >
                     <span className="text-slate-700 tabular-nums">{formatDate(item.created_at)}</span>
                     <span className="text-slate-600">
@@ -395,33 +386,10 @@ export default function DashboardPage() {
                     ) : (
                       <span className="text-slate-400">—</span>
                     )}
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadPdf(item.session_id)}
-                        className="inline-flex rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 min-w-[6.5rem]"
-                      >
-                        CV (PDF)
-                      </button>
-                      {item.has_letter_pdf ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDownloadLetter(item.session_id)}
-                          className="inline-flex rounded-lg bg-slate-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 min-w-[6.5rem]"
-                        >
-                          Letter (PDF)
-                        </button>
-                      ) : (
-                        <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-400 min-w-[6.5rem]">
-                          No letter
-                        </span>
-                      )}
-                    </div>
                   </div>
                 ))}
               </div>
             )}
-            {downloadError && <p className="mt-3 text-sm text-red-600">{downloadError}</p>}
           </div>
         </div>
       </main>

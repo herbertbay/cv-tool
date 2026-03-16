@@ -719,6 +719,8 @@ async def create_job_application(request: Request, body: dict = Body(...)):
         archived=False,
         full_job_description=full_job,
         session_id=(body.get("session_id") or "").strip() or None,
+        application_date=(body.get("application_date") or "").strip() or None,
+        job_url=(body.get("job_url") or "").strip() or None,
     )
     rows = db_get_job_applications_by_user(user_id, include_archived=True)
     created = next((r for r in rows if r["id"] == app_id), None)
@@ -727,7 +729,7 @@ async def create_job_application(request: Request, body: dict = Body(...)):
 
 @app.patch("/api/job-applications/{application_id}")
 async def patch_job_application(application_id: str, request: Request, body: dict = Body(...)):
-    """Update job application. Body: company_name?, job_title?, application_status?, archived?."""
+    """Update job application. Body: company_name?, job_title?, application_status?, archived?, application_date?, job_url?."""
     user_id = require_user(request)
     updates = {}
     if "company_name" in body:
@@ -739,6 +741,10 @@ async def patch_job_application(application_id: str, request: Request, body: dic
         updates["application_status"] = s if s in APPLICATION_STATUSES else None
     if "archived" in body:
         updates["archived"] = bool(body.get("archived"))
+    if "application_date" in body:
+        updates["application_date"] = (body.get("application_date") or "").strip() or None
+    if "job_url" in body:
+        updates["job_url"] = (body.get("job_url") or "").strip() or None
     if not updates:
         raise HTTPException(400, "No valid fields to update")
     ok = db_update_job_application(application_id, user_id, **updates)

@@ -91,10 +91,18 @@ def init_db() -> None:
                 archived INTEGER NOT NULL DEFAULT 0,
                 full_job_description TEXT,
                 session_id TEXT,
+                application_date TEXT,
+                job_url TEXT,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
         """)
+        for col, default in [("application_date", "NULL"), ("job_url", "NULL")]:
+            try:
+                conn.execute(f"ALTER TABLE job_applications ADD COLUMN {col} TEXT DEFAULT {default}")
+            except sqlite3.OperationalError as e:
+                if "duplicate column" not in str(e).lower():
+                    raise
         conn.commit()
 
 
@@ -366,6 +374,8 @@ def insert_job_application(
     archived: bool = False,
     full_job_description: str | None = None,
     session_id: str | None = None,
+    application_date: str | None = None,
+    job_url: str | None = None,
 ) -> None:
     """Insert a job application. created_at set automatically."""
     init_db()
@@ -375,8 +385,8 @@ def insert_job_application(
         conn.execute(
             """INSERT INTO job_applications (
                 id, user_id, company_name, description, salary_from, salary_to,
-                job_title, application_status, archived, full_job_description, session_id, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 id,
                 user_id,
@@ -389,6 +399,8 @@ def insert_job_application(
                 1 if archived else 0,
                 full_job_description or None,
                 session_id or None,
+                application_date or None,
+                job_url or None,
                 created,
             ),
         )
@@ -401,12 +413,12 @@ def get_job_applications_by_user(user_id: str, include_archived: bool = False) -
     with _get_conn() as conn:
         if include_archived:
             rows = conn.execute(
-                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, created_at FROM job_applications WHERE user_id = ? ORDER BY created_at DESC",
+                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at FROM job_applications WHERE user_id = ? ORDER BY created_at DESC",
                 (user_id,),
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, created_at FROM job_applications WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC",
+                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at FROM job_applications WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC",
                 (user_id,),
             ).fetchall()
     return [
@@ -422,6 +434,8 @@ def get_job_applications_by_user(user_id: str, include_archived: bool = False) -
             "archived": bool(r["archived"]),
             "full_job_description": r["full_job_description"] or "",
             "session_id": r["session_id"],
+            "application_date": r["application_date"],
+            "job_url": r["job_url"],
             "created_at": r["created_at"],
         }
         for r in rows
@@ -436,6 +450,8 @@ def update_job_application(
     job_title: str | None = None,
     application_status: str | None = None,
     archived: bool | None = None,
+    application_date: str | None = None,
+    job_url: str | None = None,
 ) -> bool:
     """Update job application fields. Returns True if a row was updated."""
     init_db()
@@ -453,6 +469,12 @@ def update_job_application(
     if archived is not None:
         updates.append("archived = ?")
         params.append(1 if archived else 0)
+    if application_date is not None:
+        updates.append("application_date = ?")
+        params.append(application_date)
+    if job_url is not None:
+        updates.append("job_url = ?")
+        params.append(job_url)
     if not updates:
         return False
     params.extend([application_id, user_id])
