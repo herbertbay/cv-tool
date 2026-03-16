@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   parseCV,
   getProfile,
@@ -54,7 +55,8 @@ function hasProfileData(p: Profile): boolean {
   );
 }
 
-export default function HomePage() {
+function HomePageContent() {
+  const searchParams = useSearchParams();
   const { user, logout } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,6 +98,11 @@ export default function HomePage() {
   useEffect(() => {
     loadUserData();
   }, [loadUserData]);
+
+  // Open create modal when arriving with ?create=1 (e.g. from dashboard)
+  useEffect(() => {
+    if (searchParams.get('create') === '1') setCreateModalOpen(true);
+  }, [searchParams]);
 
   // —— Onboarding: Step 1 — Upload CV
   const handleCVUpload = useCallback(
@@ -832,5 +839,13 @@ function CreateCVModal({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="text-slate-500">Loading…</p></div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }

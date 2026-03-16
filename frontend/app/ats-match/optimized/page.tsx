@@ -1,0 +1,130 @@
+'use client';
+
+import { Suspense, useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  generateCV,
+  downloadPdf,
+  downloadLetterPdf,
+  putUserData,
+  type AtsMatchOptimizeResponse,
+  type Profile,
+} from '../../lib/api';
+import { useAuth } from '../../lib/auth-context';
+
+const OPTIMIZE_STORAGE_KEY = 'ats-optimized';
+
+function OptimizedShareCTA() {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/ats-match` : '';
+  const onCopy = useCallback(() => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [shareUrl]);
+  return (
+    <>
+      <span className="text-sm text-slate-600">Share with a friend:</span>
+      <button
+        type="button"
+        onClick={onCopy}
+        className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      >
+        {copied ? 'Copied!' : 'Copy link'}
+      </button>
+    </>
+  );
+}
+
+function OptimizedContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('result_token') || '';
+  const [optimizeData, setOptimizeData] = useState<AtsMatchOptimizeResponse | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) {
+      router.replace('/ats-match');
+      return;
+    }
+    try {
+      const raw = typeof window !== 'undefined' ? sessionStorage.getItem(`${OPTIMIZE_STORAGE_KEY}-${token}`) : null;
+      if (raw) setOptimizeData(JSON.parse(raw) as AtsMatchOptimizeResponse);
+      else router.replace(`/ats-match/score?result_token=${encodeURIComponent(token)}`);
+    } catch {
+      router.replace('/ats-match');
+    }
+  }, [token, router]);
+
+  const handleCreateCV = async () => {
+    if (!optimizeData?.tailored_profile || !optimizeData?.job_description) {
+      setError('Missing data. Go back and try "See how much I can improve" again.');
+      return;
+    }
+    setCreateLoading(true);
+    setError(null);
+    try {
+      const profile = optimizeData.tailored_profile as unknown as Profile;
+      const res = await generateCV({
+        profile,
+        job_description: optimizeData.job_description,
+        additional_urls: [],
+        language: 'en',
+        template: 'cv_base.html',
+        pre_tailored_summary: optimizeData.tailored_summary,
+        pre_tailored_experience: optimizeData.tailored_experience,
+        pre_motivation_letter: optimizeData.motivation_letter ?? undefined,
+        pre_keywords_to_highlight: optimizeData.keywords_to_highlight ?? undefined,
+      });
+      await downloadPdf(res.session_id);
+      if (res.motivation_letter?.trim()) await downloadLetterPdf(res.session_id);
+      await putUserData({ profile, onboarding_complete: true });
+      if (typeof window !== 'undefined') sessionStorage.removeItem(`${OPTIMIZE_STORAGE_KEY}-${token}`);
+      router.push('/ats-match/complete');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create CV');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  if (!optimizeData) return <main className="mx-auto max-w-3xl px-6 pb-12"><p className="text-slate-600">Loading…</p></main>;
+
+  return (
+    <main className="mx-auto max-w-3xl px-6 pb-12">
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">Optimized ATS score</h1>
+      <p className="text-slate-600 mb-6">Your tailored CV would score higher. Create it now.</p>
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">New score</p>
+        <p className="mt-2 text-4xl font-bold text-slate-900">{optimizeData.new_score}<span className="text-2xl font-normal text-slate-500">/100</span></p>
+        <p className="mt-4 text-emerald-600 font-medium">+{optimizeData.improvement_pct}% improvement with a tailored CV</p>
+        <p className="mt-2 text-slate-600">Your original score was {optimizeData.original_score}. Download your tailored CV and motivation letter now.</p>
+        <button
+          type="button"
+          onClick={handleCreateCV}
+          disabled={createLoading}
+          className="mt-4 inline-flex rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
+        >
+          {createLoading ? 'Creating…' : 'Create tailored CV & letter'}
+        </button>
+      </div>
+      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      <p className="mt-6">
+        <Link href={`/ats-match/score?result_token=${encodeURIComponent(token)}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to score</Link>
+      </p>
+    </main>
+  );
+}
+
+export default function OptimizedPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="text-slate-500">Loading…</p></div>}>
+      <OptimizedContent />
+    </Suspense>
+  );
+}

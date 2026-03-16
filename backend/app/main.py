@@ -484,7 +484,7 @@ async def ats_match_optimize(request: Request, body: dict = Body(...)):
     new_score = new_result["score"]
     improvement = new_score - original_score if original_score > 0 else 0
     improvement_pct = round((improvement / original_score) * 100) if original_score > 0 else 0
-    db_delete_ats_match_result(token)
+    # Do not delete result here so back button from /ats-match/optimized to /ats-match/score works
     return {
         "original_score": original_score,
         "new_score": new_score,

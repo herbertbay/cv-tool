@@ -1,0 +1,51 @@
+'use client';
+
+import Link from 'next/link';
+import { useState, useCallback } from 'react';
+
+function ShareCTA() {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/ats-match` : '';
+  const onCopy = useCallback(() => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [shareUrl]);
+  return (
+    <>
+      <span className="text-sm text-slate-600">Share with a friend:</span>
+      <button
+        type="button"
+        onClick={onCopy}
+        className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      >
+        {copied ? 'Copied!' : 'Copy link'}
+      </button>
+    </>
+  );
+}
+
+export default function CompletePage() {
+  return (
+    <main className="mx-auto max-w-3xl px-6 pb-12">
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">You’re all set</h1>
+      <p className="text-slate-600 mb-6">Your tailored CV and letter are ready. Your profile is saved—create more job-specific CVs anytime.</p>
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-lg font-medium text-slate-800">Your tailored CV and letter are ready</p>
+        <p className="mt-2 text-slate-600">Check your downloads.</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Link href="/dashboard" className="inline-flex rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900">
+            View my CVs
+          </Link>
+          <span className="text-slate-400">|</span>
+          <ShareCTA />
+        </div>
+      </div>
+      <p className="mt-6">
+        <Link href="/ats-match" className="text-sm text-slate-500 hover:text-slate-700">Check another job</Link>
+      </p>
+    </main>
+  );
+}
