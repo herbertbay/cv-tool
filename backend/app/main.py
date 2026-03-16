@@ -32,6 +32,7 @@ from app.database import (
     get_ats_match_result as db_get_ats_match_result,
     delete_ats_match_result as db_delete_ats_match_result,
     insert_job_application as db_insert_job_application,
+    get_job_application_by_id as db_get_job_application_by_id,
     get_job_applications_by_user as db_get_job_applications_by_user,
     update_job_application as db_update_job_application,
 )
@@ -677,6 +678,16 @@ async def api_extract_job(request: Request, body: dict = Body(...)):
         raise HTTPException(500, str(e) or "Extraction failed") from e
 
 
+@app.get("/api/job-applications/{application_id}")
+async def get_job_application(application_id: str, request: Request):
+    """Return a single job application if it belongs to the current user."""
+    user_id = require_user(request)
+    app = db_get_job_application_by_id(application_id, user_id)
+    if not app:
+        raise HTTPException(status_code=404, detail="Not found")
+    return app
+
+
 @app.post("/api/job-applications")
 async def create_job_application(request: Request, body: dict = Body(...)):
     """Create a job application. Body: company_name?, description?, salary_from?, salary_to?, job_title?, application_status?, full_job_description?, session_id?, extract? (if true and full_job_description set, run OpenAI extraction to fill fields)."""
@@ -729,11 +740,13 @@ async def create_job_application(request: Request, body: dict = Body(...)):
 
 @app.patch("/api/job-applications/{application_id}")
 async def patch_job_application(application_id: str, request: Request, body: dict = Body(...)):
-    """Update job application. Body: company_name?, job_title?, application_status?, archived?, application_date?, job_url?."""
+    """Update job application. Body: company_name?, description?, job_title?, application_status?, archived?, application_date?, job_url?."""
     user_id = require_user(request)
     updates = {}
     if "company_name" in body:
         updates["company_name"] = (body.get("company_name") or "").strip() or None
+    if "description" in body:
+        updates["description"] = (body.get("description") or "").strip() or None
     if "job_title" in body:
         updates["job_title"] = (body.get("job_title") or "").strip() or None
     if "application_status" in body:

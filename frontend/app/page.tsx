@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   parseCV,
   getProfile,
   putUserData,
   fetchJobDescription,
   generateCV,
+  createJobApplication,
   downloadPdf,
   downloadLetterPdf,
   downloadPdfUrl,
@@ -55,6 +56,7 @@ function hasProfileData(p: Profile): boolean {
 }
 
 function HomePageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { user, logout } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -216,14 +218,22 @@ function HomePageContent() {
         language,
         template,
       });
-      setResult(res);
+      setGenerateProgress('Creating job application…');
+      const created = await createJobApplication({
+        session_id: res.session_id,
+        full_job_description: jobDescription.trim() || undefined,
+        extract: true,
+      });
       setRefreshGeneratedList((t) => t + 1);
+      setCreateModalOpen(false);
+      setResult(null);
       setGenerateProgress('');
+      router.push(`/dashboard/applications/${created.id}`);
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed');
       setGenerateProgress('');
     }
-  }, [userData, jobDescription, language, template]);
+  }, [userData, jobDescription, language, template, router]);
 
   const profileDisplay = profileWithPhoto ?? userData?.profile ?? emptyProfile;
   const showDefaultPage = userData?.onboarding_complete && hasProfileData(userData.profile);

@@ -431,6 +431,14 @@ export async function getJobApplications(includeArchived = false): Promise<JobAp
   return res.json();
 }
 
+export async function getJobApplication(id: string): Promise<JobApplication> {
+  const res = await fetch(`${API_BASE}/job-applications/${id}`, fetchOptions);
+  checkAuth(res);
+  if (res.status === 404) throw new Error('Application not found');
+  if (!res.ok) throw new Error('Failed to load application');
+  return res.json();
+}
+
 export async function createJobApplication(data: {
   company_name?: string;
   description?: string;
@@ -457,7 +465,7 @@ export async function createJobApplication(data: {
 
 export async function updateJobApplication(
   id: string,
-  data: { company_name?: string; job_title?: string; application_status?: ApplicationStatus; archived?: boolean; application_date?: string | null; job_url?: string | null }
+  data: { company_name?: string; description?: string; job_title?: string; application_status?: ApplicationStatus; archived?: boolean; application_date?: string | null; job_url?: string | null }
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/job-applications/${id}`, {
     method: 'PATCH',
