@@ -6,11 +6,24 @@ For **business model** (profitable pricing given short usage windows) and **rete
 
 ---
 
+## Immediate next steps (recommended order)
+
+| Step | Action | Why |
+|------|--------|-----|
+| **1** | **Stabilize & monitor** | Fix any remaining auth/PDF issues; confirm ATS → signup → create CV flow works end-to-end. Watch Railway logs and a few real runs. |
+| **2** | **One more growth lever** | Add either: **Share CTA** after generating a CV (“Share with a friend”), or **first 2–3 SEO pages** (“CV for Software Engineer”, “How to tailor your CV to a job”). Don’t do both at once. |
+| **3** | **Then add payment** | Once you have ~50–100 signups or 2–4 weeks of steady traffic, add a paid tier. By then you’ll have feedback and a clear value moment to monetize. |
+
+**Payment — recommendation:**  
+Adding payment now is possible but adds friction before you’ve validated demand. Better sequence: (1) get the ATS tool and core flow stable and shared a bit, (2) add one lightweight growth lever (share or SEO), (3) introduce payment (e.g. “Unlimited CVs + no branding” or “Pro templates”) so you’re monetizing people who already see the value. If you prefer to add payment earlier, keep a **generous free tier** (e.g. 3–5 CVs/month free) so the ATS tool and first CV remain a strong lead magnet.
+
+---
+
 ## Things to implement (checklist)
 
 ### Product & in-app
 
-- [ ] **CV/ATS match score tool** — Standalone page: paste job description + CV text (or upload), get a match score + 3–5 tips. No signup required; CTA “Get a tailored CV” → signup.
+- [x] **CV/ATS match score tool** — Standalone page: upload CV (PDF) + job description (text or URL), get match score; sign up to view and get optimized version; create tailored CV from result. *Done.*
 - [ ] **Job description keyword extractor** — Paste job ad → list of suggested keywords for your CV. Free, no account; CTA to Optimal CV.
 - [ ] **Share CTA after generating a CV** — “Share Optimal CV with a friend” with one-click copy link or share to LinkedIn/Twitter.
 - [ ] **Optional “Created with Optimal CV” on PDF** — Toggle in settings; off by default for paid tier.
@@ -126,10 +139,11 @@ Keep the tone direct and empathetic; avoid sounding preachy or desperate.
 
 | Priority | Action | Why |
 |----------|--------|-----|
-| 1 | Launch one free “viral” tool (score or keyword extractor) | Drives signups and shares with minimal content production. |
+| 1 | ~~Launch one free “viral” tool (score or keyword extractor)~~ Done. | Drives signups and shares. |
 | 2 | Add referral/share CTA + optional PDF branding | Turns every user into a potential acquirer. |
 | 3 | Publish 5–10 “CV for [Job Title]” pages + 2–3 “how to” posts | Captures high-intent search and builds topical authority. |
 | 4 | Show up in 1–2 communities (e.g. r/resumes, LinkedIn) | Builds trust and direct traffic without ads. |
 | 5 | Simple email sequence + one re-engagement email | Converts and brings back organic signups. |
+| 6 | **Add payment** (after some traction) | Monetize users who already get value; keep free tier strong. |
 
 Start with one item from the top two rows; measure signups and shares; then add the next. Organic growth compounds when you consistently ship one lever at a time and keep the product easy to try and share.
