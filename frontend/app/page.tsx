@@ -677,6 +677,31 @@ function DefaultPageUI({ userData, onOpenCreate, refreshTrigger }: { userData: U
   );
 }
 
+// ——— Share CTA (after generating a CV) ———
+function ShareOptimalCV() {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const handleCopy = () => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div className="pt-2 border-t border-slate-100">
+      <p className="text-sm text-slate-600 mb-2">Share Optimal CV with a friend</p>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      >
+        {copied ? 'Copied!' : 'Copy link'}
+      </button>
+    </div>
+  );
+}
+
 // ——— Create CV modal (job description optional, language, template, generate with feedback) ———
 function CreateCVModal({
   jobDescription,
@@ -781,7 +806,7 @@ function CreateCVModal({
           </div>
 
           {result && (
-            <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
+            <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
               <p className="text-sm font-medium text-slate-700">Done. Download your files:</p>
               <div className="flex flex-col gap-2">
                 <button
@@ -801,6 +826,7 @@ function CreateCVModal({
                   </button>
                 )}
               </div>
+              <ShareOptimalCV />
             </div>
           )}
         </div>

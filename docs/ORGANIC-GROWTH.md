@@ -11,8 +11,8 @@ For **business model** (profitable pricing given short usage windows) and **rete
 | Step | Action | Why |
 |------|--------|-----|
 | **1** | **Stabilize & monitor** | Fix any remaining auth/PDF issues; confirm ATS → signup → create CV flow works end-to-end. Watch Railway logs and a few real runs. |
-| **2** | **One more growth lever** | Add either: **Share CTA** after generating a CV (“Share with a friend”), or **first 2–3 SEO pages** (“CV for Software Engineer”, “How to tailor your CV to a job”). Don’t do both at once. |
-| **3** | **Then add payment** | Once you have ~50–100 signups or 2–4 weeks of steady traffic, add a paid tier. By then you’ll have feedback and a clear value moment to monetize. |
+| **2** | **One more growth lever** (Share CTA done) | Add either: **Share CTA** after generating a CV (“Share with a friend”), or **first 2–3 SEO pages** (“CV for Software Engineer”, “How to tailor your CV to a job”). Don’t do both at once. |
+| **3** | **Then add payment** | See **[STEP-3-PAYMENT.md](./STEP-3-PAYMENT.md)** for your detailed checklist. Once you have ~50–100 signups or 2–4 weeks of steady traffic, add a paid tier. By then you’ll have feedback and a clear value moment to monetize. |
 
 **Payment — recommendation:**  
 Adding payment now is possible but adds friction before you’ve validated demand. Better sequence: (1) get the ATS tool and core flow stable and shared a bit, (2) add one lightweight growth lever (share or SEO), (3) introduce payment (e.g. “Unlimited CVs + no branding” or “Pro templates”) so you’re monetizing people who already see the value. If you prefer to add payment earlier, keep a **generous free tier** (e.g. 3–5 CVs/month free) so the ATS tool and first CV remain a strong lead magnet.
@@ -25,7 +25,7 @@ Adding payment now is possible but adds friction before you’ve validated deman
 
 - [x] **CV/ATS match score tool** — Standalone page: upload CV (PDF) + job description (text or URL), get match score; sign up to view and get optimized version; create tailored CV from result. *Done.*
 - [ ] **Job description keyword extractor** — Paste job ad → list of suggested keywords for your CV. Free, no account; CTA to Optimal CV.
-- [ ] **Share CTA after generating a CV** — “Share Optimal CV with a friend” with one-click copy link or share to LinkedIn/Twitter.
+- [x] **Share CTA after generating a CV** — “Share Optimal CV with a friend” with one-click copy link in Create CV modal and ATS done step. *Done.*
 - [ ] **Optional “Created with Optimal CV” on PDF** — Toggle in settings; off by default for paid tier.
 - [ ] **Referral tracking** — Referral codes or UTM params; track which channel/user drives signups.
 - [ ] **Welcome email sequence** — (1) Confirm + “Create your first tailored CV”; (2) “Tip: paste the job description”; (3) “Your CV is ready — use it for the next application.”
