@@ -14,16 +14,17 @@ function ShareCTA() {
     });
   }, [shareUrl]);
   return (
-    <>
-      <span className="text-sm text-slate-600">Share with a friend:</span>
+    <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/80 p-4">
+      <p className="text-base font-semibold text-slate-800">Share with a friend</p>
+      <p className="mt-1 text-sm text-slate-600">Know someone job hunting? Send them the free ATS checker.</p>
       <button
         type="button"
         onClick={onCopy}
-        className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        className="mt-3 inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 hover:ring-slate-300"
       >
-        {copied ? 'Copied!' : 'Copy link'}
+        {copied ? 'Link copied!' : 'Copy link'}
       </button>
-    </>
+    </div>
   );
 }
 
@@ -35,13 +36,14 @@ export default function CompletePage() {
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-lg font-medium text-slate-800">Your tailored CV and letter are ready</p>
         <p className="mt-2 text-slate-600">Check your downloads.</p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="mt-4">
           <Link href="/dashboard" className="inline-flex rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900">
             View my CVs
           </Link>
-          <span className="text-slate-400">|</span>
-          <ShareCTA />
         </div>
+      </div>
+      <div className="mt-6">
+        <ShareCTA />
       </div>
       <p className="mt-6">
         <Link href="/ats-match" className="text-sm text-slate-500 hover:text-slate-700">Check another job</Link>
