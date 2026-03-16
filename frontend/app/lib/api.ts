@@ -379,6 +379,91 @@ export async function getGeneratedCVs(): Promise<GeneratedCVItem[]> {
   return res.json();
 }
 
+// --- Job applications (history) ---
+
+export type ApplicationStatus = 'Interested' | 'Applied' | 'Interview' | 'Rejected' | 'Offer';
+
+/** Extracted job fields from raw description (OpenAI). Used for job_applications and CV optimization. */
+export type ExtractedJob = {
+  company_name: string | null;
+  job_title: string | null;
+  description: string | null;
+  salary_from: number | null;
+  salary_to: number | null;
+  location: string | null;
+  key_requirements: string[];
+  keywords_to_highlight: string[];
+  full_job_description: string;
+};
+
+export async function extractJobDescription(jobDescription: string): Promise<ExtractedJob> {
+  const res = await fetch(`${API_BASE}/extract-job`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ job_description: jobDescription }),
+    ...fetchOptions,
+  });
+  if (!res.ok) throw new Error('Failed to extract job details');
+  return res.json();
+}
+
+export type JobApplication = {
+  id: string;
+  user_id: string;
+  company_name: string;
+  description: string;
+  salary_from: number | null;
+  salary_to: number | null;
+  job_title: string;
+  application_status: ApplicationStatus;
+  archived: boolean;
+  full_job_description: string;
+  session_id: string | null;
+  created_at: string;
+};
+
+export async function getJobApplications(includeArchived = false): Promise<JobApplication[]> {
+  const res = await fetch(`${API_BASE}/job-applications?archived=${includeArchived}`, fetchOptions);
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error('Failed to load job applications');
+  return res.json();
+}
+
+export async function createJobApplication(data: {
+  company_name?: string;
+  description?: string;
+  salary_from?: number;
+  salary_to?: number;
+  job_title?: string;
+  application_status?: ApplicationStatus;
+  full_job_description?: string;
+  session_id?: string;
+  /** If true and full_job_description is set, backend runs OpenAI extraction to fill company_name, job_title, etc. */
+  extract?: boolean;
+}): Promise<JobApplication> {
+  const res = await fetch(`${API_BASE}/job-applications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    ...fetchOptions,
+  });
+  if (!res.ok) throw new Error('Failed to create job application');
+  return res.json();
+}
+
+export async function updateJobApplication(
+  id: string,
+  data: { company_name?: string; job_title?: string; application_status?: ApplicationStatus; archived?: boolean }
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/job-applications/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    ...fetchOptions,
+  });
+  if (!res.ok) throw new Error('Failed to update job application');
+}
+
 /** Download CV PDF for session (uses fetch with credentials so auth works cross-origin) */
 export async function downloadPdf(sessionId: string, filename?: string): Promise<void> {
   const res = await fetch(`${API_BASE}/download-pdf/${sessionId}`, fetchOptions);

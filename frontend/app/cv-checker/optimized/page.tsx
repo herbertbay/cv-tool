@@ -17,7 +17,7 @@ const OPTIMIZE_STORAGE_KEY = 'ats-optimized';
 
 function OptimizedShareCTA() {
   const [copied, setCopied] = useState(false);
-  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/ats-match` : '';
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/cv-checker` : '';
   const onCopy = useCallback(() => {
     if (!shareUrl) return;
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -28,7 +28,7 @@ function OptimizedShareCTA() {
   return (
     <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/80 p-4">
       <p className="text-base font-semibold text-slate-800">Share with a friend</p>
-      <p className="mt-1 text-sm text-slate-600">Know someone job hunting? Send them the free ATS checker.</p>
+      <p className="mt-1 text-sm text-slate-600">Know someone job hunting? Send them the free CV checker.</p>
       <button
         type="button"
         onClick={onCopy}
@@ -50,15 +50,15 @@ function OptimizedContent() {
 
   useEffect(() => {
     if (!token) {
-      router.replace('/ats-match');
+      router.replace('/cv-checker');
       return;
     }
     try {
       const raw = typeof window !== 'undefined' ? sessionStorage.getItem(`${OPTIMIZE_STORAGE_KEY}-${token}`) : null;
       if (raw) setOptimizeData(JSON.parse(raw) as AtsMatchOptimizeResponse);
-      else router.replace(`/ats-match/score?result_token=${encodeURIComponent(token)}`);
+      else router.replace(`/cv-checker/score?result_token=${encodeURIComponent(token)}`);
     } catch {
-      router.replace('/ats-match');
+      router.replace('/cv-checker');
     }
   }, [token, router]);
 
@@ -86,7 +86,7 @@ function OptimizedContent() {
       if (res.motivation_letter?.trim()) await downloadLetterPdf(res.session_id);
       await putUserData({ profile, onboarding_complete: true });
       if (typeof window !== 'undefined') sessionStorage.removeItem(`${OPTIMIZE_STORAGE_KEY}-${token}`);
-      router.push('/ats-match/complete');
+      router.push('/cv-checker/complete');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create CV');
     } finally {
@@ -94,17 +94,17 @@ function OptimizedContent() {
     }
   };
 
-  if (!optimizeData) return <main className="mx-auto max-w-3xl px-6 pb-12"><p className="text-slate-600">Loading…</p></main>;
+  if (!optimizeData) return <main className="mx-auto max-w-3xl px-6 pb-12 pt-8"><p className="text-slate-600">Loading…</p></main>;
 
   const hasImprovement = optimizeData.improvement_pct > 0 || optimizeData.improvement > 0;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 pb-12">
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Optimized ATS score</h1>
+    <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">Optimized score</h1>
       <p className="text-slate-600 mb-6">
         {hasImprovement
           ? 'Your tailored CV would score higher. Create it now.'
-          : 'Your CV already matches this role well. We’ve still tailored it for this role — create and download it below.'}
+          : 'Your CV already matches this role well. We\'ve still tailored it for this role — create and download it below.'}
       </p>
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">New score</p>
@@ -115,7 +115,7 @@ function OptimizedContent() {
             <p className="mt-2 text-slate-600">Your original score was {optimizeData.original_score}. Download your tailored CV and motivation letter now.</p>
           </>
         ) : (
-          <p className="mt-4 text-slate-600">Your profile already fits this job. We’ve tailored your CV to the role — download it below.</p>
+          <p className="mt-4 text-slate-600">Your profile already fits this job. We&apos;ve tailored your CV to the role — download it below.</p>
         )}
         <button
           type="button"
@@ -131,7 +131,7 @@ function OptimizedContent() {
       </div>
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
       <p className="mt-6">
-        <Link href={`/ats-match/score?result_token=${encodeURIComponent(token)}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to score</Link>
+        <Link href={`/cv-checker/score?result_token=${encodeURIComponent(token)}`} className="text-sm text-slate-500 hover:text-slate-700">← Back to score</Link>
       </p>
     </main>
   );

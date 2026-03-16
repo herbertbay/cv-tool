@@ -78,6 +78,23 @@ def init_db() -> None:
                 created_at TEXT NOT NULL
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS job_applications (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                company_name TEXT,
+                description TEXT,
+                salary_from REAL,
+                salary_to REAL,
+                job_title TEXT,
+                application_status TEXT NOT NULL DEFAULT 'Interested',
+                archived INTEGER NOT NULL DEFAULT 0,
+                full_job_description TEXT,
+                session_id TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        """)
         conn.commit()
 
 
@@ -336,12 +353,125 @@ def get_admin_stats() -> dict:
     return {"users": user_count, "profiles": profile_count, "cv_generations": gen_count}
 
 
+def insert_job_application(
+    id: str,
+    user_id: str,
+    *,
+    company_name: str | None = None,
+    description: str | None = None,
+    salary_from: float | None = None,
+    salary_to: float | None = None,
+    job_title: str | None = None,
+    application_status: str = "Interested",
+    archived: bool = False,
+    full_job_description: str | None = None,
+    session_id: str | None = None,
+) -> None:
+    """Insert a job application. created_at set automatically."""
+    init_db()
+    import time
+    created = time.strftime("%Y-%m-%d %H:%M:%S")
+    with _get_conn() as conn:
+        conn.execute(
+            """INSERT INTO job_applications (
+                id, user_id, company_name, description, salary_from, salary_to,
+                job_title, application_status, archived, full_job_description, session_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                id,
+                user_id,
+                company_name or None,
+                description or None,
+                salary_from,
+                salary_to,
+                job_title or None,
+                application_status,
+                1 if archived else 0,
+                full_job_description or None,
+                session_id or None,
+                created,
+            ),
+        )
+        conn.commit()
+
+
+def get_job_applications_by_user(user_id: str, include_archived: bool = False) -> list[dict]:
+    """Return job applications for user, newest first. If include_archived is False, only non-archived."""
+    init_db()
+    with _get_conn() as conn:
+        if include_archived:
+            rows = conn.execute(
+                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, created_at FROM job_applications WHERE user_id = ? ORDER BY created_at DESC",
+                (user_id,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, created_at FROM job_applications WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC",
+                (user_id,),
+            ).fetchall()
+    return [
+        {
+            "id": r["id"],
+            "user_id": r["user_id"],
+            "company_name": r["company_name"] or "",
+            "description": r["description"] or "",
+            "salary_from": r["salary_from"],
+            "salary_to": r["salary_to"],
+            "job_title": r["job_title"] or "",
+            "application_status": r["application_status"] or "Interested",
+            "archived": bool(r["archived"]),
+            "full_job_description": r["full_job_description"] or "",
+            "session_id": r["session_id"],
+            "created_at": r["created_at"],
+        }
+        for r in rows
+    ]
+
+
+def update_job_application(
+    application_id: str,
+    user_id: str,
+    *,
+    company_name: str | None = None,
+    job_title: str | None = None,
+    application_status: str | None = None,
+    archived: bool | None = None,
+) -> bool:
+    """Update job application fields. Returns True if a row was updated."""
+    init_db()
+    updates = []
+    params = []
+    if company_name is not None:
+        updates.append("company_name = ?")
+        params.append(company_name)
+    if job_title is not None:
+        updates.append("job_title = ?")
+        params.append(job_title)
+    if application_status is not None:
+        updates.append("application_status = ?")
+        params.append(application_status)
+    if archived is not None:
+        updates.append("archived = ?")
+        params.append(1 if archived else 0)
+    if not updates:
+        return False
+    params.extend([application_id, user_id])
+    with _get_conn() as conn:
+        cur = conn.execute(
+            f"UPDATE job_applications SET {', '.join(updates)} WHERE id = ? AND user_id = ?",
+            params,
+        )
+        conn.commit()
+        return cur.rowcount > 0
+
+
 def delete_user(user_id: str) -> None:
-    """Permanently delete user and all their data (profile, cv_generations). Order: profiles, cv_generations, then users."""
+    """Permanently delete user and all their data (profile, cv_generations, job_applications). Order: profiles, cv_generations, job_applications, then users."""
     init_db()
     with _get_conn() as conn:
         conn.execute("DELETE FROM profiles WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM cv_generations WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM job_applications WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
         conn.commit()
 

@@ -65,6 +65,7 @@
     .skill-tag.highlight { background: #c7d2fe; font-weight: 600; }
     .summary-text, .letter-text { text-align: justify; }
     .letter-text { margin-top: 1em; white-space: pre-line; }
+    .powered-by { font-size: 8pt; color: #94a3b8; margin-top: 1.5em; padding-top: 0.5em; border-top: 1px solid #e2e8f0; }
   </style>
 </head>
 <body>
@@ -151,6 +152,10 @@
     <span class="skill-tag">{{ lang }}</span>
     {% endfor %}
   </div>
+  {% endif %}
+
+  {% if show_powered_by %}
+  <p class="powered-by">Powered by Optimal.cv</p>
   {% endif %}
 </body>
 </html>

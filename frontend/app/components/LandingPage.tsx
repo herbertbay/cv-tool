@@ -24,6 +24,12 @@ export function LandingPage() {
                   Get started free
                 </Link>
                 <Link
+                  href="/cv-checker"
+                  className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-6 py-3 text-base font-medium text-white hover:bg-emerald-700 transition-colors"
+                >
+                  Check your CV match
+                </Link>
+                <Link
                   href="/login"
                   className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
                 >
@@ -66,14 +72,37 @@ export function LandingPage() {
               icon={<StepThreeIcon />}
             />
           </div>
-          <div className="mt-10 text-center">
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link
               href="/register"
               className="inline-flex items-center rounded-lg bg-blue-800 px-6 py-3 text-base font-medium text-white hover:bg-blue-900 transition-colors"
             >
               Create your first tailored CV
             </Link>
+            <Link
+              href="/cv-checker"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
+            >
+              Check your CV match free
+            </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-100 py-12 sm:py-16 border-y border-slate-200" aria-labelledby="cv-checker-heading">
+        <div className="mx-auto max-w-6xl px-6 text-center">
+          <h2 id="cv-checker-heading" className="text-2xl font-bold text-slate-900 sm:text-3xl">
+            See how your CV matches any job
+          </h2>
+          <p className="mt-3 max-w-2xl mx-auto text-slate-600">
+            Paste a job description and get an instant match score. Find out how much you can improve with a tailored CV—no sign-up required to try.
+          </p>
+          <Link
+            href="/cv-checker"
+            className="mt-6 inline-flex items-center justify-center rounded-lg bg-emerald-600 px-6 py-3 text-base font-medium text-white hover:bg-emerald-700 transition-colors"
+          >
+            Open CV checker
+          </Link>
         </div>
       </section>
 
@@ -172,7 +201,7 @@ export function LandingPage() {
             Optimal CV
           </Link>
           <nav className="flex items-center gap-6 text-sm text-slate-600">
-            <Link href="/ats-match" className="hover:text-slate-900">Check ATS score</Link>
+            <Link href="/cv-checker" className="hover:text-slate-900">CV checker</Link>
             <Link href="/login" className="hover:text-slate-900">Sign in</Link>
             <Link href="/register" className="hover:text-slate-900">Sign up</Link>
           </nav>

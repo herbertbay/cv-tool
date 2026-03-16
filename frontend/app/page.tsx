@@ -238,7 +238,7 @@ function HomePageContent() {
             Optimal CV
           </Link>
           <nav className="flex items-center gap-4">
-            <Link href="/ats-match" className="text-slate-600 hover:text-blue-700 transition-colors">Check ATS score</Link>
+            <Link href="/cv-checker" className="text-slate-600 hover:text-blue-700 transition-colors">CV checker</Link>
             {user ? (
               <>
                 <span className="text-sm text-slate-500">{user.email}</span>

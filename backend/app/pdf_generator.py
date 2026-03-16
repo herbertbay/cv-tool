@@ -62,6 +62,7 @@ def _prepare_template_context(
     motivation_letter: str,
     keywords_to_highlight: list[str],
     additional_urls: list[str] | None = None,
+    show_powered_by: bool = True,
 ) -> dict:
     """Build context for the CV HTML template."""
     # Photo: support data URL or base64
@@ -94,6 +95,7 @@ def _prepare_template_context(
         "keywords_to_highlight": keywords_to_highlight,
         "additional_urls": urls_list,
         "language": "en",
+        "show_powered_by": show_powered_by,
     }
 
 
@@ -104,6 +106,7 @@ def render_cv_html(
     keywords_to_highlight: list[str],
     template_name: str = "cv_base.html",
     additional_urls: list[str] | None = None,
+    show_powered_by: bool = True,
 ) -> str:
     """Render CV template to HTML string (for preview or PDF input)."""
     env = Environment(
@@ -119,6 +122,7 @@ def render_cv_html(
         motivation_letter="",
         keywords_to_highlight=keywords_to_highlight,
         additional_urls=additional_urls,
+        show_powered_by=show_powered_by,
     )
     return template.render(**ctx)
 
@@ -130,6 +134,7 @@ def generate_cv_pdf(
     keywords_to_highlight: list[str],
     template_name: str = "cv_base.html",
     additional_urls: list[str] | None = None,
+    show_powered_by: bool = True,
 ) -> bytes:
     """
     Render CV only (no motivation letter) to PDF bytes.
@@ -142,13 +147,14 @@ def generate_cv_pdf(
         keywords_to_highlight=keywords_to_highlight,
         template_name=template_name,
         additional_urls=additional_urls,
+        show_powered_by=show_powered_by,
     )
     pdf_buffer = BytesIO()
     HTML(string=html_str).write_pdf(pdf_buffer, font_config=font_config)
     return pdf_buffer.getvalue()
 
 
-def generate_letter_pdf(profile: Profile, motivation_letter: str) -> bytes:
+def generate_letter_pdf(profile: Profile, motivation_letter: str, show_powered_by: bool = True) -> bytes:
     """Render motivation letter only (separate PDF file)."""
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES_DIR)),
@@ -160,6 +166,7 @@ def generate_letter_pdf(profile: Profile, motivation_letter: str) -> bytes:
         profile=profile.model_dump(),
         full_name=profile.full_name,
         motivation_letter=letter_plain,
+        show_powered_by=show_powered_by,
     )
     pdf_buffer = BytesIO()
     HTML(string=html_str).write_pdf(pdf_buffer, font_config=font_config)

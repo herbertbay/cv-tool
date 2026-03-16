@@ -191,3 +191,78 @@ Return JSON: {{"score": <0-100>, "summary": "<1-2 sentences>"}}
         return {"score": score, "summary": summary}
     except (json.JSONDecodeError, ValueError):
         return {"score": 50, "summary": "Unable to compute detailed score."}
+
+
+def extract_job_application(raw_job_description: str) -> dict[str, Any]:
+    """
+    Extract structured job application fields from raw job description text using OpenAI.
+    Returns a dict suitable for the job_applications table and for CV optimization:
+    company_name, job_title, description (short), salary_from, salary_to, location,
+    key_requirements, keywords_to_highlight (for CV), full_job_description (echo of input).
+    """
+    if not raw_job_description or not raw_job_description.strip():
+        return {
+            "company_name": None,
+            "job_title": None,
+            "description": None,
+            "salary_from": None,
+            "salary_to": None,
+            "location": None,
+            "key_requirements": [],
+            "keywords_to_highlight": [],
+            "full_job_description": raw_job_description or "",
+        }
+    client = _get_client()
+    system = (
+        "You are an expert at parsing job postings and extracting structured data. "
+        "Given a raw job description (pasted text or scraped from a listing), extract the following. "
+        "Return valid JSON only, no markdown code blocks. Use null for missing values. "
+        "For salary_from and salary_to use numbers only (e.g. 80000 for 80k); if a range is given use min and max; if only one number use it for both. "
+        "For key_requirements and keywords_to_highlight return JSON arrays of strings."
+    )
+    user_content = f"""Extract structured fields from this job description:
+
+{raw_job_description[:12000]}
+
+Return a single JSON object with exactly these keys (use null when not found):
+1) "company_name": string or null - employer/company name
+2) "job_title": string or null - role title (e.g. "Senior Product Manager")
+3) "description": string or null - short 1-3 sentence summary of the role
+4) "salary_from": number or null - minimum salary if mentioned
+5) "salary_to": number or null - maximum salary if mentioned
+6) "location": string or null - job location (city, country, or "Remote")
+7) "key_requirements": array of strings - main requirements/qualifications (5-15 items)
+8) "keywords_to_highlight": array of strings - skills/keywords to emphasize in a CV for this role (5-15 items)
+"""
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_content},
+        ],
+        temperature=0.2,
+    )
+    content = (resp.choices[0].message.content or "").strip()
+    if content.startswith("```"):
+        content = content.split("\n", 1)[-1]
+    if content.endswith("```"):
+        content = content.rsplit("```", 1)[0]
+    content = content.strip()
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        data = {}
+    out = {
+        "company_name": data.get("company_name") if data.get("company_name") else None,
+        "job_title": data.get("job_title") if data.get("job_title") else None,
+        "description": data.get("description") if data.get("description") else None,
+        "salary_from": data.get("salary_from") if data.get("salary_from") is not None else None,
+        "salary_to": data.get("salary_to") if data.get("salary_to") is not None else None,
+        "location": data.get("location") if data.get("location") else None,
+        "key_requirements": data.get("key_requirements") if isinstance(data.get("key_requirements"), list) else [],
+        "keywords_to_highlight": data.get("keywords_to_highlight") if isinstance(data.get("keywords_to_highlight"), list) else [],
+        "full_job_description": raw_job_description.strip(),
+    }
+    out["key_requirements"] = [str(x) for x in out["key_requirements"]][:20]
+    out["keywords_to_highlight"] = [str(x) for x in out["keywords_to_highlight"]][:20]
+    return out

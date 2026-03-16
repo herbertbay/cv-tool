@@ -14,9 +14,13 @@
       margin: 0 auto;
     }
     .letter-text { text-align: justify; white-space: pre-line; }
+    .powered-by { font-size: 8pt; color: #94a3b8; margin-top: 1.5em; padding-top: 0.5em; border-top: 1px solid #e2e8f0; }
   </style>
 </head>
 <body>
   <div class="letter-text">{{ motivation_letter }}</div>
+  {% if show_powered_by %}
+  <p class="powered-by">Powered by Optimal.cv</p>
+  {% endif %}
 </body>
 </html>

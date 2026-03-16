@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
 
 function ShareCTA() {
   const [copied, setCopied] = useState(false);
-  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/ats-match` : '';
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/cv-checker` : '';
   const onCopy = useCallback(() => {
     if (!shareUrl) return;
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -16,7 +16,7 @@ function ShareCTA() {
   return (
     <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/80 p-4">
       <p className="text-base font-semibold text-slate-800">Share with a friend</p>
-      <p className="mt-1 text-sm text-slate-600">Know someone job hunting? Send them the free ATS checker.</p>
+      <p className="mt-1 text-sm text-slate-600">Know someone job hunting? Send them the free CV checker.</p>
       <button
         type="button"
         onClick={onCopy}
@@ -30,8 +30,8 @@ function ShareCTA() {
 
 export default function CompletePage() {
   return (
-    <main className="mx-auto max-w-3xl px-6 pb-12">
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">You’re all set</h1>
+    <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">You're all set</h1>
       <p className="text-slate-600 mb-6">Your tailored CV and letter are ready. Your profile is saved—create more job-specific CVs anytime.</p>
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-lg font-medium text-slate-800">Your tailored CV and letter are ready</p>
@@ -46,7 +46,7 @@ export default function CompletePage() {
         <ShareCTA />
       </div>
       <p className="mt-6">
-        <Link href="/ats-match" className="text-sm text-slate-500 hover:text-slate-700">Check another job</Link>
+        <Link href="/cv-checker" className="text-sm text-slate-500 hover:text-slate-700">Check another job</Link>
       </p>
     </main>
   );

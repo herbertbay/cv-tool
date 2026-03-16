@@ -31,6 +31,9 @@ from app.database import (
     insert_ats_match_result as db_insert_ats_match_result,
     get_ats_match_result as db_get_ats_match_result,
     delete_ats_match_result as db_delete_ats_match_result,
+    insert_job_application as db_insert_job_application,
+    get_job_applications_by_user as db_get_job_applications_by_user,
+    update_job_application as db_update_job_application,
 )
 from app.generated_storage import save_cv_pdf as storage_save_cv_pdf, load_pdf_bytes as storage_load_pdf_bytes
 from app.auth import (
@@ -49,7 +52,7 @@ from app.models import (
 from app.linkedin_parser import parse_linkedin_json
 from app.pdf_profile_parser import parse_pdf_to_profile
 from app.url_fetcher import fetch_job_description, fetch_additional_urls
-from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score
+from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score, extract_job_application
 from app.pdf_generator import generate_cv_pdf, generate_letter_pdf, render_cv_html
 from app.session_store import (
     create_session_id,
@@ -59,6 +62,17 @@ from app.session_store import (
     set_session_letter_pdf,
     cleanup_old_sessions,
 )
+
+# Premium users: no "Powered by Optimal.cv" on generated CVs/letters (hardcoded for now)
+PREMIUM_EMAILS = {"herbert.bay@gmail.com"}
+
+
+def _is_premium_user(user_id: str) -> bool:
+    user = db_get_user_by_id(user_id)
+    if not user:
+        return False
+    email = (user.get("email") or "").lower().strip()
+    return email in PREMIUM_EMAILS
 
 
 @asynccontextmanager
@@ -564,6 +578,7 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
         if template_name not in allowed_templates:
             template_name = "cv_base.html"
         extra_urls = [u for u in (req.additional_urls or []) if u and str(u).strip().startswith(("http://", "https://"))]
+        show_powered_by = not _is_premium_user(user_id)
         cv_pdf_bytes = generate_cv_pdf(
             profile=profile,
             tailored_summary=tailored_summary,
@@ -571,11 +586,12 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
             keywords_to_highlight=keywords,
             template_name=template_name,
             additional_urls=extra_urls,
+            show_powered_by=show_powered_by,
         )
         set_session_pdf(session_id, cv_pdf_bytes)
         letter_pdf_bytes = None
         if motivation_letter and motivation_letter.strip():
-            letter_pdf_bytes = generate_letter_pdf(profile=profile, motivation_letter=motivation_letter)
+            letter_pdf_bytes = generate_letter_pdf(profile=profile, motivation_letter=motivation_letter, show_powered_by=show_powered_by)
             set_session_letter_pdf(session_id, letter_pdf_bytes)
 
         # Persist to filesystem and DB for listing and download after session expiry
@@ -624,6 +640,113 @@ async def list_generated_cvs(request: Request):
     ]
 
 
+APPLICATION_STATUSES = {"Interested", "Applied", "Interview", "Rejected", "Offer"}
+
+
+@app.get("/api/job-applications")
+async def list_job_applications(request: Request, archived: str = "false"):
+    """Return job applications for the current user. archived=true to include archived."""
+    user_id = require_user(request)
+    include_archived = archived.lower() in ("1", "true", "yes")
+    return db_get_job_applications_by_user(user_id, include_archived=include_archived)
+
+
+@app.post("/api/extract-job")
+async def api_extract_job(request: Request, body: dict = Body(...)):
+    """Extract structured job fields from raw job description using OpenAI. Body: job_description (string). Returns JSON with company_name, job_title, description, salary_from, salary_to, location, key_requirements, keywords_to_highlight, full_job_description."""
+    require_user(request)
+    if not settings.openai_api_key:
+        raise HTTPException(503, "OPENAI_API_KEY is not configured")
+    raw = (body.get("job_description") or "").strip()
+    if not raw:
+        return {
+            "company_name": None,
+            "job_title": None,
+            "description": None,
+            "salary_from": None,
+            "salary_to": None,
+            "location": None,
+            "key_requirements": [],
+            "keywords_to_highlight": [],
+            "full_job_description": "",
+        }
+    try:
+        return extract_job_application(raw)
+    except Exception as e:
+        logger.exception("extract-job failed: %s", e)
+        raise HTTPException(500, str(e) or "Extraction failed") from e
+
+
+@app.post("/api/job-applications")
+async def create_job_application(request: Request, body: dict = Body(...)):
+    """Create a job application. Body: company_name?, description?, salary_from?, salary_to?, job_title?, application_status?, full_job_description?, session_id?, extract? (if true and full_job_description set, run OpenAI extraction to fill fields)."""
+    user_id = require_user(request)
+    app_id = str(secrets.token_urlsafe(16))
+    status = (body.get("application_status") or "Interested").strip()
+    if status not in APPLICATION_STATUSES:
+        status = "Interested"
+    full_job = (body.get("full_job_description") or "").strip() or None
+    company_name = (body.get("company_name") or "").strip() or None
+    job_title = (body.get("job_title") or "").strip() or None
+    description = (body.get("description") or "").strip() or None
+    salary_from = body.get("salary_from") if body.get("salary_from") is not None else None
+    salary_to = body.get("salary_to") if body.get("salary_to") is not None else None
+    use_extraction = full_job and (body.get("extract") is True or (not company_name and not job_title))
+    if use_extraction and settings.openai_api_key:
+        try:
+            extracted = extract_job_application(full_job)
+            if not company_name and extracted.get("company_name"):
+                company_name = extracted["company_name"]
+            if not job_title and extracted.get("job_title"):
+                job_title = extracted["job_title"]
+            if not description and extracted.get("description"):
+                description = extracted["description"]
+            if salary_from is None and extracted.get("salary_from") is not None:
+                salary_from = extracted["salary_from"]
+            if salary_to is None and extracted.get("salary_to") is not None:
+                salary_to = extracted["salary_to"]
+        except Exception as e:
+            logger.warning("job application extract failed, using provided fields: %s", e)
+    db_insert_job_application(
+        app_id,
+        user_id,
+        company_name=company_name,
+        description=description,
+        salary_from=salary_from,
+        salary_to=salary_to,
+        job_title=job_title,
+        application_status=status,
+        archived=False,
+        full_job_description=full_job,
+        session_id=(body.get("session_id") or "").strip() or None,
+    )
+    rows = db_get_job_applications_by_user(user_id, include_archived=True)
+    created = next((r for r in rows if r["id"] == app_id), None)
+    return created or {"id": app_id, "user_id": user_id, "application_status": status, "archived": False}
+
+
+@app.patch("/api/job-applications/{application_id}")
+async def patch_job_application(application_id: str, request: Request, body: dict = Body(...)):
+    """Update job application. Body: company_name?, job_title?, application_status?, archived?."""
+    user_id = require_user(request)
+    updates = {}
+    if "company_name" in body:
+        updates["company_name"] = (body.get("company_name") or "").strip() or None
+    if "job_title" in body:
+        updates["job_title"] = (body.get("job_title") or "").strip() or None
+    if "application_status" in body:
+        s = (body.get("application_status") or "").strip()
+        updates["application_status"] = s if s in APPLICATION_STATUSES else None
+    if "archived" in body:
+        updates["archived"] = bool(body.get("archived"))
+    if not updates:
+        raise HTTPException(400, "No valid fields to update")
+    ok = db_update_job_application(application_id, user_id, **updates)
+    if not ok:
+        raise HTTPException(404, "Application not found")
+    return {"ok": True}
+
+
 @app.get("/api/preview-cv-html")
 async def preview_cv_html(request: Request, template: str = "cv_base.html"):
     """
@@ -644,6 +767,7 @@ async def preview_cv_html(request: Request, template: str = "cv_base.html"):
         for e in (profile.experience or [])
     ]
     additional_urls = data.get("additional_urls") or []
+    show_powered_by = not _is_premium_user(user_id)
     html_str = render_cv_html(
         profile=profile,
         tailored_summary=profile.summary or "",
@@ -651,6 +775,7 @@ async def preview_cv_html(request: Request, template: str = "cv_base.html"):
         keywords_to_highlight=[],
         template_name=template,
         additional_urls=additional_urls,
+        show_powered_by=show_powered_by,
     )
     return HTMLResponse(html_str)
 
