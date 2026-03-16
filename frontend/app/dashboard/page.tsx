@@ -1,11 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { getProfile, type UserData } from '../lib/api';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  getProfile,
+  fetchJobDescription,
+  generateCV,
+  createJobApplication,
+  downloadPdf,
+  downloadLetterPdf,
+  type UserData,
+  type Profile,
+  type GenerateCVResponse,
+} from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { JobApplicationsHistory } from '../components/JobApplicationsHistory';
+import { DefaultPageUI } from '../components/DefaultPageUI';
+import { CreateCVModal } from '../components/CreateCVModal';
+
+const emptyProfile: Profile = {
+  full_name: '',
+  headline: null,
+  summary: '',
+  email: null,
+  phone: null,
+  address: null,
+  linkedin_url: null,
+  photo_base64: null,
+  experience: [],
+  education: [],
+  skills: [],
+  certifications: [],
+  languages: [],
+};
 
 function hasProfileData(p: UserData['profile']): boolean {
   return (
@@ -19,9 +47,19 @@ function hasProfileData(p: UserData['profile']): boolean {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, logout } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [jobDescription, setJobDescription] = useState('');
+  const [jobIsUrl, setJobIsUrl] = useState(false);
+  const [language, setLanguage] = useState('en');
+  const [template, setTemplate] = useState('cv_base.html');
+  const [generateProgress, setGenerateProgress] = useState('');
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [result, setResult] = useState<GenerateCVResponse | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -34,6 +72,68 @@ export default function DashboardPage() {
       .catch(() => setUserData(null))
       .finally(() => setLoading(false));
   }, [user, router]);
+
+  useEffect(() => {
+    if (searchParams.get('create') === '1') setCreateModalOpen(true);
+  }, [searchParams]);
+
+  const handleOpenCreate = useCallback(() => {
+    setCreateModalOpen(true);
+    setGenerateProgress('');
+    setGenerateError(null);
+    setResult(null);
+  }, []);
+
+  const handleFetchJob = useCallback(async () => {
+    if (!jobDescription.trim()) return;
+    setGenerateError(null);
+    setGenerateProgress('Fetching job description…');
+    try {
+      const { content } = await fetchJobDescription(jobIsUrl ? jobDescription.trim() : null, jobIsUrl ? null : jobDescription.trim());
+      setJobDescription(content || jobDescription);
+      setGenerateProgress('');
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : 'Fetch failed');
+      setGenerateProgress('');
+    }
+  }, [jobDescription, jobIsUrl]);
+
+  const handleGenerate = useCallback(async () => {
+    const profile = userData?.profile ?? emptyProfile;
+    if (!hasProfileData(profile)) {
+      setGenerateError('Profile is missing. Edit your information first.');
+      return;
+    }
+    setGenerateError(null);
+    setGenerateProgress('Preparing…');
+    try {
+      const hasJob = !!jobDescription.trim();
+      setGenerateProgress(hasJob ? 'Generating tailored CV and motivation letter…' : 'Generating tailored CV…');
+      const urls = userData?.additional_urls?.filter((u) => u?.trim().startsWith('http')) ?? [];
+      const res = await generateCV({
+        profile,
+        job_description: jobDescription.trim(),
+        personal_summary: userData?.personal_summary?.trim() || undefined,
+        additional_urls: urls,
+        language,
+        template,
+      });
+      setGenerateProgress('Creating job application…');
+      const created = await createJobApplication({
+        session_id: res.session_id,
+        full_job_description: jobDescription.trim() || undefined,
+        extract: true,
+      });
+      setRefreshTrigger((t) => t + 1);
+      setCreateModalOpen(false);
+      setResult(null);
+      setGenerateProgress('');
+      router.push(`/dashboard/applications/${created.id}`);
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : 'Generation failed');
+      setGenerateProgress('');
+    }
+  }, [userData, jobDescription, language, template, router]);
 
   if (!user) return null;
   if (loading) {
@@ -56,6 +156,7 @@ export default function DashboardPage() {
             Optimal CV
           </Link>
           <nav className="flex items-center gap-4">
+            <Link href="/dashboard" className="text-slate-600 hover:text-blue-700 transition-colors">Dashboard</Link>
             <Link href="/cv-checker" className="text-slate-600 hover:text-blue-700 transition-colors">CV checker</Link>
             <span className="text-sm text-slate-500">{user.email}</span>
             <button type="button" onClick={() => logout()} className="text-sm text-slate-600 hover:text-slate-900">
@@ -68,12 +169,13 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Dashboard</h1>
         <p className="text-slate-600 mb-6">Your generated CVs and motivation letters.</p>
         <div className="mb-6 flex flex-wrap gap-3">
-          <Link
-            href="/?create=1"
+          <button
+            type="button"
+            onClick={handleOpenCreate}
             className="inline-flex items-center rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900"
           >
             Create CV & motivation letter
-          </Link>
+          </button>
           <Link href="/profile" className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
             Edit profile
           </Link>
@@ -82,8 +184,33 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <JobApplicationsHistory />
+        <JobApplicationsHistory refreshTrigger={refreshTrigger} />
+        {userData && <DefaultPageUI userData={userData} onOpenCreate={handleOpenCreate} />}
       </main>
+
+      {createModalOpen && (
+        <CreateCVModal
+          jobDescription={jobDescription}
+          setJobDescription={setJobDescription}
+          jobIsUrl={jobIsUrl}
+          setJobIsUrl={setJobIsUrl}
+          language={language}
+          setLanguage={setLanguage}
+          template={template}
+          setTemplate={setTemplate}
+          progress={generateProgress}
+          error={generateError}
+          result={result}
+          onFetchJob={handleFetchJob}
+          onGenerate={handleGenerate}
+          onClose={() => {
+            setCreateModalOpen(false);
+            setResult(null);
+          }}
+          onDownloadPdf={downloadPdf}
+          onDownloadLetter={downloadLetterPdf}
+        />
+      )}
     </div>
   );
 }
