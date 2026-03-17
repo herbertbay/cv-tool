@@ -2,6 +2,7 @@
 FastAPI application: CV and motivation letter generation API.
 CV upload only; user from cookie; profile in local DB; motivation letter as separate PDF.
 """
+import json
 import logging
 import secrets
 import time
@@ -836,8 +837,15 @@ async def compute_application_score(application_id: str, request: Request):
     result = calculate_ats_match_score(profile_for_score, full_job)
     score = result["score"]
     summary = result.get("summary") or ""
-    db_update_job_application(application_id, user_id, ats_score=score, ats_score_summary=summary)
-    return {"score": score, "summary": summary}
+    breakdown = result.get("breakdown")
+    breakdown_json = json.dumps(breakdown) if breakdown else None
+    db_update_job_application(
+        application_id, user_id,
+        ats_score=score,
+        ats_score_summary=summary,
+        ats_score_breakdown=breakdown_json,
+    )
+    return {"score": score, "summary": summary, "breakdown": breakdown}
 
 
 @app.get("/api/preview-cv-html")

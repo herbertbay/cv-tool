@@ -11,6 +11,7 @@ import {
   regenerateCv,
   downloadPdf,
   downloadLetterPdf,
+  computeApplicationScore,
   type JobApplication,
   type ApplicationStatus,
   type TailoredContent,
@@ -39,6 +40,135 @@ function toDateOnly(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+const BREAKDOWN_LABELS: Record<string, string> = {
+  summary: 'Summary',
+  skills: 'Skills',
+  experience: 'Experience',
+  education: 'Education',
+};
+
+function MatchScoreCard({
+  atsScore,
+  atsScoreSummary,
+  atsScoreBreakdown,
+  scoreLoading,
+  scoreError,
+  canCompute,
+  onComputeScore,
+}: {
+  atsScore: number | null;
+  atsScoreSummary: string | null;
+  atsScoreBreakdown: string | null;
+  scoreLoading: boolean;
+  scoreError: string | null;
+  canCompute: boolean;
+  onComputeScore: () => void;
+}) {
+  let breakdown: Record<string, number> | null = null;
+  if (atsScoreBreakdown) {
+    try {
+      breakdown = JSON.parse(atsScoreBreakdown) as Record<string, number>;
+    } catch {
+      breakdown = null;
+    }
+  }
+  const scoreTier = atsScore == null ? null : atsScore >= 75 ? 'strong' : atsScore >= 50 ? 'moderate' : 'develop';
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+        <h2 className="text-lg font-semibold text-slate-800">ATS match score</h2>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Semantic fit between your CV content and the job description (embedding-based). Re-compute after editing tailored content.
+        </p>
+      </div>
+      <div className="p-6">
+        {atsScore != null ? (
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-end gap-6">
+              <div className="flex items-baseline gap-2">
+                <span
+                  className={`text-4xl font-bold tabular-nums ${
+                    scoreTier === 'strong'
+                      ? 'text-emerald-700'
+                      : scoreTier === 'moderate'
+                        ? 'text-amber-700'
+                        : 'text-slate-800'
+                  }`}
+                >
+                  {atsScore}
+                </span>
+                <span className="text-lg text-slate-500 font-medium">/ 100</span>
+              </div>
+              {scoreTier && (
+                <span
+                  className={`text-sm font-medium uppercase tracking-wider ${
+                    scoreTier === 'strong'
+                      ? 'text-emerald-600'
+                      : scoreTier === 'moderate'
+                        ? 'text-amber-600'
+                        : 'text-slate-500'
+                  }`}
+                >
+                  {scoreTier === 'strong' ? 'Strong match' : scoreTier === 'moderate' ? 'Moderate match' : 'Room to improve'}
+                </span>
+              )}
+            </div>
+            {atsScoreSummary && (
+              <p className="text-sm text-slate-600 leading-relaxed max-w-xl">{atsScoreSummary}</p>
+            )}
+            {breakdown && Object.keys(breakdown).length > 0 && (
+              <div className="pt-2 border-t border-slate-100">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Breakdown</p>
+                <div className="space-y-3">
+                  {['summary', 'skills', 'experience', 'education'].map((key) => {
+                    const value = breakdown![key];
+                    if (value == null) return null;
+                    const pct = Math.round(Math.max(0, Math.min(100, value)));
+                    const tier = pct >= 70 ? 'high' : pct >= 40 ? 'mid' : 'low';
+                    return (
+                      <div key={key}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="font-medium text-slate-700">{BREAKDOWN_LABELS[key] ?? key}</span>
+                          <span className="tabular-nums text-slate-600">{pct}</span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              tier === 'high'
+                                ? 'bg-emerald-500'
+                                : tier === 'mid'
+                                  ? 'bg-amber-500'
+                                  : 'bg-slate-400'
+                            }`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">No score yet. Compute to see how your CV matches the job.</p>
+        )}
+        {scoreError && <p className="mt-2 text-sm text-red-600">{scoreError}</p>}
+        <button
+          type="button"
+          onClick={onComputeScore}
+          disabled={scoreLoading || !canCompute}
+          className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          {scoreLoading ? 'Computing…' : atsScore != null ? 'Re-compute score' : 'Compute score'}
+        </button>
+        {!canCompute && <p className="mt-2 text-xs text-slate-500">Add a job description to this application to compute the score.</p>}
+      </div>
+    </div>
+  );
+}
+
 export default function ApplicationDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -61,6 +191,8 @@ export default function ApplicationDetailPage() {
   const [tailoredSaving, setTailoredSaving] = useState(false);
   const [regenerateProgress, setRegenerateProgress] = useState('');
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
+  const [scoreLoading, setScoreLoading] = useState(false);
+  const [scoreError, setScoreError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     if (!id || !user) return;
@@ -170,6 +302,25 @@ export default function ApplicationDetailPage() {
       setDownloadError('Download failed');
     }
   }, [app?.session_id]);
+
+  const handleComputeScore = useCallback(async () => {
+    if (!id) return;
+    setScoreError(null);
+    setScoreLoading(true);
+    try {
+      const data = await computeApplicationScore(id);
+      setApp((prev) => prev ? {
+        ...prev,
+        ats_score: data.score,
+        ats_score_summary: data.summary,
+        ats_score_breakdown: data.breakdown ? JSON.stringify(data.breakdown) : null,
+      } : null);
+    } catch (e) {
+      setScoreError(e instanceof Error ? e.message : 'Failed to compute score');
+    } finally {
+      setScoreLoading(false);
+    }
+  }, [id]);
 
   if (!user) return null;
   if (loading) {
@@ -290,6 +441,18 @@ export default function ApplicationDetailPage() {
             </div>
           </div>
         </div>
+
+        {app.session_id && (app.full_job_description?.trim() || app.ats_score != null) && (
+          <MatchScoreCard
+            atsScore={app.ats_score}
+            atsScoreSummary={app.ats_score_summary}
+            atsScoreBreakdown={app.ats_score_breakdown}
+            scoreLoading={scoreLoading}
+            scoreError={scoreError}
+            canCompute={!!app.full_job_description?.trim()}
+            onComputeScore={handleComputeScore}
+          />
+        )}
 
         {app.session_id && (
           <>

@@ -422,6 +422,10 @@ export type JobApplication = {
   application_date: string | null;
   job_url: string | null;
   created_at: string;
+  ats_score: number | null;
+  ats_score_summary: string | null;
+  /** JSON string of { summary, skills, experience, education } each 0-100 */
+  ats_score_breakdown: string | null;
 };
 
 export async function getJobApplications(includeArchived = false): Promise<JobApplication[]> {
@@ -474,6 +478,26 @@ export async function updateJobApplication(
     ...fetchOptions,
   });
   if (!res.ok) throw new Error('Failed to update job application');
+}
+
+/** Breakdown from ATS match: each key (summary, skills, experience, education) has a 0-100 score. */
+export type AtsScoreBreakdown = Record<string, number>;
+
+/** Compute ATS match score for an application (current tailored content vs job description). Saves and returns score + breakdown. */
+export async function computeApplicationScore(applicationId: string): Promise<{ score: number; summary: string; breakdown?: AtsScoreBreakdown }> {
+  const res = await fetch(`${API_BASE}/job-applications/${applicationId}/compute-score`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    ...fetchOptions,
+  });
+  checkAuth(res);
+  if (res.status === 400) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Job description and a generated CV are required to compute the score.');
+  }
+  if (res.status === 404) throw new Error('Application or CV not found');
+  if (!res.ok) throw new Error('Failed to compute score');
+  return res.json();
 }
 
 /** Tailored content for a generated CV (editable, persisted per session). */

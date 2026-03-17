@@ -143,54 +143,17 @@ Respond with a single JSON object (no markdown, no code block) with exactly thes
 
 def calculate_ats_match_score(profile: Profile, job_description: str) -> dict:
     """
-    Calculate an ATS (Applicant Tracking System) match score 0-100 between the CV profile
-    and the job description. Uses GPT for professional evaluation.
-    Returns: {"score": int 0-100, "summary": str}
+    Calculate an ATS match score 0-100 between the CV profile and the job description.
+    Uses the shared embedding-based scorer (cosine similarity over skills, experience, education, summary).
+    Returns: {"score": int 0-100, "summary": str, "breakdown": dict optional}
     """
-    if not job_description or not job_description.strip():
-        return {"score": 0, "summary": "No job description provided."}
-    profile_ctx = _profile_to_context(profile)
-    client = _get_client()
-    system = (
-        "You are an expert ATS (Applicant Tracking System) evaluator and recruitment specialist. "
-        "Evaluate how well a candidate's CV matches a job description. Consider: "
-        "1) Keyword overlap (skills, tools, qualifications mentioned in the job); "
-        "2) Experience relevance (sector, role type, seniority); "
-        "3) Education/qualifications match; "
-        "4) Clarity and professionalism of the CV. "
-        "Return a single JSON object with: 'score' (integer 0-100) and 'summary' (1-2 sentences, concise). "
-        "Be professional and consistent. Typical strong matches: 75-95; moderate: 50-74; weak: 25-49; poor: 0-24."
-    )
-    user_content = f"""## Job description
-{job_description[:6000]}
-
-## Candidate CV summary
-{profile_ctx}
-
-Return JSON: {{"score": <0-100>, "summary": "<1-2 sentences>"}}
-"""
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user_content},
-        ],
-        temperature=0.3,
-    )
-    content = (resp.choices[0].message.content or "").strip()
-    if content.startswith("```"):
-        content = content.split("\n", 1)[-1]
-    if content.endswith("```"):
-        content = content.rsplit("```", 1)[0]
-    content = content.strip()
-    try:
-        data = json.loads(content)
-        score = int(data.get("score", 0))
-        score = max(0, min(100, score))
-        summary = str(data.get("summary", "")) or "Score based on keyword relevance and experience match."
-        return {"score": score, "summary": summary}
-    except (json.JSONDecodeError, ValueError):
-        return {"score": 50, "summary": "Unable to compute detailed score."}
+    from app.ats_scorer import compute_ats_match
+    result = compute_ats_match(profile, job_description)
+    return {
+        "score": result["score"],
+        "summary": result["summary"],
+        "breakdown": result.get("breakdown"),
+    }
 
 
 def extract_job_application(raw_job_description: str) -> dict[str, Any]:
