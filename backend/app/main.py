@@ -57,6 +57,7 @@ from app.linkedin_parser import parse_linkedin_json
 from app.pdf_profile_parser import parse_pdf_to_profile
 from app.url_fetcher import fetch_job_description, fetch_additional_urls
 from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score, extract_job_application
+from app.ats_scorer import compute_ats_match
 from app.pdf_generator import generate_cv_pdf, generate_letter_pdf, render_cv_html
 from app.session_store import (
     create_session_id,
@@ -411,13 +412,16 @@ async def ats_match_prepare(
     if not settings.openai_api_key:
         raise HTTPException(503, "OPENAI_API_KEY is not configured")
     try:
-        result = calculate_ats_match_score(profile, job_text)
+        result = compute_ats_match(profile, job_text)
         token = secrets.token_urlsafe(32)
+        breakdown_json = json.dumps(result["breakdown"]) if result.get("breakdown") else None
         db_insert_ats_match_result(
             token=token,
             profile_json=profile.model_dump_json(),
             job_text=job_text[:10000],
             score=result["score"],
+            ats_summary=result.get("summary"),
+            ats_breakdown=breakdown_json,
         )
         return {"result_token": token, "message": "Score calculated. Sign in to view it."}
     except Exception as e:
@@ -441,6 +445,8 @@ async def ats_match_result(request: Request, result_token: str = ""):
     return {
         "score": row["score"],
         "job_preview": row["job_text"][:500] + ("…" if len(row["job_text"]) > 500 else ""),
+        "summary": row.get("ats_summary"),
+        "breakdown": json.loads(row["ats_breakdown"]) if row.get("ats_breakdown") else None,
     }
 
 
@@ -498,7 +504,11 @@ async def ats_match_optimize(request: Request, body: dict = Body(...)):
         certifications=profile.certifications,
         languages=profile.languages,
     )
-    new_result = calculate_ats_match_score(tailored_profile, job_text)
+    new_result = calculate_ats_match_score(
+        tailored_profile,
+        job_text,
+        skills_append=[str(k).strip() for k in keywords if str(k).strip()],
+    )
     new_score = new_result["score"]
     improvement = new_score - original_score if original_score > 0 else 0
     improvement_pct = round((improvement / original_score) * 100) if original_score > 0 else 0
@@ -834,8 +844,13 @@ async def compute_application_score(application_id: str, request: Request):
         certifications=profile.certifications,
         languages=profile.languages,
     )
+    keywords_highlight = gen.get("keywords_to_highlight") or []
     try:
-        result = calculate_ats_match_score(profile_for_score, full_job)
+        result = calculate_ats_match_score(
+            profile_for_score,
+            full_job,
+            skills_append=[str(k).strip() for k in keywords_highlight if str(k).strip()],
+        )
     except Exception as e:
         logger.exception("compute_application_score: scoring failed: %s", e)
         raise HTTPException(503, "Score computation failed. Try again later.") from e

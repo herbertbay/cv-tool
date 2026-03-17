@@ -161,15 +161,18 @@ def _fallback_summary(breakdown: dict[str, int], overall: int) -> str:
     return f"Match score {overall}/100. Consider tailoring your summary and experience to the job description to improve ATS ranking."
 
 
-def compute_ats_match(profile: Profile, job_description: str) -> dict[str, Any]:
+def compute_ats_match(
+    profile: Profile,
+    job_description: str,
+    *,
+    skills_append: list[str] | None = None,
+) -> dict[str, Any]:
     """
     Compute CV–job match score using embedding cosine similarity.
     Used everywhere: cv-checker, optimize, application detail.
 
-    Returns:
-        score: int 0-100
-        summary: str (1-2 sentences)
-        breakdown: dict with keys summary, skills, experience, education (each 0-100)
+    skills_append: optional job-relevant keywords/skills to merge into the profile's skills
+    text before embedding (e.g. from tailoring). Increases the skills component of the score.
     """
     if not job_description or not job_description.strip():
         return {
@@ -179,6 +182,12 @@ def compute_ats_match(profile: Profile, job_description: str) -> dict[str, Any]:
         }
     job_text = job_description.strip()[:MAX_CHARS]
     components = _profile_components(profile)
+    if skills_append:
+        extra = ", ".join(str(s).strip() for s in skills_append if str(s).strip())
+        if extra and (components["skills"] or "").strip():
+            components["skills"] = components["skills"].strip() + ", " + extra
+        elif extra:
+            components["skills"] = extra
     # One job embedding; four profile segments
     all_texts = [job_text, components["summary"], components["skills"], components["experience"], components["education"]]
     embeddings = _embed_batch(all_texts)

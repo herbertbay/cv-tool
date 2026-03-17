@@ -157,8 +157,42 @@ function ScoreContent() {
         </div>
       ) : (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Score</p>
-          <p className="mt-2 text-4xl font-bold text-slate-900">{scoreData.score}<span className="text-2xl font-normal text-slate-500">/100</span></p>
+          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">ATS match score</p>
+          <div className="mt-2 flex flex-wrap items-baseline gap-2">
+            <p className="text-4xl font-bold text-slate-900">{scoreData.score}<span className="text-2xl font-normal text-slate-500">/100</span></p>
+            <span className="text-sm font-medium uppercase tracking-wider text-slate-500">
+              {scoreData.score >= 75 ? 'Strong match' : scoreData.score >= 50 ? 'Moderate match' : 'Room to improve'}
+            </span>
+          </div>
+          {scoreData.summary && <p className="mt-3 text-sm text-slate-600">{scoreData.summary}</p>}
+          {scoreData.breakdown && Object.keys(scoreData.breakdown).length > 0 && (
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-2">Breakdown</p>
+              <div className="space-y-2">
+                {['summary', 'skills', 'experience', 'education'].map((key) => {
+                  const value = scoreData.breakdown![key];
+                  if (value == null) return null;
+                  const pct = Math.round(Math.max(0, Math.min(100, value)));
+                  const tier = pct >= 70 ? 'high' : pct >= 40 ? 'mid' : 'low';
+                  const label = key === 'summary' ? 'Summary' : key === 'skills' ? 'Skills' : key === 'experience' ? 'Experience' : 'Education';
+                  return (
+                    <div key={key}>
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-slate-700">{label}</span>
+                        <span className="tabular-nums text-slate-600">{pct}</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${tier === 'high' ? 'bg-emerald-500' : tier === 'mid' ? 'bg-amber-500' : 'bg-slate-400'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <p className="mt-4 text-slate-600">Get a tailored CV with Optimal CV to improve your score.</p>
           <button
             type="button"

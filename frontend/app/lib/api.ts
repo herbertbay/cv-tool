@@ -138,7 +138,12 @@ export async function logout(): Promise<void> {
 // --- ATS match score tool ---
 
 export type AtsMatchPrepareResponse = { result_token: string; message: string };
-export type AtsMatchResultResponse = { score: number; job_preview: string };
+export type AtsMatchResultResponse = {
+  score: number;
+  job_preview: string;
+  summary?: string | null;
+  breakdown?: Record<string, number> | null;
+};
 export type AtsMatchOptimizeResponse = {
   original_score: number;
   new_score: number;
