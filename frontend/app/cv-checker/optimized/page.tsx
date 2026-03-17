@@ -8,6 +8,7 @@ import {
   downloadPdf,
   downloadLetterPdf,
   putUserData,
+  createJobApplication,
   type AtsMatchOptimizeResponse,
   type Profile,
 } from '../../lib/api';
@@ -84,6 +85,12 @@ function OptimizedContent() {
       });
       await downloadPdf(res.session_id);
       if (res.motivation_letter?.trim()) await downloadLetterPdf(res.session_id);
+      await createJobApplication({
+        session_id: res.session_id,
+        full_job_description: optimizeData.job_description || undefined,
+        application_date: new Date().toISOString().slice(0, 10),
+        extract: true,
+      });
       await putUserData({ profile, onboarding_complete: true });
       if (typeof window !== 'undefined') sessionStorage.removeItem(`${OPTIMIZE_STORAGE_KEY}-${token}`);
       router.push('/cv-checker/complete');
