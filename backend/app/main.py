@@ -786,6 +786,60 @@ async def post_job_application_update(application_id: str, request: Request, bod
     return await patch_job_application(application_id, request, body)
 
 
+@app.post("/api/job-applications/{application_id}/compute-score")
+async def compute_application_score(application_id: str, request: Request):
+    """Compute ATS match score for this application using current tailored content and job description. Saves score on the application and returns it. Requires auth."""
+    user_id = require_user(request)
+    app = db_get_job_application_by_id(application_id, user_id)
+    if not app:
+        raise HTTPException(404, "Application not found")
+    session_id = (app.get("session_id") or "").strip()
+    full_job = (app.get("full_job_description") or "").strip()
+    if not session_id or not full_job:
+        raise HTTPException(400, "Job description and a generated CV are required to compute the match score.")
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen:
+        raise HTTPException(404, "Generated CV for this application not found.")
+    data = db_get_user_data(user_id)
+    if not data or not data.get("profile"):
+        raise HTTPException(400, "Profile not found. Save your profile first.")
+    if not settings.openai_api_key:
+        raise HTTPException(503, "Score computation is not configured.")
+    profile = Profile(**data["profile"])
+    tailored_summary = gen.get("tailored_summary") or ""
+    tailored_experience = gen.get("tailored_experience") or []
+    exp_list = []
+    for p in tailored_experience:
+        exp_list.append(Position(
+            title=p.get("title", "") or "",
+            company=p.get("company", "") or "",
+            start_date=p.get("start_date"),
+            end_date=p.get("end_date"),
+            description=p.get("description"),
+            location=p.get("location"),
+        ))
+    profile_for_score = Profile(
+        full_name=profile.full_name,
+        headline=profile.headline,
+        summary=tailored_summary,
+        email=profile.email,
+        phone=profile.phone,
+        address=profile.address,
+        linkedin_url=profile.linkedin_url,
+        photo_base64=profile.photo_base64,
+        experience=exp_list or profile.experience,
+        education=profile.education,
+        skills=profile.skills,
+        certifications=profile.certifications,
+        languages=profile.languages,
+    )
+    result = calculate_ats_match_score(profile_for_score, full_job)
+    score = result["score"]
+    summary = result.get("summary") or ""
+    db_update_job_application(application_id, user_id, ats_score=score, ats_score_summary=summary)
+    return {"score": score, "summary": summary}
+
+
 @app.get("/api/preview-cv-html")
 async def preview_cv_html(request: Request, template: str = "cv_base.html"):
     """

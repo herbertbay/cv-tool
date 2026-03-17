@@ -109,6 +109,16 @@ def init_db() -> None:
             except sqlite3.OperationalError as e:
                 if "duplicate column" not in str(e).lower():
                     raise
+        try:
+            conn.execute("ALTER TABLE job_applications ADD COLUMN ats_score INTEGER DEFAULT NULL")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
+        try:
+            conn.execute("ALTER TABLE job_applications ADD COLUMN ats_score_summary TEXT DEFAULT NULL")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
         conn.commit()
 
 
@@ -493,7 +503,7 @@ def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
     init_db()
     with _get_conn() as conn:
         row = conn.execute(
-            "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at FROM job_applications WHERE id = ? AND user_id = ?",
+            "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at, ats_score, ats_score_summary FROM job_applications WHERE id = ? AND user_id = ?",
             (application_id, user_id),
         ).fetchone()
     if not row:
@@ -513,6 +523,8 @@ def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
         "application_date": row["application_date"],
         "job_url": row["job_url"],
         "created_at": row["created_at"],
+        "ats_score": row["ats_score"] if row.get("ats_score") is not None else None,
+        "ats_score_summary": row["ats_score_summary"] or None,
     }
 
 
@@ -522,12 +534,12 @@ def get_job_applications_by_user(user_id: str, include_archived: bool = False) -
     with _get_conn() as conn:
         if include_archived:
             rows = conn.execute(
-                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at FROM job_applications WHERE user_id = ? ORDER BY created_at DESC",
+                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at, ats_score, ats_score_summary FROM job_applications WHERE user_id = ? ORDER BY created_at DESC",
                 (user_id,),
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at FROM job_applications WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC",
+                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at, ats_score, ats_score_summary FROM job_applications WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC",
                 (user_id,),
             ).fetchall()
     return [
@@ -546,6 +558,8 @@ def get_job_applications_by_user(user_id: str, include_archived: bool = False) -
             "application_date": r["application_date"],
             "job_url": r["job_url"],
             "created_at": r["created_at"],
+            "ats_score": r["ats_score"] if r.get("ats_score") is not None else None,
+            "ats_score_summary": r["ats_score_summary"] or None,
         }
         for r in rows
     ]
@@ -562,6 +576,8 @@ def update_job_application(
     archived: bool | None = None,
     application_date: str | None = None,
     job_url: str | None = None,
+    ats_score: int | None = None,
+    ats_score_summary: str | None = None,
 ) -> bool:
     """Update job application fields. Returns True if a row was updated."""
     init_db()
@@ -588,6 +604,12 @@ def update_job_application(
     if job_url is not None:
         updates.append("job_url = ?")
         params.append(job_url)
+    if ats_score is not None:
+        updates.append("ats_score = ?")
+        params.append(ats_score)
+    if ats_score_summary is not None:
+        updates.append("ats_score_summary = ?")
+        params.append(ats_score_summary)
     if not updates:
         return False
     params.extend([application_id, user_id])

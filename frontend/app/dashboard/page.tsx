@@ -157,7 +157,6 @@ function DashboardContent() {
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/dashboard" className="text-slate-600 hover:text-blue-700 transition-colors">Dashboard</Link>
-            <Link href="/cv-checker" className="text-slate-600 hover:text-blue-700 transition-colors">CV checker</Link>
             <span className="text-sm text-slate-500">{user.email}</span>
             <button type="button" onClick={() => logout()} className="text-sm text-slate-600 hover:text-slate-900">
               Sign out
@@ -178,9 +177,6 @@ function DashboardContent() {
           </button>
           <Link href="/profile" className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
             Edit profile
-          </Link>
-          <Link href="/cv-checker" className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            CV checker
           </Link>
         </div>
 
