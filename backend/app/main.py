@@ -747,7 +747,10 @@ async def create_job_application(request: Request, body: dict = Body(...)):
 
 @app.patch("/api/job-applications/{application_id}")
 async def patch_job_application(application_id: str, request: Request, body: dict = Body(...)):
-    """Update job application. Body: company_name?, description?, job_title?, application_status?, archived?, application_date?, job_url?."""
+    """Update job application.
+
+    Body: company_name?, description?, job_title?, application_status?, archived?, application_date?, job_url?.
+    """
     user_id = require_user(request)
     updates = {}
     if "company_name" in body:
@@ -771,6 +774,16 @@ async def patch_job_application(application_id: str, request: Request, body: dic
     if not ok:
         raise HTTPException(404, "Application not found")
     return {"ok": True}
+
+
+@app.post("/api/job-applications/{application_id}")
+async def post_job_application_update(application_id: str, request: Request, body: dict = Body(...)):
+    """POST alias for updating job applications.
+
+    Some frontends or proxies only support POST for non-GET methods; this
+    endpoint forwards to the PATCH logic so both POST and PATCH work.
+    """
+    return await patch_job_application(application_id, request, body)
 
 
 @app.get("/api/preview-cv-html")
