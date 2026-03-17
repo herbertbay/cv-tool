@@ -806,7 +806,7 @@ async def compute_application_score(application_id: str, request: Request):
         raise HTTPException(400, "Profile not found. Save your profile first.")
     if not settings.openai_api_key:
         raise HTTPException(503, "Score computation is not configured.")
-    profile = Profile(**data["profile"])
+    profile = data["profile"] if isinstance(data["profile"], Profile) else Profile(**data["profile"])
     tailored_summary = gen.get("tailored_summary") or ""
     tailored_experience = gen.get("tailored_experience") or []
     exp_list = []
@@ -834,7 +834,11 @@ async def compute_application_score(application_id: str, request: Request):
         certifications=profile.certifications,
         languages=profile.languages,
     )
-    result = calculate_ats_match_score(profile_for_score, full_job)
+    try:
+        result = calculate_ats_match_score(profile_for_score, full_job)
+    except Exception as e:
+        logger.exception("compute_application_score: scoring failed: %s", e)
+        raise HTTPException(503, "Score computation failed. Try again later.") from e
     score = result["score"]
     summary = result.get("summary") or ""
     breakdown = result.get("breakdown")
@@ -1047,7 +1051,7 @@ async def regenerate_cv(request: Request, body: dict = Body(...)):
     data = db_get_user_data(user_id)
     if not data or not data.get("profile"):
         raise HTTPException(400, "User profile not found; cannot regenerate")
-    profile = Profile(**data["profile"])
+    profile = data["profile"] if isinstance(data["profile"], Profile) else Profile(**data["profile"])
     extra_urls = [u for u in (data.get("additional_urls") or []) if u and str(u).strip().startswith(("http://", "https://"))]
     show_powered_by = not _is_premium_user(user_id)
     cv_pdf_bytes = generate_cv_pdf(
