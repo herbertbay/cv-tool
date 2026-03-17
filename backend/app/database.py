@@ -506,13 +506,25 @@ def insert_job_application(
 def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
     """Return one job application if it belongs to the user, else None."""
     init_db()
+    base_cols = "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at"
+    full_cols = base_cols + ", ats_score, ats_score_summary, ats_score_breakdown"
     with _get_conn() as conn:
-        row = conn.execute(
-            "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at, ats_score, ats_score_summary, ats_score_breakdown FROM job_applications WHERE id = ? AND user_id = ?",
-            (application_id, user_id),
-        ).fetchone()
+        try:
+            row = conn.execute(
+                f"SELECT {full_cols} FROM job_applications WHERE id = ? AND user_id = ?",
+                (application_id, user_id),
+            ).fetchone()
+        except sqlite3.OperationalError as e:
+            if "no such column" not in str(e).lower():
+                raise
+            row = conn.execute(
+                f"SELECT {base_cols} FROM job_applications WHERE id = ? AND user_id = ?",
+                (application_id, user_id),
+            ).fetchone()
     if not row:
         return None
+    if "ats_score" in row.keys():
+        return _row_to_job_application(row)
     return {
         "id": row["id"],
         "user_id": row["user_id"],
@@ -528,48 +540,91 @@ def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
         "application_date": row["application_date"],
         "job_url": row["job_url"],
         "created_at": row["created_at"],
-        "ats_score": row["ats_score"] if row.get("ats_score") is not None else None,
-        "ats_score_summary": row["ats_score_summary"] or None,
-        "ats_score_breakdown": row["ats_score_breakdown"] if row.get("ats_score_breakdown") else None,
+        "ats_score": None,
+        "ats_score_summary": None,
+        "ats_score_breakdown": None,
+    }
+
+
+def _row_to_job_application(r: sqlite3.Row) -> dict:
+    """Map a job_applications row to dict; works even if ats_* columns are missing (old DB). sqlite3.Row has no .get()."""
+    keys = r.keys() if hasattr(r, "keys") else []
+    return {
+        "id": r["id"],
+        "user_id": r["user_id"],
+        "company_name": r["company_name"] or "",
+        "description": r["description"] or "",
+        "salary_from": r["salary_from"],
+        "salary_to": r["salary_to"],
+        "job_title": r["job_title"] or "",
+        "application_status": r["application_status"] or "Interested",
+        "archived": bool(r["archived"]),
+        "full_job_description": r["full_job_description"] or "",
+        "session_id": r["session_id"],
+        "application_date": r["application_date"],
+        "job_url": r["job_url"],
+        "created_at": r["created_at"],
+        "ats_score": r["ats_score"] if "ats_score" in keys and r["ats_score"] is not None else None,
+        "ats_score_summary": (r["ats_score_summary"] or None) if "ats_score_summary" in keys else None,
+        "ats_score_breakdown": (r["ats_score_breakdown"] or None) if "ats_score_breakdown" in keys else None,
     }
 
 
 def get_job_applications_by_user(user_id: str, include_archived: bool = False) -> list[dict]:
     """Return job applications for user, newest first. If include_archived is False, only non-archived."""
     init_db()
+    base_cols = "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at"
+    optional_cols = ", ats_score, ats_score_summary, ats_score_breakdown"
     with _get_conn() as conn:
-        if include_archived:
-            rows = conn.execute(
-                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at, ats_score, ats_score_summary, ats_score_breakdown FROM job_applications WHERE user_id = ? ORDER BY created_at DESC",
-                (user_id,),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at, ats_score, ats_score_summary, ats_score_breakdown FROM job_applications WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC",
-                (user_id,),
-            ).fetchall()
-    return [
-        {
-            "id": r["id"],
-            "user_id": r["user_id"],
-            "company_name": r["company_name"] or "",
-            "description": r["description"] or "",
-            "salary_from": r["salary_from"],
-            "salary_to": r["salary_to"],
-            "job_title": r["job_title"] or "",
-            "application_status": r["application_status"] or "Interested",
-            "archived": bool(r["archived"]),
-            "full_job_description": r["full_job_description"] or "",
-            "session_id": r["session_id"],
-            "application_date": r["application_date"],
-            "job_url": r["job_url"],
-            "created_at": r["created_at"],
-            "ats_score": r["ats_score"] if r.get("ats_score") is not None else None,
-            "ats_score_summary": r["ats_score_summary"] or None,
-            "ats_score_breakdown": r["ats_score_breakdown"] if r.get("ats_score_breakdown") else None,
-        }
-        for r in rows
-    ]
+        try:
+            cols = base_cols + optional_cols
+            if include_archived:
+                rows = conn.execute(
+                    f"SELECT {cols} FROM job_applications WHERE user_id = ? ORDER BY created_at DESC",
+                    (user_id,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    f"SELECT {cols} FROM job_applications WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC",
+                    (user_id,),
+                ).fetchall()
+        except sqlite3.OperationalError as e:
+            if "no such column" not in str(e).lower():
+                raise
+            # Old DB without ats_* columns: re-query with base columns only
+            if include_archived:
+                rows = conn.execute(
+                    f"SELECT {base_cols} FROM job_applications WHERE user_id = ? ORDER BY created_at DESC",
+                    (user_id,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    f"SELECT {base_cols} FROM job_applications WHERE user_id = ? AND archived = 0 ORDER BY created_at DESC",
+                    (user_id,),
+                ).fetchall()
+            return [
+                {
+                    "id": r["id"],
+                    "user_id": r["user_id"],
+                    "company_name": r["company_name"] or "",
+                    "description": r["description"] or "",
+                    "salary_from": r["salary_from"],
+                    "salary_to": r["salary_to"],
+                    "job_title": r["job_title"] or "",
+                    "application_status": r["application_status"] or "Interested",
+                    "archived": bool(r["archived"]),
+                    "full_job_description": r["full_job_description"] or "",
+                    "session_id": r["session_id"],
+                    "application_date": r["application_date"],
+                    "job_url": r["job_url"],
+                    "created_at": r["created_at"],
+                    "ats_score": None,
+                    "ats_score_summary": None,
+                    "ats_score_breakdown": None,
+                }
+                for r in rows
+            ]
+    return [_row_to_job_application(r) for r in rows]
 
 
 def update_job_application(
