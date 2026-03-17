@@ -72,13 +72,14 @@ def tailor_cv_and_letter(
     system = (
         "You are an expert CV and cover letter writer. You optimize CVs for ATS (applicant tracking systems) "
         "and human readers. Critical rules: (1) Do NOT alter factual background: job titles, company names, "
-        "dates, schools, and certifications must stay exactly as in the candidate profile. (2) Maximize ATS match: "
-        "use exact keywords and phrases from the job description in the summary and in each experience description "
-        "where factually correct. Prefer repeating important job terms over generic synonyms so the CV scores higher "
-        "in semantic and keyword-based matching. (3) Rephrase only the summary and experience descriptions to "
-        "emphasize relevance and weave in job-description wording. (4) In the EXPERIENCE section only: never add "
-        "explicit references to the job or company (e.g. avoid 'essential for the role at X', 'relevant to this "
-        "position'). Show relevance through achievements and keywords only. Output all content in " + lang_name + ". "
+        "dates, schools, and certifications must stay exactly as in the candidate profile. (2) Maximize ATS match "
+        "by mirroring the job description's exact wording: copy key phrases, skill names, and role terminology "
+        "from the job ad into the summary and experience descriptions wherever they truthfully describe the "
+        "candidate's experience. Use the job's own words (e.g. if the job says 'stakeholder management', use "
+        "'stakeholder management', not 'working with stakeholders'). Do not invent facts. (3) Rephrase only the "
+        "summary and experience descriptions; keep titles, companies, and dates unchanged. (4) In the EXPERIENCE "
+        "section only: never add explicit references to the job or company (e.g. avoid 'essential for the role at X'). "
+        "Show relevance through achievements and job-mirrored wording only. Output all content in " + lang_name + ". "
         "Return valid JSON only, no markdown code blocks."
     )
 
@@ -94,8 +95,8 @@ def tailor_cv_and_letter(
 ---
 
 Respond with a single JSON object (no markdown, no code block) with exactly these keys:
-1) "tailored_summary": A short professional summary (3-5 sentences) in {lang_name}, tailored to this job. Weave in exact keywords and phrases from the job description (skills, tools, responsibilities, qualifications) where they truthfully apply. Maximize ATS match by using the job's own wording. Do not invent facts.
-2) "tailored_experience": A list with one object per position. Each object: "title", "company", "start_date", "end_date", "description". Copy title, company, start_date, end_date exactly from the profile. Rewrite only "description" to include job-description keywords and phrases where accurate; use the job's terminology for skills and outcomes. Do NOT add phrases that explicitly reference the job or employer. Let relevance be implicit.
+1) "tailored_summary": A short professional summary (3-5 sentences) in {lang_name}, tailored to this job. Use the job description's exact phrases and terminology (skills, tools, responsibilities) where they truthfully describe the candidate. Mirror the job's wording to maximize ATS match; do not invent facts.
+2) "tailored_experience": A list with one object per position. Each object: "title", "company", "start_date", "end_date", "description". Copy title, company, start_date, end_date exactly from the profile. Rewrite only "description" using the job's exact wording for skills and outcomes where accurate (e.g. same verbs and nouns as the job ad). Do NOT add phrases that reference the job or employer. Let relevance be implicit.
 3) "motivation_letter": A professional motivation/cover letter (3-5 short paragraphs) in {lang_name}, referencing the role and the candidate's fit. If the job description is empty or missing (e.g. "(none)"), set "motivation_letter" to "" (empty string); do not generate a letter.
 4) "keywords_to_highlight": A list of 10-18 important keywords or short phrases from the job description (skills, tools, methods, qualifications) to highlight in the PDF. These should be terms you have used or will use in tailored_summary and tailored_experience. Return as a JSON array of strings. If no job description, return [].
 """

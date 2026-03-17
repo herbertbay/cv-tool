@@ -29,6 +29,12 @@ export function LandingPage() {
                 >
                   Sign in
                 </Link>
+                <Link
+                  href="/cv-checker"
+                  className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-6 py-3 text-base font-medium text-blue-800 hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                >
+                  Free CV checker
+                </Link>
               </div>
             </div>
             <div className="relative flex justify-center lg:justify-end">
@@ -172,6 +178,7 @@ export function LandingPage() {
             Optimal CV
           </Link>
           <nav className="flex items-center gap-6 text-sm text-slate-600">
+            <Link href="/cv-checker" className="hover:text-slate-900">CV checker</Link>
             <Link href="/login" className="hover:text-slate-900">Sign in</Link>
             <Link href="/register" className="hover:text-slate-900">Sign up</Link>
           </nav>
