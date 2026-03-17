@@ -112,7 +112,7 @@ function OptimizedContent() {
         {hasImprovement ? (
           <>
             <p className="mt-4 text-emerald-600 font-medium">+{optimizeData.improvement_pct}% improvement with a tailored CV</p>
-            <p className="mt-2 text-slate-600">Your original score was {optimizeData.original_score}. Download your tailored CV and motivation letter now.</p>
+            <p className="mt-2 text-slate-600">Your original score was {optimizeData.original_score}. Download your tailored CV and motivation letter.</p>
           </>
         ) : (
           <p className="mt-4 text-slate-600">Your profile already fits this job. We&apos;ve tailored your CV to the role — download it below.</p>
@@ -123,7 +123,7 @@ function OptimizedContent() {
           disabled={createLoading}
           className="mt-4 inline-flex rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
         >
-          {createLoading ? 'Creating…' : 'Create tailored CV & letter'}
+          {createLoading ? 'Creating…' : 'Create tailored CV & motivation letter'}
         </button>
       </div>
       <div className="mt-6">

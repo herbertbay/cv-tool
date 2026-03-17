@@ -203,7 +203,6 @@ export default function ApplicationDetailPage() {
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/dashboard" className="text-slate-600 hover:text-blue-700">Dashboard</Link>
-            <Link href="/dashboard/applications" className="text-slate-600 hover:text-blue-700">Applications</Link>
             <span className="text-sm text-slate-500">{user.email}</span>
           </nav>
         </div>
@@ -365,7 +364,7 @@ export default function ApplicationDetailPage() {
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
                 <h2 className="text-lg font-semibold text-slate-800">Re-generate PDFs</h2>
-                <p className="text-sm text-slate-500 mt-0.5">Choose a template and generate a new CV and letter PDF with your current tailored content.</p>
+                <p className="text-sm text-slate-500 mt-0.5">Choose a template and generate new CV and motivation letter PDFs with your current tailored content.</p>
               </div>
               <div className="p-6 space-y-4">
                 {tailored && (
@@ -388,7 +387,7 @@ export default function ApplicationDetailPage() {
                       disabled={!!regenerateProgress}
                       className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
                     >
-                      {regenerateProgress || 'Re-generate CV & letter PDF'}
+                    {regenerateProgress || 'Re-generate CV & motivation letter PDFs'}
                     </button>
                     {regenerateError && <p className="text-sm text-red-600">{regenerateError}</p>}
                   </>

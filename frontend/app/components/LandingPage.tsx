@@ -50,7 +50,7 @@ export function LandingPage() {
             How it works
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-            One profile. Add any job. Get a tailored CV and cover letter in minutes.
+            One profile. Add any job. Get a tailored CV and motivation letter in minutes.
           </p>
           <div className="mt-12 grid gap-10 sm:grid-cols-3">
             <StepCard
@@ -67,8 +67,8 @@ export function LandingPage() {
             />
             <StepCard
               step={3}
-              title="Download your tailored CV and letter"
-              description="Get a professional PDF CV and cover letter optimized for that job. Use the same profile for every application."
+              title="Download your tailored CV and motivation letter"
+              description="Get a professional PDF CV and motivation letter optimized for that job. Use the same profile for every application."
               icon={<StepThreeIcon />}
             />
           </div>
@@ -122,16 +122,16 @@ export function LandingPage() {
             />
             <FeatureBlock
               title="Match the job description"
-              description="Keywords and phrasing from the role are reflected in your CV and cover letter so you stand out."
+              description="Keywords and phrasing from the role are reflected in your CV and motivation letter so you stand out."
               icon={<MatchIcon />}
             />
             <FeatureBlock
               title="Professional PDFs"
-              description="Download clean, ATS-friendly CV and cover letter PDFs ready to upload to any job board."
+              description="Download clean, ATS-friendly CV and motivation letter PDFs ready to upload to any job board."
               icon={<PdfIcon />}
             />
             <FeatureBlock
-              title="Cover letters included"
+              title="Motivation letters included"
               description="Get a tailored motivation letter for each application so your whole package is consistent."
               icon={<LetterIcon />}
             />
@@ -148,7 +148,7 @@ export function LandingPage() {
             <li>
               <h3 className="text-lg font-semibold text-slate-900">How is Optimal CV different from a regular resume builder?</h3>
               <p className="mt-2 text-slate-600">
-                Most resume builders help you create one static CV. Optimal CV is built for applying to many jobs: you keep one profile and generate a new, tailored CV and cover letter for each role. Your experience is rewritten and emphasized to match what each job description asks for, so you stay relevant to both hiring managers and applicant tracking systems.
+                Most resume builders help you create one static CV. Optimal CV is built for applying to many jobs: you keep one profile and generate a new, tailored CV and motivation letter for each role. Your experience is rewritten and emphasized to match what each job description asks for, so you stay relevant to both hiring managers and applicant tracking systems.
               </p>
             </li>
             <li>
@@ -160,7 +160,7 @@ export function LandingPage() {
             <li>
               <h3 className="text-lg font-semibold text-slate-900">Is my data safe?</h3>
               <p className="mt-2 text-slate-600">
-                We use your profile and job descriptions only to generate your tailored CV and cover letter. We do not sell your data. You can delete your account and all associated data at any time from your profile settings.
+                We use your profile and job descriptions only to generate your tailored CV and motivation letter. We do not sell your data. You can delete your account and all associated data at any time from your profile settings.
               </p>
             </li>
           </ul>

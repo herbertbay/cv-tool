@@ -468,7 +468,7 @@ export async function updateJobApplication(
   data: { company_name?: string; description?: string; job_title?: string; application_status?: ApplicationStatus; archived?: boolean; application_date?: string | null; job_url?: string | null }
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/job-applications/${id}`, {
-    method: 'PATCH',
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
     ...fetchOptions,

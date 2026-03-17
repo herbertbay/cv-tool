@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   getJobApplications,
@@ -85,14 +84,8 @@ export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: nu
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-8">
       <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-slate-800">Generated CVs &amp; motivation letters</h2>
+        <h2 className="text-base font-semibold text-slate-800">History</h2>
         <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard/applications"
-            className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Applications overview
-          </Link>
           <label className="inline-flex items-center gap-2 text-sm text-slate-600">
             <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
             Show archived
@@ -103,7 +96,7 @@ export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: nu
         {loading && <p className="text-sm text-slate-500 py-4">Loading…</p>}
         {!loading && applications.length === 0 && (
           <p className="text-sm text-slate-500 py-4">
-            No generated CVs yet. Use &quot;Create CV &amp; motivation letter&quot; with a job description; a new entry will be added here and you can download your CV and letter from the detail view.
+            No history yet. Create a tailored CV (and optionally a motivation letter) to add your first entry.
           </p>
         )}
         {!loading && applications.length > 0 && (

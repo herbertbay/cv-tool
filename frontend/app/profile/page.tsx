@@ -224,8 +224,8 @@ export default function ProfilePage() {
       <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-slate-800">Edit profile</h1>
-          <Link href="/" className="text-slate-600 hover:text-slate-900">
-            ← Back to Optimal CV
+          <Link href="/dashboard" className="text-slate-600 hover:text-slate-900">
+            ← Back to dashboard
           </Link>
         </div>
       </header>

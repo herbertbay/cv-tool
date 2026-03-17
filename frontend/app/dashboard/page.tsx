@@ -167,14 +167,14 @@ function DashboardContent() {
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Dashboard</h1>
-        <p className="text-slate-600 mb-6">Your generated CVs and motivation letters.</p>
+        <p className="text-slate-600 mb-6">Your history of tailored CVs and motivation letters.</p>
         <div className="mb-6 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={handleOpenCreate}
             className="inline-flex items-center rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900"
           >
-            Create CV & motivation letter
+            Create tailored CV &amp; motivation letter
           </button>
           <Link href="/profile" className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
             Edit profile
