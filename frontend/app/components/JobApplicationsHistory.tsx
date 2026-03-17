@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   getJobApplications,
   updateJobApplication,
@@ -39,6 +40,7 @@ function formatDate(dateStr: string | null | undefined): string {
 /** History = generated CVs & motivation letters, augmented with job application data. Only shows applications that have a linked generated CV (session_id). */
 export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: number } = {}) {
   const { user } = useAuth();
+  const router = useRouter();
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
@@ -119,7 +121,11 @@ export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: nu
             {applications.map((app) => (
               <div
                 key={app.id}
-                className="grid gap-4 items-center px-4 py-3 text-sm border-b border-slate-100 last:border-0 hover:bg-slate-50/50"
+                role="button"
+                tabIndex={0}
+                onClick={() => router.push(`/dashboard/applications/${app.id}`)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/dashboard/applications/${app.id}`); } }}
+                className="grid gap-4 items-center px-4 py-3 text-sm border-b border-slate-100 last:border-0 hover:bg-slate-50/50 cursor-pointer"
                 style={{ gridTemplateColumns: 'minmax(120px, 1fr) minmax(140px, 1.2fr) 100px 100px 80px' }}
               >
                 <span className="text-slate-800 truncate" title={app.company_name ?? undefined}>
@@ -132,6 +138,8 @@ export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: nu
                 <select
                   value={app.application_status}
                   onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
                   disabled={updatingId === app.id}
                   className="rounded border border-slate-200 px-2 py-1.5 text-slate-800 bg-white text-sm"
                 >
@@ -139,13 +147,7 @@ export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: nu
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
-                <div className="flex justify-end gap-2">
-                  <Link
-                    href={`/dashboard/applications/${app.id}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    View
-                  </Link>
+                <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={() => handleArchive(app.id, !app.archived)}

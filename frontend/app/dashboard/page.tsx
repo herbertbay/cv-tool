@@ -121,6 +121,7 @@ function DashboardContent() {
       const created = await createJobApplication({
         session_id: res.session_id,
         full_job_description: jobDescription.trim() || undefined,
+        application_date: new Date().toISOString().slice(0, 10),
         extract: true,
       });
       setRefreshTrigger((t) => t + 1);

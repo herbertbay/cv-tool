@@ -35,6 +35,10 @@ function formatDate(dateStr: string | null): string {
   }
 }
 
+function toDateOnly(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 export default function ApplicationDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -49,7 +53,7 @@ export default function ApplicationDetailPage() {
     job_title: '',
     description: '',
     application_status: 'Interested' as ApplicationStatus,
-    application_date: '',
+    application_date: toDateOnly(new Date()),
     job_url: '',
   });
   const [tailored, setTailored] = useState<TailoredContent | null>(null);
@@ -69,7 +73,7 @@ export default function ApplicationDetailPage() {
           job_title: data.job_title ?? '',
           description: data.description ?? '',
           application_status: (data.application_status as ApplicationStatus) ?? 'Interested',
-          application_date: data.application_date ?? '',
+          application_date: data.application_date ?? toDateOnly(new Date()),
           job_url: data.job_url ?? '',
         });
       })
@@ -111,7 +115,7 @@ export default function ApplicationDetailPage() {
         job_title: edit.job_title.trim() || undefined,
         description: edit.description.trim() || undefined,
         application_status: edit.application_status,
-        application_date: edit.application_date.trim() || null,
+        application_date: edit.application_date.trim() ? edit.application_date.trim() : null,
         job_url: edit.job_url.trim() || null,
       });
       setApp((prev) => prev ? { ...prev, ...edit } : null);
@@ -267,11 +271,10 @@ export default function ApplicationDetailPage() {
             <div>
               <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Application date (optional)</label>
               <input
-                type="text"
+                type="date"
                 value={edit.application_date}
                 onChange={(e) => setEdit((p) => ({ ...p, application_date: e.target.value }))}
                 onBlur={handleSave}
-                placeholder="YYYY-MM-DD"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
