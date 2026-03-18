@@ -745,162 +745,8 @@ async def list_generated_cvs(request: Request):
 APPLICATION_STATUSES = {"Interested", "Applied", "Interview", "Rejected", "Offer"}
 
 
-@app.get("/api/job-applications")
-async def list_job_applications(request: Request, archived: str = "false"):
-    """Return job applications for the current user. archived=true to include archived."""
-    user_id = require_user(request)
-    include_archived = archived.lower() in ("1", "true", "yes")
-    return db_get_job_applications_by_user(user_id, include_archived=include_archived)
-
-
-@app.post("/api/extract-job")
-async def api_extract_job(request: Request, body: dict = Body(...)):
-    """Extract structured job fields from raw job description using OpenAI. Body: job_description (string). Returns JSON with company_name, job_title, description, salary_from, salary_to, location, key_requirements, keywords_to_highlight, full_job_description."""
-    require_user(request)
-    if not settings.openai_api_key:
-        raise HTTPException(503, "OPENAI_API_KEY is not configured")
-    raw = (body.get("job_description") or "").strip()
-    if not raw:
-        return {
-            "company_name": None,
-            "job_title": None,
-            "description": None,
-            "salary_from": None,
-            "salary_to": None,
-            "location": None,
-            "key_requirements": [],
-            "keywords_to_highlight": [],
-            "full_job_description": "",
-        }
-    try:
-        return extract_job_application(raw)
-    except Exception as e:
-        logger.exception("extract-job failed: %s", e)
-        raise HTTPException(500, str(e) or "Extraction failed") from e
-
-
-@app.get("/api/job-applications/{application_id}")
-async def get_job_application(application_id: str, request: Request):
-    """Return a single job application if it belongs to the current user."""
-    user_id = require_user(request)
-    app = db_get_job_application_by_id(application_id, user_id)
-    if not app:
-        raise HTTPException(status_code=404, detail="Not found")
-    return app
-
-
-@app.post("/api/job-applications")
-async def create_job_application(request: Request, body: dict = Body(...)):
-    """Create a job application. Body: company_name?, description?, salary_from?, salary_to?, job_title?, application_status?, full_job_description?, session_id?, extract? (if true and full_job_description set, run OpenAI extraction to fill fields)."""
-    user_id = require_user(request)
-    app_id = str(secrets.token_urlsafe(16))
-    status = (body.get("application_status") or "Interested").strip()
-    if status not in APPLICATION_STATUSES:
-        status = "Interested"
-    full_job = (body.get("full_job_description") or "").strip() or None
-    company_name = (body.get("company_name") or "").strip() or None
-    job_title = (body.get("job_title") or "").strip() or None
-    description = (body.get("description") or "").strip() or None
-    salary_from = body.get("salary_from") if body.get("salary_from") is not None else None
-    salary_to = body.get("salary_to") if body.get("salary_to") is not None else None
-    tailored_headline = (body.get("tailored_headline") or "").strip() or None
-    tailored_skills_raw = body.get("tailored_skills")
-    tailored_skills = [str(s).strip() for s in tailored_skills_raw if str(s).strip()] if isinstance(tailored_skills_raw, list) else None
-    tailored_education_raw = body.get("tailored_education")
-    tailored_education = tailored_education_raw if isinstance(tailored_education_raw, list) else None
-    use_extraction = full_job and (body.get("extract") is True or (not company_name and not job_title))
-    if use_extraction and settings.openai_api_key:
-        try:
-            extracted = extract_job_application(full_job)
-            if not company_name and extracted.get("company_name"):
-                company_name = extracted["company_name"]
-            if not job_title and extracted.get("job_title"):
-                job_title = extracted["job_title"]
-            if not description and extracted.get("description"):
-                description = extracted["description"]
-            if salary_from is None and extracted.get("salary_from") is not None:
-                salary_from = extracted["salary_from"]
-            if salary_to is None and extracted.get("salary_to") is not None:
-                salary_to = extracted["salary_to"]
-        except Exception as e:
-            logger.warning("job application extract failed, using provided fields: %s", e)
-    db_insert_job_application(
-        app_id,
-        user_id,
-        company_name=company_name,
-        description=description,
-        salary_from=salary_from,
-        salary_to=salary_to,
-        job_title=job_title,
-        application_status=status,
-        archived=False,
-        full_job_description=full_job,
-        session_id=(body.get("session_id") or "").strip() or None,
-        application_date=(body.get("application_date") or "").strip() or None,
-        job_url=(body.get("job_url") or "").strip() or None,
-        tailored_headline=tailored_headline,
-        tailored_skills=tailored_skills,
-        tailored_education=tailored_education,
-    )
-    rows = db_get_job_applications_by_user(user_id, include_archived=True)
-    created = next((r for r in rows if r["id"] == app_id), None)
-    return created or {"id": app_id, "user_id": user_id, "application_status": status, "archived": False}
-
-
-@app.patch("/api/job-applications/{application_id}")
-async def patch_job_application(application_id: str, request: Request, body: dict = Body(...)):
-    """Update job application.
-
-    Body: company_name?, description?, job_title?, application_status?, archived?, application_date?, job_url?,
-    tailored_headline?, tailored_skills?, tailored_education?.
-    """
-    user_id = require_user(request)
-    updates = {}
-    if "company_name" in body:
-        updates["company_name"] = (body.get("company_name") or "").strip() or None
-    if "description" in body:
-        updates["description"] = (body.get("description") or "").strip() or None
-    if "job_title" in body:
-        updates["job_title"] = (body.get("job_title") or "").strip() or None
-    if "application_status" in body:
-        s = (body.get("application_status") or "").strip()
-        updates["application_status"] = s if s in APPLICATION_STATUSES else None
-    if "archived" in body:
-        updates["archived"] = bool(body.get("archived"))
-    if "application_date" in body:
-        updates["application_date"] = (body.get("application_date") or "").strip() or None
-    if "job_url" in body:
-        updates["job_url"] = (body.get("job_url") or "").strip() or None
-    if "tailored_headline" in body:
-        updates["tailored_headline"] = (body.get("tailored_headline") or "").strip() or None
-    if "tailored_skills" in body:
-        raw = body.get("tailored_skills")
-        updates["tailored_skills"] = [str(s).strip() for s in raw if str(s).strip()] if isinstance(raw, list) else None
-    if "tailored_education" in body:
-        raw = body.get("tailored_education")
-        updates["tailored_education"] = raw if isinstance(raw, list) else None
-    if not updates:
-        raise HTTPException(400, "No valid fields to update")
-    ok = db_update_job_application(application_id, user_id, **updates)
-    if not ok:
-        raise HTTPException(404, "Application not found")
-    return {"ok": True}
-
-
-@app.post("/api/job-applications/{application_id}")
-async def post_job_application_update(application_id: str, request: Request, body: dict = Body(...)):
-    """POST alias for updating job applications.
-
-    Some frontends or proxies only support POST for non-GET methods; this
-    endpoint forwards to the PATCH logic so both POST and PATCH work.
-    """
-    return await patch_job_application(application_id, request, body)
-
-
-@app.post("/api/job-applications/{application_id}/compute-score")
-async def compute_application_score(application_id: str, request: Request):
-    """Compute ATS match score for this application using current tailored content and job description. Saves score on the application and returns it. Requires auth."""
-    user_id = require_user(request)
+def _compute_and_store_application_score(user_id: str, application_id: str) -> dict:
+    """Compute ATS match score for one application, persist it, and return score payload."""
     app = db_get_job_application_by_id(application_id, user_id)
     if not app:
         raise HTTPException(404, "Application not found")
@@ -982,6 +828,173 @@ async def compute_application_score(application_id: str, request: Request):
         ats_score_breakdown=breakdown_json,
     )
     return {"score": score, "summary": summary, "breakdown": breakdown}
+
+
+@app.get("/api/job-applications")
+async def list_job_applications(request: Request, archived: str = "false"):
+    """Return job applications for the current user. archived=true to include archived."""
+    user_id = require_user(request)
+    include_archived = archived.lower() in ("1", "true", "yes")
+    return db_get_job_applications_by_user(user_id, include_archived=include_archived)
+
+
+@app.post("/api/extract-job")
+async def api_extract_job(request: Request, body: dict = Body(...)):
+    """Extract structured job fields from raw job description using OpenAI. Body: job_description (string). Returns JSON with company_name, job_title, description, salary_from, salary_to, location, key_requirements, keywords_to_highlight, full_job_description."""
+    require_user(request)
+    if not settings.openai_api_key:
+        raise HTTPException(503, "OPENAI_API_KEY is not configured")
+    raw = (body.get("job_description") or "").strip()
+    if not raw:
+        return {
+            "company_name": None,
+            "job_title": None,
+            "description": None,
+            "salary_from": None,
+            "salary_to": None,
+            "location": None,
+            "key_requirements": [],
+            "keywords_to_highlight": [],
+            "full_job_description": "",
+        }
+    try:
+        return extract_job_application(raw)
+    except Exception as e:
+        logger.exception("extract-job failed: %s", e)
+        raise HTTPException(500, str(e) or "Extraction failed") from e
+
+
+@app.get("/api/job-applications/{application_id}")
+async def get_job_application(application_id: str, request: Request):
+    """Return a single job application if it belongs to the current user."""
+    user_id = require_user(request)
+    app = db_get_job_application_by_id(application_id, user_id)
+    if not app:
+        raise HTTPException(status_code=404, detail="Not found")
+    return app
+
+
+@app.post("/api/job-applications")
+async def create_job_application(request: Request, body: dict = Body(...)):
+    """Create a job application. Body: company_name?, description?, salary_from?, salary_to?, job_title?, application_status?, full_job_description?, session_id?, extract? (if true and full_job_description set, run OpenAI extraction to fill fields)."""
+    user_id = require_user(request)
+    app_id = str(secrets.token_urlsafe(16))
+    status = (body.get("application_status") or "Interested").strip()
+    if status not in APPLICATION_STATUSES:
+        status = "Interested"
+    full_job = (body.get("full_job_description") or "").strip() or None
+    company_name = (body.get("company_name") or "").strip() or None
+    job_title = (body.get("job_title") or "").strip() or None
+    description = (body.get("description") or "").strip() or None
+    salary_from = body.get("salary_from") if body.get("salary_from") is not None else None
+    salary_to = body.get("salary_to") if body.get("salary_to") is not None else None
+    session_id_value = (body.get("session_id") or "").strip() or None
+    tailored_headline = (body.get("tailored_headline") or "").strip() or None
+    tailored_skills_raw = body.get("tailored_skills")
+    tailored_skills = [str(s).strip() for s in tailored_skills_raw if str(s).strip()] if isinstance(tailored_skills_raw, list) else None
+    tailored_education_raw = body.get("tailored_education")
+    tailored_education = tailored_education_raw if isinstance(tailored_education_raw, list) else None
+    use_extraction = full_job and (body.get("extract") is True or (not company_name and not job_title))
+    if use_extraction and settings.openai_api_key:
+        try:
+            extracted = extract_job_application(full_job)
+            if not company_name and extracted.get("company_name"):
+                company_name = extracted["company_name"]
+            if not job_title and extracted.get("job_title"):
+                job_title = extracted["job_title"]
+            if not description and extracted.get("description"):
+                description = extracted["description"]
+            if salary_from is None and extracted.get("salary_from") is not None:
+                salary_from = extracted["salary_from"]
+            if salary_to is None and extracted.get("salary_to") is not None:
+                salary_to = extracted["salary_to"]
+        except Exception as e:
+            logger.warning("job application extract failed, using provided fields: %s", e)
+    db_insert_job_application(
+        app_id,
+        user_id,
+        company_name=company_name,
+        description=description,
+        salary_from=salary_from,
+        salary_to=salary_to,
+        job_title=job_title,
+        application_status=status,
+        archived=False,
+        full_job_description=full_job,
+        session_id=session_id_value,
+        application_date=(body.get("application_date") or "").strip() or None,
+        job_url=(body.get("job_url") or "").strip() or None,
+        tailored_headline=tailored_headline,
+        tailored_skills=tailored_skills,
+        tailored_education=tailored_education,
+    )
+    # Compute ATS score right after first creation so detail view already has it.
+    # Never block creation on scoring errors.
+    if session_id_value and full_job and settings.openai_api_key:
+        try:
+            _compute_and_store_application_score(user_id, app_id)
+        except Exception as e:
+            logger.warning("create_job_application: initial ATS score compute failed: %s", e)
+    rows = db_get_job_applications_by_user(user_id, include_archived=True)
+    created = next((r for r in rows if r["id"] == app_id), None)
+    return created or {"id": app_id, "user_id": user_id, "application_status": status, "archived": False}
+
+
+@app.patch("/api/job-applications/{application_id}")
+async def patch_job_application(application_id: str, request: Request, body: dict = Body(...)):
+    """Update job application.
+
+    Body: company_name?, description?, job_title?, application_status?, archived?, application_date?, job_url?,
+    tailored_headline?, tailored_skills?, tailored_education?.
+    """
+    user_id = require_user(request)
+    updates = {}
+    if "company_name" in body:
+        updates["company_name"] = (body.get("company_name") or "").strip() or None
+    if "description" in body:
+        updates["description"] = (body.get("description") or "").strip() or None
+    if "job_title" in body:
+        updates["job_title"] = (body.get("job_title") or "").strip() or None
+    if "application_status" in body:
+        s = (body.get("application_status") or "").strip()
+        updates["application_status"] = s if s in APPLICATION_STATUSES else None
+    if "archived" in body:
+        updates["archived"] = bool(body.get("archived"))
+    if "application_date" in body:
+        updates["application_date"] = (body.get("application_date") or "").strip() or None
+    if "job_url" in body:
+        updates["job_url"] = (body.get("job_url") or "").strip() or None
+    if "tailored_headline" in body:
+        updates["tailored_headline"] = (body.get("tailored_headline") or "").strip() or None
+    if "tailored_skills" in body:
+        raw = body.get("tailored_skills")
+        updates["tailored_skills"] = [str(s).strip() for s in raw if str(s).strip()] if isinstance(raw, list) else None
+    if "tailored_education" in body:
+        raw = body.get("tailored_education")
+        updates["tailored_education"] = raw if isinstance(raw, list) else None
+    if not updates:
+        raise HTTPException(400, "No valid fields to update")
+    ok = db_update_job_application(application_id, user_id, **updates)
+    if not ok:
+        raise HTTPException(404, "Application not found")
+    return {"ok": True}
+
+
+@app.post("/api/job-applications/{application_id}")
+async def post_job_application_update(application_id: str, request: Request, body: dict = Body(...)):
+    """POST alias for updating job applications.
+
+    Some frontends or proxies only support POST for non-GET methods; this
+    endpoint forwards to the PATCH logic so both POST and PATCH work.
+    """
+    return await patch_job_application(application_id, request, body)
+
+
+@app.post("/api/job-applications/{application_id}/compute-score")
+async def compute_application_score(application_id: str, request: Request):
+    """Compute ATS match score for this application using current tailored content and job description. Saves score on the application and returns it. Requires auth."""
+    user_id = require_user(request)
+    return _compute_and_store_application_score(user_id, application_id)
 
 
 @app.get("/api/preview-cv-html")
