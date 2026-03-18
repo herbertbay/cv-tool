@@ -963,8 +963,8 @@ async def create_job_application(request: Request, body: dict = Body(...)):
 async def patch_job_application(application_id: str, request: Request, body: dict = Body(...)):
     """Update job application.
 
-    Body: company_name?, description?, job_title?, application_status?, archived?, application_date?, job_url?,
-    tailored_headline?, tailored_skills?, tailored_education?.
+    Body: company_name?, description?, salary_from?, salary_to?, job_title?, application_status?, archived?,
+    full_job_description?, application_date?, job_url?, tailored_headline?, tailored_skills?, tailored_education?.
     """
     user_id = require_user(request)
     updates = {}
@@ -972,6 +972,18 @@ async def patch_job_application(application_id: str, request: Request, body: dic
         updates["company_name"] = (body.get("company_name") or "").strip() or None
     if "description" in body:
         updates["description"] = (body.get("description") or "").strip() or None
+    if "salary_from" in body:
+        v = body.get("salary_from")
+        try:
+            updates["salary_from"] = float(v) if v not in (None, "") else None
+        except Exception:
+            updates["salary_from"] = None
+    if "salary_to" in body:
+        v = body.get("salary_to")
+        try:
+            updates["salary_to"] = float(v) if v not in (None, "") else None
+        except Exception:
+            updates["salary_to"] = None
     if "job_title" in body:
         updates["job_title"] = (body.get("job_title") or "").strip() or None
     if "application_status" in body:
@@ -979,6 +991,8 @@ async def patch_job_application(application_id: str, request: Request, body: dic
         updates["application_status"] = s if s in APPLICATION_STATUSES else None
     if "archived" in body:
         updates["archived"] = bool(body.get("archived"))
+    if "full_job_description" in body:
+        updates["full_job_description"] = (body.get("full_job_description") or "").strip() or None
     if "application_date" in body:
         updates["application_date"] = (body.get("application_date") or "").strip() or None
     if "job_url" in body:

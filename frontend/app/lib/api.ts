@@ -507,7 +507,21 @@ export async function createJobApplication(data: {
 
 export async function updateJobApplication(
   id: string,
-  data: { company_name?: string; description?: string; job_title?: string; application_status?: ApplicationStatus; archived?: boolean; application_date?: string | null; job_url?: string | null }
+  data: {
+    company_name?: string;
+    description?: string;
+    salary_from?: number | null;
+    salary_to?: number | null;
+    job_title?: string;
+    application_status?: ApplicationStatus;
+    archived?: boolean;
+    full_job_description?: string | null;
+    application_date?: string | null;
+    job_url?: string | null;
+    tailored_headline?: string | null;
+    tailored_skills?: string[];
+    tailored_education?: Array<Record<string, unknown>>;
+  }
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/job-applications/${id}`, {
     method: 'POST',

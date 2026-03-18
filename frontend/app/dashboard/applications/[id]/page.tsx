@@ -182,9 +182,15 @@ export default function ApplicationDetailPage() {
     company_name: '',
     job_title: '',
     description: '',
+    salary_from: '',
+    salary_to: '',
     application_status: 'Interested' as ApplicationStatus,
+    full_job_description: '',
     application_date: toDateOnly(new Date()),
     job_url: '',
+    tailored_headline: '',
+    tailored_skills: '',
+    tailored_education: [] as Array<Record<string, unknown>>,
   });
   const [tailored, setTailored] = useState<TailoredContent | null>(null);
   const [tailoredLoading, setTailoredLoading] = useState(false);
@@ -204,9 +210,15 @@ export default function ApplicationDetailPage() {
           company_name: data.company_name ?? '',
           job_title: data.job_title ?? '',
           description: data.description ?? '',
+          salary_from: data.salary_from != null ? String(data.salary_from) : '',
+          salary_to: data.salary_to != null ? String(data.salary_to) : '',
           application_status: (data.application_status as ApplicationStatus) ?? 'Interested',
+          full_job_description: data.full_job_description ?? '',
           application_date: data.application_date ?? toDateOnly(new Date()),
           job_url: data.job_url ?? '',
+          tailored_headline: data.tailored_headline ?? '',
+          tailored_skills: Array.isArray(data.tailored_skills) ? data.tailored_skills.join(', ') : '',
+          tailored_education: Array.isArray(data.tailored_education) ? data.tailored_education : [],
         });
       })
       .catch(() => setApp(null))
@@ -242,15 +254,41 @@ export default function ApplicationDetailPage() {
     if (!id || !app) return;
     setSaving(true);
     try {
+      const salaryFrom = edit.salary_from.trim() ? Number(edit.salary_from.trim()) : null;
+      const salaryTo = edit.salary_to.trim() ? Number(edit.salary_to.trim()) : null;
+      const tailoredSkills = edit.tailored_skills
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       await updateJobApplication(id, {
         company_name: edit.company_name.trim() || undefined,
         job_title: edit.job_title.trim() || undefined,
         description: edit.description.trim() || undefined,
+        salary_from: Number.isFinite(salaryFrom) ? salaryFrom : null,
+        salary_to: Number.isFinite(salaryTo) ? salaryTo : null,
         application_status: edit.application_status,
+        full_job_description: edit.full_job_description.trim() || null,
         application_date: edit.application_date.trim() ? edit.application_date.trim() : null,
         job_url: edit.job_url.trim() || null,
+        tailored_headline: edit.tailored_headline.trim() || null,
+        tailored_skills: tailoredSkills,
+        tailored_education: edit.tailored_education,
       });
-      setApp((prev) => prev ? { ...prev, ...edit } : null);
+      setApp((prev) => prev ? {
+        ...prev,
+        company_name: edit.company_name,
+        job_title: edit.job_title,
+        description: edit.description,
+        salary_from: Number.isFinite(salaryFrom) ? salaryFrom : null,
+        salary_to: Number.isFinite(salaryTo) ? salaryTo : null,
+        application_status: edit.application_status,
+        full_job_description: edit.full_job_description,
+        application_date: edit.application_date,
+        job_url: edit.job_url,
+        tailored_headline: edit.tailored_headline,
+        tailored_skills: tailoredSkills,
+        tailored_education: edit.tailored_education,
+      } : null);
     } finally {
       setSaving(false);
     }
@@ -402,6 +440,30 @@ export default function ApplicationDetailPage() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Salary from (optional)</label>
+                <input
+                  type="number"
+                  value={edit.salary_from}
+                  onChange={(e) => setEdit((p) => ({ ...p, salary_from: e.target.value }))}
+                  onBlur={handleSave}
+                  placeholder="e.g. 60000"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Salary to (optional)</label>
+                <input
+                  type="number"
+                  value={edit.salary_to}
+                  onChange={(e) => setEdit((p) => ({ ...p, salary_to: e.target.value }))}
+                  onBlur={handleSave}
+                  placeholder="e.g. 80000"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Status</label>
               <select
@@ -439,6 +501,72 @@ export default function ApplicationDetailPage() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Full job description</label>
+              <textarea
+                value={edit.full_job_description}
+                onChange={(e) => setEdit((p) => ({ ...p, full_job_description: e.target.value }))}
+                onBlur={handleSave}
+                rows={7}
+                placeholder="Paste the full job description used for ATS scoring"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="pt-2 border-t border-slate-100">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">ATS-tailored profile fields</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored headline/title</label>
+                  <input
+                    type="text"
+                    value={edit.tailored_headline}
+                    onChange={(e) => setEdit((p) => ({ ...p, tailored_headline: e.target.value }))}
+                    onBlur={handleSave}
+                    placeholder="Headline optimized for this job"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored skills (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={edit.tailored_skills}
+                    onChange={(e) => setEdit((p) => ({ ...p, tailored_skills: e.target.value }))}
+                    onBlur={handleSave}
+                    placeholder="Python, SQL, Stakeholder management, ..."
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored education</label>
+                  <div className="space-y-3">
+                    {edit.tailored_education.map((edu, i) => (
+                      <div key={i} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50">
+                        <p className="text-xs font-medium text-slate-600 mb-1">
+                          {String(edu.school ?? '—')} {edu.degree ? `• ${String(edu.degree)}` : ''} {edu.field ? `• ${String(edu.field)}` : ''}
+                        </p>
+                        <textarea
+                          value={String(edu.description ?? '')}
+                          onChange={(e) => {
+                            const next = [...edit.tailored_education];
+                            next[i] = { ...next[i], description: e.target.value };
+                            setEdit((p) => ({ ...p, tailored_education: next }));
+                          }}
+                          onBlur={handleSave}
+                          rows={2}
+                          className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
+                          placeholder="Tailored education description"
+                        />
+                      </div>
+                    ))}
+                    {edit.tailored_education.length === 0 && (
+                      <p className="text-sm text-slate-500">No tailored education entries available for this application.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {saving && <p className="text-xs text-slate-500">Saving changes…</p>}
           </div>
         </div>
 
@@ -588,18 +716,6 @@ export default function ApplicationDetailPage() {
           </>
         )}
 
-        {app.full_job_description && (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div className="px-6 py-3 border-b border-slate-100">
-              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Full job description</label>
-            </div>
-            <div className="p-6">
-              <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-sm text-slate-700">
-                {app.full_job_description}
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

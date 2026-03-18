@@ -84,7 +84,8 @@ def tailor_cv_and_letter(
         "seniority cues, and qualification phrases across headline, summary, experience, skills, and education. "
         "Prefer exact terms over synonyms when both are valid. "
         "(3) Maximize coverage of important requirements: ensure every top requirement from the job ad appears in at "
-        "least one relevant section using natural phrasing. "
+        "least one relevant section using natural phrasing. Include education-relevant terms (methods, domains, "
+        "coursework focus, academic projects) in education descriptions when truthful. "
         "(4) Rephrase for impact: use strong action verbs, outcomes, and domain terminology, but do not fabricate "
         "metrics, tools, or achievements. "
         "(5) In EXPERIENCE descriptions, never explicitly reference the target employer/role (avoid phrases like "
@@ -110,7 +111,7 @@ Respond with a single JSON object (no markdown, no code block) with exactly thes
 2) "tailored_summary": A short professional summary (3-5 sentences) in {lang_name}, tailored to this job. Weave in exact keywords and phrases from the job description (skills, tools, responsibilities, qualifications) where they truthfully apply. Aim for high keyword density without keyword stuffing. Do not invent facts.
 3) "tailored_experience": A list with one object per position. Each object: "title", "company", "start_date", "end_date", "description". Copy title, company, start_date, end_date exactly from the profile. Rewrite only "description" to include job-description keywords and phrases where accurate; use the job's terminology for skills, methods, and outcomes. Make each description highly relevant to the target role. Do NOT add phrases that explicitly reference the job or employer. Let relevance be implicit.
 4) "tailored_skills": A comma-separated-suitable list of 15-30 skills/keywords (JSON array of strings), prioritizing exact terms from the job description that are truthful for the candidate. Include tools, methods, platforms, and domain terms from the job ad.
-5) "tailored_education": A list with one object per education entry: "school", "degree", "field", "start_date", "end_date", "description". Keep school, degree, field, and dates factually consistent; rewrite only description to better align wording with the job where truthful (coursework, focus areas, methods, domain context).
+5) "tailored_education": A list with one object per education entry: "school", "degree", "field", "start_date", "end_date", "description". Keep school, degree, field, and dates factually consistent; rewrite only description to better align with the job. For each education entry, include 1-2 high-value job terms where truthful (tools, methods, domain areas, qualifications), and map academic evidence to job requirements (e.g., relevant coursework, thesis/project topics, specialization). Do not invent coursework, projects, grades, or credentials.
 6) "motivation_letter": A professional motivation/cover letter (3-5 short paragraphs) in {lang_name}, referencing the role and the candidate's fit. If the job description is empty or missing (e.g. "(none)"), set "motivation_letter" to "" (empty string); do not generate a letter.
 7) "keywords_to_highlight": A list of 15-25 important keywords or short phrases from the job description (skills, tools, methods, qualifications) to highlight in the PDF. These should be terms you have used in tailored_headline, tailored_summary, tailored_experience, tailored_skills, or tailored_education. Return as a JSON array of strings. If no job description, return [].
 """

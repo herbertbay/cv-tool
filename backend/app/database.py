@@ -723,9 +723,12 @@ def update_job_application(
     *,
     company_name: str | None = None,
     description: str | None = None,
+    salary_from: float | None = None,
+    salary_to: float | None = None,
     job_title: str | None = None,
     application_status: str | None = None,
     archived: bool | None = None,
+    full_job_description: str | None = None,
     application_date: str | None = None,
     job_url: str | None = None,
     ats_score: int | None = None,
@@ -745,6 +748,12 @@ def update_job_application(
     if description is not None:
         updates.append("description = ?")
         params.append(description)
+    if salary_from is not None:
+        updates.append("salary_from = ?")
+        params.append(salary_from)
+    if salary_to is not None:
+        updates.append("salary_to = ?")
+        params.append(salary_to)
     if job_title is not None:
         updates.append("job_title = ?")
         params.append(job_title)
@@ -754,6 +763,9 @@ def update_job_application(
     if archived is not None:
         updates.append("archived = ?")
         params.append(1 if archived else 0)
+    if full_job_description is not None:
+        updates.append("full_job_description = ?")
+        params.append(full_job_description)
     if application_date is not None:
         updates.append("application_date = ?")
         params.append(application_date)
