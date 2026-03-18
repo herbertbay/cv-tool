@@ -54,15 +54,20 @@ def tailor_cv_and_letter(
     personal_summary_override: str | None,
     additional_context: str,
     language: str,
-) -> tuple[str, list[dict], str, list[str]]:
+) -> tuple[str, str, list[dict], list[str], list[dict], str, list[str]]:
     """
     Call GPT to:
-    1) Produce a tailored summary (and optionally merge with personal_summary_override).
-    2) Produce tailored experience bullet points (same structure as Position, with tailored description).
-    3) Generate a motivation/cover letter.
-    4) Return a list of keywords/skills to highlight in the PDF.
+    1) Produce a tailored headline/title.
+    2) Produce a tailored summary (and optionally merge with personal_summary_override).
+    3) Produce tailored experience bullet points (same structure as Position, with tailored description).
+    4) Produce tailored skills list.
+    5) Produce tailored education entries (same structure, rewritten description only).
+    6) Generate a motivation/cover letter.
+    7) Return a list of keywords/skills to highlight in the PDF.
 
-    Returns: (tailored_summary, tailored_experience_list, motivation_letter, keywords_to_highlight)
+    Returns:
+    (tailored_headline, tailored_summary, tailored_experience_list, tailored_skills,
+     tailored_education_list, motivation_letter, keywords_to_highlight)
     """
     lang_name = LANG_NAMES.get(language, "English")
     profile_ctx = _profile_to_context(profile)
@@ -94,10 +99,13 @@ def tailor_cv_and_letter(
 ---
 
 Respond with a single JSON object (no markdown, no code block) with exactly these keys:
-1) "tailored_summary": A short professional summary (3-5 sentences) in {lang_name}, tailored to this job. Weave in exact keywords and phrases from the job description (skills, tools, responsibilities, qualifications) where they truthfully apply. Maximize ATS match by using the job's own wording. Do not invent facts.
-2) "tailored_experience": A list with one object per position. Each object: "title", "company", "start_date", "end_date", "description". Copy title, company, start_date, end_date exactly from the profile. Rewrite only "description" to include job-description keywords and phrases where accurate; use the job's terminology for skills and outcomes. Do NOT add phrases that explicitly reference the job or employer. Let relevance be implicit.
-3) "motivation_letter": A professional motivation/cover letter (3-5 short paragraphs) in {lang_name}, referencing the role and the candidate's fit. If the job description is empty or missing (e.g. "(none)"), set "motivation_letter" to "" (empty string); do not generate a letter.
-4) "keywords_to_highlight": A list of 10-18 important keywords or short phrases from the job description (skills, tools, methods, qualifications) to highlight in the PDF. These should be terms you have used or will use in tailored_summary and tailored_experience. Return as a JSON array of strings. If no job description, return [].
+1) "tailored_headline": A short headline/title in {lang_name} aligned with the job terminology. Keep it factual and close to the candidate's real profile.
+2) "tailored_summary": A short professional summary (3-5 sentences) in {lang_name}, tailored to this job. Weave in exact keywords and phrases from the job description (skills, tools, responsibilities, qualifications) where they truthfully apply. Maximize ATS match by using the job's own wording. Do not invent facts.
+3) "tailored_experience": A list with one object per position. Each object: "title", "company", "start_date", "end_date", "description". Copy title, company, start_date, end_date exactly from the profile. Rewrite only "description" to include job-description keywords and phrases where accurate; use the job's terminology for skills and outcomes. Do NOT add phrases that explicitly reference the job or employer. Let relevance be implicit.
+4) "tailored_skills": A comma-separated-suitable list of 12-25 skills/keywords (JSON array of strings), prioritizing exact terms from the job description that are truthful for the candidate. Prefer canonical skill names over generic wording.
+5) "tailored_education": A list with one object per education entry: "school", "degree", "field", "start_date", "end_date", "description". Keep school, degree, field, and dates factually consistent; rewrite only description to better align wording with the job where truthful.
+6) "motivation_letter": A professional motivation/cover letter (3-5 short paragraphs) in {lang_name}, referencing the role and the candidate's fit. If the job description is empty or missing (e.g. "(none)"), set "motivation_letter" to "" (empty string); do not generate a letter.
+7) "keywords_to_highlight": A list of 10-18 important keywords or short phrases from the job description (skills, tools, methods, qualifications) to highlight in the PDF. These should be terms you have used or will use in tailored_summary and tailored_experience. Return as a JSON array of strings. If no job description, return [].
 """
 
     client = _get_client()
@@ -122,23 +130,62 @@ Respond with a single JSON object (no markdown, no code block) with exactly thes
     except json.JSONDecodeError:
         # Fallback: use raw content and empty structures
         data = {
+            "tailored_headline": profile.headline or "",
             "tailored_summary": content[:1500] or profile.summary,
             "tailored_experience": [{"title": p.title, "company": p.company, "start_date": p.start_date, "end_date": p.end_date, "description": p.description or ""} for p in profile.experience],
+            "tailored_skills": [s for s in (profile.skills or []) if str(s).strip()],
+            "tailored_education": [
+                {
+                    "school": e.school,
+                    "degree": e.degree,
+                    "field": e.field,
+                    "start_date": e.start_date,
+                    "end_date": e.end_date,
+                    "description": e.description or "",
+                }
+                for e in profile.education
+            ],
             "motivation_letter": "Please generate a motivation letter based on the CV and job description.",
             "keywords_to_highlight": [],
         }
 
+    tailored_headline = str(data.get("tailored_headline") or profile.headline or "").strip()
     tailored_summary = data.get("tailored_summary") or profile.summary
     tailored_experience = data.get("tailored_experience")
     if not isinstance(tailored_experience, list):
         tailored_experience = [{"title": p.title, "company": p.company, "start_date": p.start_date, "end_date": p.end_date, "description": p.description or ""} for p in profile.experience]
+    tailored_skills = data.get("tailored_skills")
+    if not isinstance(tailored_skills, list):
+        tailored_skills = [s for s in (profile.skills or []) if str(s).strip()]
+    tailored_skills = [str(s).strip() for s in tailored_skills if str(s).strip()]
+    tailored_education = data.get("tailored_education")
+    if not isinstance(tailored_education, list):
+        tailored_education = [
+            {
+                "school": e.school,
+                "degree": e.degree,
+                "field": e.field,
+                "start_date": e.start_date,
+                "end_date": e.end_date,
+                "description": e.description or "",
+            }
+            for e in profile.education
+        ]
     motivation_letter = data.get("motivation_letter") or ""
     keywords = data.get("keywords_to_highlight")
     if not isinstance(keywords, list):
         keywords = []
     keywords = [str(k) for k in keywords]
 
-    return tailored_summary, tailored_experience, motivation_letter, keywords
+    return (
+        tailored_headline,
+        tailored_summary,
+        tailored_experience,
+        tailored_skills,
+        tailored_education,
+        motivation_letter,
+        keywords,
+    )
 
 
 def calculate_ats_match_score(

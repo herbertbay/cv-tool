@@ -78,8 +78,13 @@ function OptimizedContent() {
         additional_urls: [],
         language: 'en',
         template: 'cv_base.html',
+        pre_tailored_headline: typeof profile.headline === 'string' ? profile.headline : undefined,
         pre_tailored_summary: optimizeData.tailored_summary,
         pre_tailored_experience: optimizeData.tailored_experience,
+        pre_tailored_skills: Array.isArray(profile.skills) ? profile.skills : undefined,
+        pre_tailored_education: Array.isArray(profile.education)
+          ? (profile.education as unknown as Array<Record<string, unknown>>)
+          : undefined,
         pre_motivation_letter: optimizeData.motivation_letter ?? undefined,
         pre_keywords_to_highlight: optimizeData.keywords_to_highlight ?? undefined,
       });
@@ -89,6 +94,9 @@ function OptimizedContent() {
         session_id: res.session_id,
         full_job_description: optimizeData.job_description || undefined,
         application_date: new Date().toISOString().slice(0, 10),
+        tailored_headline: res.tailored_headline || undefined,
+        tailored_skills: res.tailored_skills || undefined,
+        tailored_education: res.tailored_education || undefined,
         extract: true,
       });
       await putUserData({ profile, onboarding_complete: true });

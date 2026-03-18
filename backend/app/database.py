@@ -124,6 +124,12 @@ def init_db() -> None:
         except sqlite3.OperationalError as e:
             if "duplicate column" not in str(e).lower():
                 raise
+        for col in ("tailored_headline", "tailored_skills", "tailored_education"):
+            try:
+                conn.execute(f"ALTER TABLE job_applications ADD COLUMN {col} TEXT DEFAULT NULL")
+            except sqlite3.OperationalError as e:
+                if "duplicate column" not in str(e).lower():
+                    raise
         for col in ["ats_summary", "ats_breakdown"]:
             try:
                 conn.execute(f"ALTER TABLE ats_match_results ADD COLUMN {col} TEXT DEFAULT NULL")
@@ -507,6 +513,9 @@ def insert_job_application(
     session_id: str | None = None,
     application_date: str | None = None,
     job_url: str | None = None,
+    tailored_headline: str | None = None,
+    tailored_skills: list[str] | None = None,
+    tailored_education: list[dict] | None = None,
 ) -> None:
     """Insert a job application. created_at set automatically."""
     init_db()
@@ -516,8 +525,9 @@ def insert_job_application(
         conn.execute(
             """INSERT INTO job_applications (
                 id, user_id, company_name, description, salary_from, salary_to,
-                job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                job_title, application_status, archived, full_job_description, session_id, application_date, job_url,
+                tailored_headline, tailored_skills, tailored_education, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 id,
                 user_id,
@@ -532,6 +542,9 @@ def insert_job_application(
                 session_id or None,
                 application_date or None,
                 job_url or None,
+                tailored_headline or None,
+                json.dumps(tailored_skills) if tailored_skills is not None else None,
+                json.dumps(tailored_education) if tailored_education is not None else None,
                 created,
             ),
         )
@@ -541,8 +554,11 @@ def insert_job_application(
 def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
     """Return one job application if it belongs to the user, else None."""
     init_db()
-    base_cols = "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at"
-    full_cols = base_cols + ", ats_score, ats_score_summary, ats_score_breakdown"
+    base_cols = (
+        "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, "
+        "archived, full_job_description, session_id, application_date, job_url, created_at"
+    )
+    full_cols = base_cols + ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, tailored_education"
     with _get_conn() as conn:
         try:
             row = conn.execute(
@@ -578,12 +594,25 @@ def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
         "ats_score": None,
         "ats_score_summary": None,
         "ats_score_breakdown": None,
+        "tailored_headline": None,
+        "tailored_skills": [],
+        "tailored_education": [],
     }
 
 
 def _row_to_job_application(r: sqlite3.Row) -> dict:
     """Map a job_applications row to dict; works even if ats_* columns are missing (old DB). sqlite3.Row has no .get()."""
     keys = r.keys() if hasattr(r, "keys") else []
+    skills_raw = r["tailored_skills"] if "tailored_skills" in keys else None
+    education_raw = r["tailored_education"] if "tailored_education" in keys else None
+    try:
+        parsed_skills = json.loads(skills_raw) if isinstance(skills_raw, str) and skills_raw.strip() else (skills_raw if isinstance(skills_raw, list) else [])
+    except Exception:
+        parsed_skills = []
+    try:
+        parsed_education = json.loads(education_raw) if isinstance(education_raw, str) and education_raw.strip() else (education_raw if isinstance(education_raw, list) else [])
+    except Exception:
+        parsed_education = []
     return {
         "id": r["id"],
         "user_id": r["user_id"],
@@ -602,14 +631,20 @@ def _row_to_job_application(r: sqlite3.Row) -> dict:
         "ats_score": r["ats_score"] if "ats_score" in keys and r["ats_score"] is not None else None,
         "ats_score_summary": (r["ats_score_summary"] or None) if "ats_score_summary" in keys else None,
         "ats_score_breakdown": (r["ats_score_breakdown"] or None) if "ats_score_breakdown" in keys else None,
+        "tailored_headline": (r["tailored_headline"] or None) if "tailored_headline" in keys else None,
+        "tailored_skills": parsed_skills,
+        "tailored_education": parsed_education,
     }
 
 
 def get_job_applications_by_user(user_id: str, include_archived: bool = False) -> list[dict]:
     """Return job applications for user, newest first. If include_archived is False, only non-archived."""
     init_db()
-    base_cols = "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, archived, full_job_description, session_id, application_date, job_url, created_at"
-    optional_cols = ", ats_score, ats_score_summary, ats_score_breakdown"
+    base_cols = (
+        "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, "
+        "archived, full_job_description, session_id, application_date, job_url, created_at"
+    )
+    optional_cols = ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, tailored_education"
     with _get_conn() as conn:
         try:
             cols = base_cols + optional_cols
@@ -656,6 +691,9 @@ def get_job_applications_by_user(user_id: str, include_archived: bool = False) -
                     "ats_score": None,
                     "ats_score_summary": None,
                     "ats_score_breakdown": None,
+                    "tailored_headline": None,
+                    "tailored_skills": [],
+                    "tailored_education": [],
                 }
                 for r in rows
             ]
@@ -676,6 +714,9 @@ def update_job_application(
     ats_score: int | None = None,
     ats_score_summary: str | None = None,
     ats_score_breakdown: str | None = None,
+    tailored_headline: str | None = None,
+    tailored_skills: list[str] | None = None,
+    tailored_education: list[dict] | None = None,
 ) -> bool:
     """Update job application fields. Returns True if a row was updated."""
     init_db()
@@ -711,6 +752,15 @@ def update_job_application(
     if ats_score_breakdown is not None:
         updates.append("ats_score_breakdown = ?")
         params.append(ats_score_breakdown)
+    if tailored_headline is not None:
+        updates.append("tailored_headline = ?")
+        params.append(tailored_headline)
+    if tailored_skills is not None:
+        updates.append("tailored_skills = ?")
+        params.append(json.dumps(tailored_skills))
+    if tailored_education is not None:
+        updates.append("tailored_education = ?")
+        params.append(json.dumps(tailored_education))
     if not updates:
         return False
     params.extend([application_id, user_id])

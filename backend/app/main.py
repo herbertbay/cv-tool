@@ -49,6 +49,7 @@ from app.auth import (
 from app.models import (
     Profile,
     Position,
+    EducationEntry,
     GenerateCVRequest,
     GenerateCVResponse,
     ProfileUpdateRequest,
@@ -114,7 +115,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -471,7 +472,15 @@ async def ats_match_optimize(request: Request, body: dict = Body(...)):
     original_score = row["score"]
     if not settings.openai_api_key:
         raise HTTPException(503, "OPENAI_API_KEY is not configured")
-    tailored_summary, tailored_experience, motivation_letter, keywords = tailor_cv_and_letter(
+    (
+        tailored_headline,
+        tailored_summary,
+        tailored_experience,
+        tailored_skills,
+        tailored_education,
+        motivation_letter,
+        keywords,
+    ) = tailor_cv_and_letter(
         profile=profile,
         job_description=job_text,
         personal_summary_override=None,
@@ -491,7 +500,7 @@ async def ats_match_optimize(request: Request, body: dict = Body(...)):
             ))
     tailored_profile = Profile(
         full_name=profile.full_name,
-        headline=profile.headline,
+        headline=tailored_headline or profile.headline,
         summary=tailored_summary,
         email=profile.email,
         phone=profile.phone,
@@ -499,8 +508,19 @@ async def ats_match_optimize(request: Request, body: dict = Body(...)):
         linkedin_url=profile.linkedin_url,
         photo_base64=profile.photo_base64,
         experience=exp_list or profile.experience,
-        education=profile.education,
-        skills=profile.skills,
+        education=[
+            EducationEntry(
+                school=(e.get("school") or ""),
+                degree=e.get("degree"),
+                field=e.get("field"),
+                start_date=e.get("start_date"),
+                end_date=e.get("end_date"),
+                description=e.get("description"),
+            )
+            for e in (tailored_education or [])
+            if isinstance(e, dict)
+        ] or profile.education,
+        skills=tailored_skills or profile.skills,
         certifications=profile.certifications,
         languages=profile.languages,
     )
@@ -520,6 +540,9 @@ async def ats_match_optimize(request: Request, body: dict = Body(...)):
         "improvement_pct": improvement_pct,
         "tailored_summary": tailored_summary,
         "tailored_experience": tailored_experience,
+        "tailored_headline": tailored_headline,
+        "tailored_skills": tailored_skills,
+        "tailored_education": tailored_education,
         "motivation_letter": motivation_letter,
         "keywords_to_highlight": keywords,
         "tailored_profile": tailored_profile.model_dump(),
@@ -559,14 +582,28 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
             req.pre_tailored_summary is not None and req.pre_tailored_experience is not None
         )
         if use_pre_tailored:
+            tailored_headline = (req.pre_tailored_headline or profile.headline or "").strip()
             tailored_summary = req.pre_tailored_summary
             tailored_experience = req.pre_tailored_experience
+            tailored_skills = req.pre_tailored_skills if req.pre_tailored_skills is not None else list(profile.skills or [])
+            tailored_education = req.pre_tailored_education if req.pre_tailored_education is not None else [
+                e.model_dump() if hasattr(e, "model_dump") else dict(e)
+                for e in (profile.education or [])
+            ]
             motivation_letter = req.pre_motivation_letter or ""
             keywords = req.pre_keywords_to_highlight if req.pre_keywords_to_highlight is not None else []
         else:
             if not settings.openai_api_key:
                 raise HTTPException(503, "OPENAI_API_KEY is not configured")
-            tailored_summary, tailored_experience, motivation_letter, keywords = tailor_cv_and_letter(
+            (
+                tailored_headline,
+                tailored_summary,
+                tailored_experience,
+                tailored_skills,
+                tailored_education,
+                motivation_letter,
+                keywords,
+            ) = tailor_cv_and_letter(
                 profile=profile,
                 job_description=job_text,
                 personal_summary_override=req.personal_summary,
@@ -575,7 +612,50 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
             )
 
         session_id = create_session_id()
-        profile_dict = req.profile.model_dump() if isinstance(req.profile, Profile) else req.profile
+        exp_list = []
+        for p in (tailored_experience or []):
+            if not isinstance(p, dict):
+                continue
+            exp_list.append(
+                Position(
+                    title=p.get("title", "") or "",
+                    company=p.get("company", "") or "",
+                    start_date=p.get("start_date"),
+                    end_date=p.get("end_date"),
+                    description=p.get("description"),
+                    location=p.get("location"),
+                )
+            )
+        edu_list = []
+        for e in (tailored_education or []):
+            if not isinstance(e, dict):
+                continue
+            edu_list.append(
+                EducationEntry(
+                    school=e.get("school", "") or "",
+                    degree=e.get("degree"),
+                    field=e.get("field"),
+                    start_date=e.get("start_date"),
+                    end_date=e.get("end_date"),
+                    description=e.get("description"),
+                )
+            )
+        profile_for_output = Profile(
+            full_name=profile.full_name,
+            headline=tailored_headline or profile.headline,
+            summary=tailored_summary,
+            email=profile.email,
+            phone=profile.phone,
+            address=profile.address,
+            linkedin_url=profile.linkedin_url,
+            photo_base64=profile.photo_base64,
+            experience=exp_list or profile.experience,
+            education=edu_list or profile.education,
+            skills=tailored_skills or profile.skills,
+            certifications=profile.certifications,
+            languages=profile.languages,
+        )
+        profile_dict = profile_for_output.model_dump()
         save_session(
             session_id=session_id,
             profile=profile_dict,
@@ -594,7 +674,7 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
         extra_urls = [u for u in (req.additional_urls or []) if u and str(u).strip().startswith(("http://", "https://"))]
         show_powered_by = not _is_premium_user(user_id)
         cv_pdf_bytes = generate_cv_pdf(
-            profile=profile,
+            profile=profile_for_output,
             tailored_summary=tailored_summary,
             tailored_experience=tailored_experience,
             keywords_to_highlight=keywords,
@@ -624,8 +704,11 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
 
         return GenerateCVResponse(
             session_id=session_id,
+            tailored_headline=tailored_headline or "",
             tailored_summary=tailored_summary,
             tailored_experience=tailored_experience,
+            tailored_skills=tailored_skills or [],
+            tailored_education=tailored_education or [],
             motivation_letter=motivation_letter,
             suggested_skills_highlight=keywords,
             status="success",
@@ -720,6 +803,11 @@ async def create_job_application(request: Request, body: dict = Body(...)):
     description = (body.get("description") or "").strip() or None
     salary_from = body.get("salary_from") if body.get("salary_from") is not None else None
     salary_to = body.get("salary_to") if body.get("salary_to") is not None else None
+    tailored_headline = (body.get("tailored_headline") or "").strip() or None
+    tailored_skills_raw = body.get("tailored_skills")
+    tailored_skills = [str(s).strip() for s in tailored_skills_raw if str(s).strip()] if isinstance(tailored_skills_raw, list) else None
+    tailored_education_raw = body.get("tailored_education")
+    tailored_education = tailored_education_raw if isinstance(tailored_education_raw, list) else None
     use_extraction = full_job and (body.get("extract") is True or (not company_name and not job_title))
     if use_extraction and settings.openai_api_key:
         try:
@@ -750,6 +838,9 @@ async def create_job_application(request: Request, body: dict = Body(...)):
         session_id=(body.get("session_id") or "").strip() or None,
         application_date=(body.get("application_date") or "").strip() or None,
         job_url=(body.get("job_url") or "").strip() or None,
+        tailored_headline=tailored_headline,
+        tailored_skills=tailored_skills,
+        tailored_education=tailored_education,
     )
     rows = db_get_job_applications_by_user(user_id, include_archived=True)
     created = next((r for r in rows if r["id"] == app_id), None)
@@ -760,7 +851,8 @@ async def create_job_application(request: Request, body: dict = Body(...)):
 async def patch_job_application(application_id: str, request: Request, body: dict = Body(...)):
     """Update job application.
 
-    Body: company_name?, description?, job_title?, application_status?, archived?, application_date?, job_url?.
+    Body: company_name?, description?, job_title?, application_status?, archived?, application_date?, job_url?,
+    tailored_headline?, tailored_skills?, tailored_education?.
     """
     user_id = require_user(request)
     updates = {}
@@ -779,6 +871,14 @@ async def patch_job_application(application_id: str, request: Request, body: dic
         updates["application_date"] = (body.get("application_date") or "").strip() or None
     if "job_url" in body:
         updates["job_url"] = (body.get("job_url") or "").strip() or None
+    if "tailored_headline" in body:
+        updates["tailored_headline"] = (body.get("tailored_headline") or "").strip() or None
+    if "tailored_skills" in body:
+        raw = body.get("tailored_skills")
+        updates["tailored_skills"] = [str(s).strip() for s in raw if str(s).strip()] if isinstance(raw, list) else None
+    if "tailored_education" in body:
+        raw = body.get("tailored_education")
+        updates["tailored_education"] = raw if isinstance(raw, list) else None
     if not updates:
         raise HTTPException(400, "No valid fields to update")
     ok = db_update_job_application(application_id, user_id, **updates)
@@ -829,9 +929,26 @@ async def compute_application_score(application_id: str, request: Request):
             description=p.get("description"),
             location=p.get("location"),
         ))
+    app_tailored_headline = (app.get("tailored_headline") or "").strip() or profile.headline
+    app_tailored_skills = app.get("tailored_skills") if isinstance(app.get("tailored_skills"), list) else []
+    app_tailored_education = app.get("tailored_education") if isinstance(app.get("tailored_education"), list) else []
+    edu_list = []
+    for e in app_tailored_education:
+        if not isinstance(e, dict):
+            continue
+        edu_list.append(
+            EducationEntry(
+                school=e.get("school", "") or "",
+                degree=e.get("degree"),
+                field=e.get("field"),
+                start_date=e.get("start_date"),
+                end_date=e.get("end_date"),
+                description=e.get("description"),
+            )
+        )
     profile_for_score = Profile(
         full_name=profile.full_name,
-        headline=profile.headline,
+        headline=app_tailored_headline,
         summary=tailored_summary,
         email=profile.email,
         phone=profile.phone,
@@ -839,8 +956,8 @@ async def compute_application_score(application_id: str, request: Request):
         linkedin_url=profile.linkedin_url,
         photo_base64=profile.photo_base64,
         experience=exp_list or profile.experience,
-        education=profile.education,
-        skills=profile.skills,
+        education=edu_list or profile.education,
+        skills=app_tailored_skills or profile.skills,
         certifications=profile.certifications,
         languages=profile.languages,
     )

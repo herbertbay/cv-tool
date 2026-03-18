@@ -73,14 +73,20 @@ export type GenerateCVRequest = {
   /** Pre-computed from ATS optimize (skips AI tailoring) */
   pre_tailored_summary?: string | null;
   pre_tailored_experience?: Array<Record<string, unknown>> | null;
+  pre_tailored_skills?: string[] | null;
+  pre_tailored_education?: Array<Record<string, unknown>> | null;
+  pre_tailored_headline?: string | null;
   pre_motivation_letter?: string | null;
   pre_keywords_to_highlight?: string[] | null;
 };
 
 export type GenerateCVResponse = {
   session_id: string;
+  tailored_headline: string;
   tailored_summary: string;
   tailored_experience: Array<Record<string, unknown>>;
+  tailored_skills: string[];
+  tailored_education: Array<Record<string, unknown>>;
   motivation_letter: string;
   suggested_skills_highlight: string[];
   status: string;
@@ -151,6 +157,9 @@ export type AtsMatchOptimizeResponse = {
   improvement_pct: number;
   tailored_summary: string;
   tailored_experience: Array<Record<string, unknown>>;
+  tailored_headline?: string;
+  tailored_skills?: string[];
+  tailored_education?: Array<Record<string, unknown>>;
   motivation_letter?: string;
   keywords_to_highlight?: string[];
   tailored_profile?: Record<string, unknown>;
@@ -431,6 +440,9 @@ export type JobApplication = {
   ats_score_summary: string | null;
   /** JSON string of { summary, skills, experience, education } each 0-100 */
   ats_score_breakdown: string | null;
+  tailored_headline?: string | null;
+  tailored_skills?: string[];
+  tailored_education?: Array<Record<string, unknown>>;
 };
 
 export async function getJobApplications(includeArchived = false): Promise<JobApplication[]> {
@@ -459,6 +471,9 @@ export async function createJobApplication(data: {
   session_id?: string;
   application_date?: string;
   job_url?: string;
+  tailored_headline?: string;
+  tailored_skills?: string[];
+  tailored_education?: Array<Record<string, unknown>>;
   /** If true and full_job_description is set, backend runs OpenAI extraction to fill company_name, job_title, etc. */
   extract?: boolean;
 }): Promise<JobApplication> {

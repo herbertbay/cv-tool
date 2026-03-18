@@ -50,14 +50,19 @@ def test_lang_names():
 
 
 @patch("app.ai_service._get_client")
-def test_tailor_cv_and_letter_returns_four_tuple(mock_get_client, minimal_profile):
-    """tailor_cv_and_letter returns (summary, experience_list, letter, keywords)."""
+def test_tailor_cv_and_letter_returns_extended_tuple(mock_get_client, minimal_profile):
+    """tailor_cv_and_letter returns tailored headline, summary, experience, skills, education, letter, and keywords."""
     mock_resp = MagicMock()
     mock_resp.choices = [MagicMock()]
     mock_resp.choices[0].message.content = '''{
+        "tailored_headline": "Software Engineer",
         "tailored_summary": "Tailored summary text.",
         "tailored_experience": [
             {"title": "Dev", "company": "Co", "start_date": "2020", "end_date": "Present", "description": "Tailored desc"}
+        ],
+        "tailored_skills": ["Python", "SQL", "APIs"],
+        "tailored_education": [
+            {"school": "Uni", "degree": "BS", "field": "CS", "start_date": "2016", "end_date": "2020", "description": "Relevant coursework"}
         ],
         "motivation_letter": "Dear hiring manager...",
         "keywords_to_highlight": ["Python", "API"]
@@ -66,19 +71,22 @@ def test_tailor_cv_and_letter_returns_four_tuple(mock_get_client, minimal_profil
     mock_client.chat.completions.create.return_value = mock_resp
     mock_get_client.return_value = mock_client
 
-    summary, exp_list, letter, keywords = tailor_cv_and_letter(
+    headline, summary, exp_list, skills, education, letter, keywords = tailor_cv_and_letter(
         profile=minimal_profile,
         job_description="Looking for Python developer.",
         personal_summary_override=None,
         additional_context="",
         language="en",
     )
+    assert headline == "Software Engineer"
     assert isinstance(summary, str)
     assert "Tailored summary" in summary or "summary" in summary.lower()
     assert isinstance(exp_list, list)
     assert len(exp_list) == 1
     assert exp_list[0]["title"] == "Dev"
     assert "Tailored desc" in (exp_list[0].get("description") or "")
+    assert isinstance(skills, list) and "Python" in skills
+    assert isinstance(education, list) and len(education) == 1
     assert "Dear" in letter or "hiring" in letter.lower()
     assert "Python" in keywords or "API" in keywords
 
@@ -93,16 +101,19 @@ def test_tailor_cv_and_letter_invalid_json_fallback(mock_get_client, minimal_pro
     mock_client.chat.completions.create.return_value = mock_resp
     mock_get_client.return_value = mock_client
 
-    summary, exp_list, letter, keywords = tailor_cv_and_letter(
+    headline, summary, exp_list, skills, education, letter, keywords = tailor_cv_and_letter(
         profile=minimal_profile,
         job_description="Job",
         personal_summary_override=None,
         additional_context="",
         language="en",
     )
+    assert headline == minimal_profile.headline
     assert summary == minimal_profile.summary or len(summary) > 0
     assert len(exp_list) == 1
     assert exp_list[0]["title"] == "Dev"
+    assert isinstance(skills, list)
+    assert isinstance(education, list)
     assert isinstance(keywords, list)
 
 

@@ -101,8 +101,11 @@ describe('generateCV', () => {
   it('sends request and returns response', async () => {
     const response = {
       session_id: 'sid-123',
+      tailored_headline: 'Engineer',
       tailored_summary: 'Summary',
       tailored_experience: [],
+      tailored_skills: [],
+      tailored_education: [],
       motivation_letter: 'Letter',
       suggested_skills_highlight: [],
       status: 'success',

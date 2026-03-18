@@ -60,6 +60,9 @@ class GenerateCVRequest(BaseModel):
     # Optional: pre-computed from ATS optimize (skips tailor_cv_and_letter)
     pre_tailored_summary: Optional[str] = None
     pre_tailored_experience: Optional[list[dict]] = None
+    pre_tailored_skills: Optional[list[str]] = None
+    pre_tailored_education: Optional[list[dict]] = None
+    pre_tailored_headline: Optional[str] = None
     pre_motivation_letter: Optional[str] = None
     pre_keywords_to_highlight: Optional[list[str]] = None
 
@@ -67,8 +70,11 @@ class GenerateCVRequest(BaseModel):
 class GenerateCVResponse(BaseModel):
     """Response after CV generation."""
     session_id: str
+    tailored_headline: str = ""
     tailored_summary: str
     tailored_experience: list[dict]  # Same shape as Position with tailored descriptions
+    tailored_skills: list[str] = Field(default_factory=list)
+    tailored_education: list[dict] = Field(default_factory=list)
     motivation_letter: str
     suggested_skills_highlight: list[str]  # Keywords to highlight in PDF
     status: str = "success"

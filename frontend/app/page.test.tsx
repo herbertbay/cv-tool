@@ -88,8 +88,11 @@ describe('HomePage', () => {
   it('shows download and preview after successful generate', async () => {
     (api.generateCV as jest.Mock).mockResolvedValueOnce({
       session_id: 's123',
+      tailored_headline: 'Engineer',
       tailored_summary: 'Tailored summary text.',
       tailored_experience: [],
+      tailored_skills: [],
+      tailored_education: [],
       motivation_letter: 'Dear hiring manager...',
       suggested_skills_highlight: [],
       status: 'success',

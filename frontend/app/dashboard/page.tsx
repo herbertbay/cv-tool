@@ -122,6 +122,9 @@ function DashboardContent() {
         session_id: res.session_id,
         full_job_description: jobDescription.trim() || undefined,
         application_date: new Date().toISOString().slice(0, 10),
+        tailored_headline: res.tailored_headline || undefined,
+        tailored_skills: res.tailored_skills || undefined,
+        tailored_education: res.tailored_education || undefined,
         extract: true,
       });
       setRefreshTrigger((t) => t + 1);
