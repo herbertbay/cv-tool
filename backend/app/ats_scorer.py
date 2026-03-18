@@ -114,8 +114,8 @@ def _profile_components(profile: Profile) -> dict[str, str]:
 
 
 def _similarity_to_score(sim: float) -> int:
-    """Map cosine similarity [-1, 1] to 0-100. Clamp to [0, 1] then scale linearly so 0 -> 0, 1 -> 100."""
-    x = max(0.0, min(1.0, float(sim)))
+    """Map cosine similarity [-1, 1] to 0-100. Stretch [0, 1] into [~9, 100] so low similarities still show a modest score."""
+    x = max(0.0, min(1.0, (float(sim) + 0.1) / 1.1))
     return round(x * 100)
 
 
