@@ -141,6 +141,24 @@ export async function logout(): Promise<void> {
   await fetch(`${API_BASE}/auth/logout`, { method: 'POST', ...fetchOptions });
 }
 
+// --- Admin ---
+export type AdminUser = {
+  id: string;
+  email: string;
+  created_at: string;
+};
+
+export async function getAdminUsers(): Promise<AdminUser[]> {
+  const res = await fetch(`${API_BASE}/admin/users`, fetchOptions);
+  checkAuth(res);
+  if (!res.ok) {
+    if (res.status === 403) throw new Error('Admin access required');
+    throw new Error('Failed to load users');
+  }
+  const data = await res.json();
+  return Array.isArray(data?.users) ? (data.users as AdminUser[]) : [];
+}
+
 // --- ATS match score tool ---
 
 export type AtsMatchPrepareResponse = { result_token: string; message: string };

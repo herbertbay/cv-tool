@@ -26,6 +26,7 @@ from app.database import (
     get_user_by_email as db_get_user_by_email,
     delete_user as db_delete_user,
     get_admin_stats as db_get_admin_stats,
+    get_all_users_for_admin as db_get_all_users_for_admin,
     insert_cv_generation as db_insert_cv_generation,
     get_cv_generations_by_user as db_get_cv_generations_by_user,
     get_cv_generation as db_get_cv_generation,
@@ -71,6 +72,7 @@ from app.session_store import (
 
 # Premium users: no "Powered by Optimal.cv" on generated CVs/letters (hardcoded for now)
 PREMIUM_EMAILS = {"herbert.bay@gmail.com"}
+ADMIN_EMAILS = {"herbert.bay@gmail.com"}
 
 
 def _is_premium_user(user_id: str) -> bool:
@@ -79,6 +81,14 @@ def _is_premium_user(user_id: str) -> bool:
         return False
     email = (user.get("email") or "").lower().strip()
     return email in PREMIUM_EMAILS
+
+
+def _is_admin_user(user_id: str) -> bool:
+    user = db_get_user_by_id(user_id)
+    if not user:
+        return False
+    email = (user.get("email") or "").lower().strip()
+    return email in ADMIN_EMAILS
 
 
 @asynccontextmanager
@@ -180,6 +190,15 @@ def admin_stats(request: Request, secret: str = ""):
     if provided != expected:
         raise HTTPException(401, "Unauthorized")
     return db_get_admin_stats()
+
+
+@app.get("/api/admin/users")
+async def admin_users(request: Request):
+    """Return all users (id, email, created_at). Requires authenticated admin user."""
+    user_id = require_user(request)
+    if not _is_admin_user(user_id):
+        raise HTTPException(403, "Admin access required")
+    return {"users": db_get_all_users_for_admin()}
 
 
 # --- Auth ---

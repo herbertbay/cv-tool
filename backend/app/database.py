@@ -498,6 +498,23 @@ def get_admin_stats() -> dict:
     return {"users": user_count, "profiles": profile_count, "cv_generations": gen_count}
 
 
+def get_all_users_for_admin() -> list[dict]:
+    """Return all users for admin view (id, email, created_at), newest first."""
+    init_db()
+    with _get_conn() as conn:
+        rows = conn.execute(
+            "SELECT id, email, created_at FROM users ORDER BY created_at DESC"
+        ).fetchall()
+    return [
+        {
+            "id": r["id"],
+            "email": r["email"],
+            "created_at": r["created_at"],
+        }
+        for r in rows
+    ]
+
+
 def insert_job_application(
     id: str,
     user_id: str,

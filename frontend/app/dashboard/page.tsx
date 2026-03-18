@@ -34,6 +34,8 @@ const emptyProfile: Profile = {
   languages: [],
 };
 
+const ADMIN_EMAILS = new Set(['herbert.bay@gmail.com']);
+
 function hasProfileData(p: UserData['profile']): boolean {
   return (
     Boolean(p?.full_name?.trim()) ||
@@ -59,6 +61,7 @@ function DashboardContent() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerateCVResponse | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const isAdmin = ADMIN_EMAILS.has((user?.email || '').toLowerCase().trim());
 
   useEffect(() => {
     if (!user) {
@@ -160,6 +163,9 @@ function DashboardContent() {
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/dashboard" className="text-slate-600 hover:text-blue-700 transition-colors">Dashboard</Link>
+            {isAdmin && (
+              <Link href="/admin/users" className="text-slate-600 hover:text-blue-700 transition-colors">Users</Link>
+            )}
             <span className="text-sm text-slate-500">{user.email}</span>
             <button type="button" onClick={() => logout()} className="text-sm text-slate-600 hover:text-slate-900">
               Sign out
