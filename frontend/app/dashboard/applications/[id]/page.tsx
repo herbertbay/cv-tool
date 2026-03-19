@@ -148,6 +148,16 @@ function MatchScoreCard({
                     );
                   })}
                 </div>
+                {typeof breakdown.education === 'number' && breakdown.education < 60 && (
+                  <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+                    <p className="text-sm font-medium text-amber-900">Education is pulling down your match score</p>
+                    <ul className="mt-1 space-y-1 text-xs text-amber-800">
+                      <li>Use the same degree, certification, and field wording as the job post when accurate.</li>
+                      <li>Add relevant coursework, thesis, and project keywords from the role requirements.</li>
+                      <li>Include tools/technologies used in education (for example: SQL, Python, TensorFlow).</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -396,7 +406,7 @@ export default function ApplicationDetailPage() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-6 py-8">
         <p className="mb-6">
           <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700">← Back to dashboard</Link>
         </p>
@@ -406,114 +416,128 @@ export default function ApplicationDetailPage() {
             <h1 className="text-xl font-semibold text-slate-800">Job application</h1>
             <p className="text-sm text-slate-500 mt-0.5">Edit application details. Edit the tailored CV content below and re-generate to update your PDFs.</p>
           </div>
-          <div className="p-6 space-y-4">
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Company</label>
-              <input
-                type="text"
-                value={edit.company_name}
-                onChange={(e) => setEdit((p) => ({ ...p, company_name: e.target.value }))}
-                onBlur={handleSave}
-                placeholder="Company name"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Job title</label>
-              <input
-                type="text"
-                value={edit.job_title}
-                onChange={(e) => setEdit((p) => ({ ...p, job_title: e.target.value }))}
-                onBlur={handleSave}
-                placeholder="Job title"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Short description (optional)</label>
-              <input
-                type="text"
-                value={edit.description}
-                onChange={(e) => setEdit((p) => ({ ...p, description: e.target.value }))}
-                onBlur={handleSave}
-                placeholder="Brief description"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-6 space-y-6">
+            <section className="space-y-4">
+              <h3 className="text-sm font-semibold text-slate-800">Core details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Company</label>
+                  <input
+                    type="text"
+                    value={edit.company_name}
+                    onChange={(e) => setEdit((p) => ({ ...p, company_name: e.target.value }))}
+                    onBlur={handleSave}
+                    placeholder="Company name"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Job title</label>
+                  <input
+                    type="text"
+                    value={edit.job_title}
+                    onChange={(e) => setEdit((p) => ({ ...p, job_title: e.target.value }))}
+                    onBlur={handleSave}
+                    placeholder="Job title"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Short description (optional)</label>
+                  <input
+                    type="text"
+                    value={edit.description}
+                    onChange={(e) => setEdit((p) => ({ ...p, description: e.target.value }))}
+                    onBlur={handleSave}
+                    placeholder="Brief description"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4 border-t border-slate-100 pt-4">
+              <h3 className="text-sm font-semibold text-slate-800">Application tracking</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Status</label>
+                  <select
+                    value={edit.application_status}
+                    onChange={(e) => {
+                      const v = e.target.value as ApplicationStatus;
+                      setEdit((p) => ({ ...p, application_status: v }));
+                      updateJobApplication(app.id, { application_status: v }).catch(() => {});
+                    }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    {APPLICATION_STATUSES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Application date (optional)</label>
+                  <input
+                    type="date"
+                    value={edit.application_date}
+                    onChange={(e) => setEdit((p) => ({ ...p, application_date: e.target.value }))}
+                    onBlur={handleSave}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Job URL (optional)</label>
+                  <input
+                    type="url"
+                    value={edit.job_url}
+                    onChange={(e) => setEdit((p) => ({ ...p, job_url: e.target.value }))}
+                    onBlur={handleSave}
+                    placeholder="https://…"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Salary from (optional)</label>
+                  <input
+                    type="number"
+                    value={edit.salary_from}
+                    onChange={(e) => setEdit((p) => ({ ...p, salary_from: e.target.value }))}
+                    onBlur={handleSave}
+                    placeholder="e.g. 60000"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Salary to (optional)</label>
+                  <input
+                    type="number"
+                    value={edit.salary_to}
+                    onChange={(e) => setEdit((p) => ({ ...p, salary_to: e.target.value }))}
+                    onBlur={handleSave}
+                    placeholder="e.g. 80000"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4 border-t border-slate-100 pt-4">
+              <h3 className="text-sm font-semibold text-slate-800">Job description for ATS scoring</h3>
               <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Salary from (optional)</label>
-                <input
-                  type="number"
-                  value={edit.salary_from}
-                  onChange={(e) => setEdit((p) => ({ ...p, salary_from: e.target.value }))}
+                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Full job description</label>
+                <textarea
+                  value={edit.full_job_description}
+                  onChange={(e) => setEdit((p) => ({ ...p, full_job_description: e.target.value }))}
                   onBlur={handleSave}
-                  placeholder="e.g. 60000"
+                  rows={7}
+                  placeholder="Paste the full job description used for ATS scoring"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Salary to (optional)</label>
-                <input
-                  type="number"
-                  value={edit.salary_to}
-                  onChange={(e) => setEdit((p) => ({ ...p, salary_to: e.target.value }))}
-                  onBlur={handleSave}
-                  placeholder="e.g. 80000"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Status</label>
-              <select
-                value={edit.application_status}
-                onChange={(e) => {
-                  const v = e.target.value as ApplicationStatus;
-                  setEdit((p) => ({ ...p, application_status: v }));
-                  updateJobApplication(app.id, { application_status: v }).catch(() => {});
-                }}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              >
-                {APPLICATION_STATUSES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Application date (optional)</label>
-              <input
-                type="date"
-                value={edit.application_date}
-                onChange={(e) => setEdit((p) => ({ ...p, application_date: e.target.value }))}
-                onBlur={handleSave}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Job URL (optional)</label>
-              <input
-                type="url"
-                value={edit.job_url}
-                onChange={(e) => setEdit((p) => ({ ...p, job_url: e.target.value }))}
-                onBlur={handleSave}
-                placeholder="https://…"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Full job description</label>
-              <textarea
-                value={edit.full_job_description}
-                onChange={(e) => setEdit((p) => ({ ...p, full_job_description: e.target.value }))}
-                onBlur={handleSave}
-                rows={7}
-                placeholder="Paste the full job description used for ATS scoring"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="pt-2 border-t border-slate-100">
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">ATS-tailored profile fields</p>
+            </section>
+
+            <section className="space-y-4 border-t border-slate-100 pt-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">ATS-tailored profile fields</p>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored headline/title</label>
@@ -538,13 +562,17 @@ export default function ApplicationDetailPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored education</label>
+                  <div className="flex items-start justify-between gap-3 mb-1">
+                    <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Tailored education</label>
+                    <span className="text-[11px] text-slate-500">Include exact job-relevant keywords where truthful</span>
+                  </div>
                   <div className="space-y-3">
                     {edit.tailored_education.map((edu, i) => (
                       <div key={i} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50">
-                        <p className="text-xs font-medium text-slate-600 mb-1">
-                          {String(edu.school ?? '—')} {edu.degree ? `• ${String(edu.degree)}` : ''} {edu.field ? `• ${String(edu.field)}` : ''}
-                        </p>
+                        <div className="space-y-0.5 mb-2">
+                          <p className="text-xs text-slate-700 font-medium">{String(edu.degree ?? 'Degree not set')} {edu.field ? `in ${String(edu.field)}` : ''}</p>
+                          <p className="text-xs text-slate-600">{String(edu.school ?? 'School not set')}</p>
+                        </div>
                         <textarea
                           value={String(edu.description ?? '')}
                           onChange={(e) => {
@@ -553,9 +581,9 @@ export default function ApplicationDetailPage() {
                             setEdit((p) => ({ ...p, tailored_education: next }));
                           }}
                           onBlur={handleSave}
-                          rows={2}
+                          rows={3}
                           className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
-                          placeholder="Tailored education description"
+                          placeholder="Tailored education description (coursework, thesis, projects, tools, certifications)"
                         />
                       </div>
                     ))}
@@ -565,7 +593,7 @@ export default function ApplicationDetailPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
             {saving && <p className="text-xs text-slate-500">Saving changes…</p>}
           </div>
         </div>
