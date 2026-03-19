@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getAdminUsers, type AdminUser } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
+import { formatDate } from '../../lib/date';
 
 const ADMIN_EMAILS = new Set(['herbert.bay@gmail.com']);
 
@@ -58,7 +59,7 @@ export default function AdminUsersPage() {
                   <tr key={u.id} className="border-b last:border-b-0 border-slate-100">
                     <td className="px-4 py-3 text-slate-900">{u.email}</td>
                     <td className="px-4 py-3 text-slate-500 font-mono text-xs">{u.id}</td>
-                    <td className="px-4 py-3 text-slate-600">{u.created_at}</td>
+                    <td className="px-4 py-3 text-slate-600">{formatDate(u.created_at, { includeTime: true })}</td>
                   </tr>
                 ))}
                 {users.length === 0 && (

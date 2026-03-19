@@ -25,17 +25,6 @@ const CV_TEMPLATES = [
   { value: 'cv_executive.html', label: 'Executive' },
 ];
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch {
-    return dateStr;
-  }
-}
-
 function toDateOnly(d: Date): string {
   return d.toISOString().slice(0, 10);
 }

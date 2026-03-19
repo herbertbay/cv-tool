@@ -9,32 +9,9 @@ import {
   type ApplicationStatus,
 } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
+import { formatDate } from '../lib/date';
 
 const APPLICATION_STATUSES: ApplicationStatus[] = ['Interested', 'Applied', 'Interview', 'Rejected', 'Offer'];
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60_000);
-    const diffHours = Math.floor(diffMs / 3_600_000);
-    const diffDays = Math.floor(diffMs / 86_400_000);
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-    if (diffHours < 24 && now.getDate() === d.getDate()) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear()) return 'yesterday';
-    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) === 1 ? '' : 's'} ago`;
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
-  } catch {
-    return dateStr;
-  }
-}
 
 /** History = generated CVs & motivation letters, augmented with job application data. Only shows applications that have a linked generated CV (session_id). */
 export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: number } = {}) {
@@ -127,7 +104,7 @@ export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: nu
                 <span className="text-slate-700 truncate" title={app.job_title ?? undefined}>
                   {app.job_title || '—'}
                 </span>
-                <span className="text-slate-600 tabular-nums">{formatDate(app.application_date || app.created_at)}</span>
+                <span className="text-slate-600 tabular-nums">{formatDate(app.application_date || app.created_at, { relative: true })}</span>
                 <select
                   value={app.application_status}
                   onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
