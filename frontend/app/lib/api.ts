@@ -146,6 +146,8 @@ export type AdminUser = {
   id: string;
   email: string;
   created_at: string;
+  cv_generations_count: number;
+  last_used_at: string | null;
 };
 
 export async function getAdminUsers(): Promise<AdminUser[]> {

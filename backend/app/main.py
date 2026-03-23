@@ -194,7 +194,7 @@ def admin_stats(request: Request, secret: str = ""):
 
 @app.get("/api/admin/users")
 async def admin_users(request: Request):
-    """Return all users (id, email, created_at). Requires authenticated admin user."""
+    """Return all users plus CV generation stats. Requires authenticated admin user."""
     user_id = require_user(request)
     if not _is_admin_user(user_id):
         raise HTTPException(403, "Admin access required")

@@ -499,17 +499,35 @@ def get_admin_stats() -> dict:
 
 
 def get_all_users_for_admin() -> list[dict]:
-    """Return all users for admin view (id, email, created_at), newest first."""
+    """Return all users for admin view.
+
+    Includes per-user CV generation stats:
+    - cv_generations_count: number of rows in cv_generations
+    - last_used_at: most recent cv_generations.created_at (or None)
+    """
     init_db()
     with _get_conn() as conn:
         rows = conn.execute(
-            "SELECT id, email, created_at FROM users ORDER BY created_at DESC"
+            """
+            SELECT
+                u.id,
+                u.email,
+                u.created_at,
+                COUNT(g.session_id) AS cv_generations_count,
+                MAX(g.created_at) AS last_used_at
+            FROM users u
+            LEFT JOIN cv_generations g ON g.user_id = u.id
+            GROUP BY u.id, u.email, u.created_at
+            ORDER BY u.created_at DESC
+            """
         ).fetchall()
     return [
         {
             "id": r["id"],
             "email": r["email"],
             "created_at": r["created_at"],
+            "cv_generations_count": r["cv_generations_count"],
+            "last_used_at": r["last_used_at"],
         }
         for r in rows
     ]

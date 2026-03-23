@@ -52,6 +52,8 @@ export default function AdminUsersPage() {
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Email</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">User ID</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Created</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-700">CVs generated</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-700">Last used</th>
                 </tr>
               </thead>
               <tbody>
@@ -60,11 +62,13 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-slate-900">{u.email}</td>
                     <td className="px-4 py-3 text-slate-500 font-mono text-xs">{u.id}</td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(u.created_at, { includeTime: true })}</td>
+                    <td className="px-4 py-3 text-slate-900 font-mono text-xs">{u.cv_generations_count}</td>
+                    <td className="px-4 py-3 text-slate-600">{formatDate(u.last_used_at, { includeTime: true })}</td>
                   </tr>
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td className="px-4 py-4 text-slate-500" colSpan={3}>No users found.</td>
+                    <td className="px-4 py-4 text-slate-500" colSpan={5}>No users found.</td>
                   </tr>
                 )}
               </tbody>
