@@ -217,6 +217,73 @@ def calculate_ats_match_score(
     }
 
 
+def generate_motivation_letter(
+    *,
+    profile: Profile,
+    job_description: str,
+    tailored_summary: str | None = None,
+    tailored_experience: list[dict] | None = None,
+    language: str = "en",
+) -> str:
+    """
+    Generate a motivation/cover letter.
+
+    If job_description is empty, returns "".
+    If tailored_summary/experience are provided, uses them as additional context so the
+    letter matches the user's latest edited content.
+    """
+    if not job_description or not str(job_description).strip():
+        return ""
+    lang_name = LANG_NAMES.get(language, "English")
+    profile_ctx = _profile_to_context(profile)
+    tailored_parts: list[str] = []
+    if tailored_summary and str(tailored_summary).strip():
+        tailored_parts.append(f"Tailored summary (latest):\n{str(tailored_summary).strip()}")
+    if tailored_experience and isinstance(tailored_experience, list):
+        bullets: list[str] = []
+        for p in tailored_experience:
+            if not isinstance(p, dict):
+                continue
+            title = (p.get("title") or "").strip()
+            company = (p.get("company") or "").strip()
+            desc = (p.get("description") or "").strip()
+            if not (title or company or desc):
+                continue
+            header = " - ".join([x for x in [title, company] if x])
+            bullets.append(f"- {header}\n  {desc}".strip())
+        if bullets:
+            tailored_parts.append("Tailored experience (latest):\n" + "\n".join(bullets[:12]))
+    tailored_ctx = "\n\n".join(tailored_parts) if tailored_parts else "None."
+
+    system = (
+        "You are an expert motivation letter writer. "
+        "Write a concise, professional cover letter that is highly aligned to the job description, "
+        "using the same terminology where truthful. Do not invent facts. "
+        f"Output in {lang_name}. Return plain text only (no markdown)."
+    )
+    user_content = f"""## Candidate profile (facts)
+{profile_ctx}
+
+## Latest tailored CV content (must match this)
+{tailored_ctx}
+
+## Job description
+{job_description}
+
+Write a motivation/cover letter in {lang_name} (3-5 short paragraphs)."""
+
+    client = _get_client()
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_content},
+        ],
+        temperature=0.25,
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
 def extract_job_application(raw_job_description: str) -> dict[str, Any]:
     """
     Extract structured job application fields from raw job description text using OpenAI.

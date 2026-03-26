@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getAdminUsers, type AdminUser } from '../../lib/api';
+import { getAdminDownloadLastCvUrl, getAdminUsers, type AdminUser } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { formatDate } from '../../lib/date';
 
@@ -54,6 +54,7 @@ export default function AdminUsersPage() {
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Created</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">CVs generated</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Last used</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-700">Download</th>
                 </tr>
               </thead>
               <tbody>
@@ -64,11 +65,23 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-slate-600">{formatDate(u.created_at, { includeTime: true })}</td>
                     <td className="px-4 py-3 text-slate-900 font-mono text-xs">{u.cv_generations_count}</td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(u.last_used_at, { includeTime: true })}</td>
+                    <td className="px-4 py-3">
+                      {u.last_used_at ? (
+                        <a
+                          href={getAdminDownloadLastCvUrl(u.id)}
+                          className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          Download last CV
+                        </a>
+                      ) : (
+                        <span className="text-slate-400 text-xs">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td className="px-4 py-4 text-slate-500" colSpan={5}>No users found.</td>
+                    <td className="px-4 py-4 text-slate-500" colSpan={6}>No users found.</td>
                   </tr>
                 )}
               </tbody>

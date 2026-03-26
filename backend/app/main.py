@@ -30,6 +30,7 @@ from app.database import (
     insert_cv_generation as db_insert_cv_generation,
     get_cv_generations_by_user as db_get_cv_generations_by_user,
     get_cv_generation as db_get_cv_generation,
+    get_last_cv_generation_for_user as db_get_last_cv_generation_for_user,
     update_cv_generation_tailored as db_update_cv_generation_tailored,
     update_cv_generation_template as db_update_cv_generation_template,
     insert_ats_match_result as db_insert_ats_match_result,
@@ -58,7 +59,7 @@ from app.models import (
 from app.linkedin_parser import parse_linkedin_json
 from app.pdf_profile_parser import parse_pdf_to_profile
 from app.url_fetcher import fetch_job_description, fetch_additional_urls
-from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score, extract_job_application
+from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score, extract_job_application, generate_motivation_letter
 from app.ats_scorer import compute_ats_match
 from app.pdf_generator import generate_cv_pdf, generate_letter_pdf, render_cv_html
 from app.session_store import (
@@ -199,6 +200,67 @@ async def admin_users(request: Request):
     if not _is_admin_user(user_id):
         raise HTTPException(403, "Admin access required")
     return {"users": db_get_all_users_for_admin()}
+
+
+@app.get("/api/admin/users/{target_user_id}/download-last-cv")
+async def admin_download_last_cv(target_user_id: str, request: Request):
+    """Admin-only: download the most recently generated CV PDF for a user."""
+    user_id = require_user(request)
+    if not _is_admin_user(user_id):
+        raise HTTPException(403, "Admin access required")
+    gen = db_get_last_cv_generation_for_user(target_user_id)
+    if not gen:
+        raise HTTPException(404, "No generated CV found for this user")
+    pdf_bytes = storage_load_pdf_bytes(gen["cv_path"])
+    if not pdf_bytes:
+        raise HTTPException(404, "PDF file not found")
+    session_id = gen["session_id"]
+    return HttpResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="cv_{session_id[:8]}.pdf"'},
+    )
+
+
+@app.post("/api/job-applications/{application_id}/generate-motivation-letter")
+async def generate_application_motivation_letter(application_id: str, request: Request):
+    """Generate and persist motivation letter text for an application (uses latest tailored content). Requires auth."""
+    user_id = require_user(request)
+    app = db_get_job_application_by_id(application_id, user_id)
+    if not app:
+        raise HTTPException(404, "Application not found")
+    session_id = (app.get("session_id") or "").strip()
+    job_text = (app.get("full_job_description") or "").strip()
+    if not session_id:
+        raise HTTPException(400, "Application has no linked CV session")
+    if not job_text:
+        raise HTTPException(400, "Job description is required to generate a motivation letter")
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen:
+        raise HTTPException(404, "Generated CV for this application not found.")
+    data = db_get_user_data(user_id)
+    if not data or not data.get("profile"):
+        raise HTTPException(400, "Profile not found. Save your profile first.")
+    if not settings.openai_api_key:
+        raise HTTPException(503, "OPENAI_API_KEY is not configured")
+    profile = data["profile"] if isinstance(data["profile"], Profile) else Profile(**data["profile"])
+    tailored_summary = gen.get("tailored_summary") or ""
+    tailored_experience = gen.get("tailored_experience") or []
+    language = (gen.get("language") or "en").strip() or "en"
+    letter = generate_motivation_letter(
+        profile=profile,
+        job_description=job_text,
+        tailored_summary=tailored_summary,
+        tailored_experience=tailored_experience if isinstance(tailored_experience, list) else None,
+        language=language,
+    )
+    ok = db_update_cv_generation_tailored(session_id, user_id, motivation_letter=letter)
+    if not ok:
+        raise HTTPException(404, "Update failed")
+    session = get_session(session_id)
+    if session:
+        session["motivation_letter"] = letter
+    return {"session_id": session_id, "motivation_letter": letter}
 
 
 # --- Auth ---
@@ -611,6 +673,15 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
             ]
             motivation_letter = req.pre_motivation_letter or ""
             keywords = req.pre_keywords_to_highlight if req.pre_keywords_to_highlight is not None else []
+            # If ATS optimize didn't produce a letter (or it was omitted), generate one here.
+            if (not motivation_letter.strip()) and settings.openai_api_key:
+                motivation_letter = generate_motivation_letter(
+                    profile=profile,
+                    job_description=job_text,
+                    tailored_summary=tailored_summary,
+                    tailored_experience=tailored_experience if isinstance(tailored_experience, list) else None,
+                    language=req.language or "en",
+                )
         else:
             if not settings.openai_api_key:
                 raise HTTPException(503, "OPENAI_API_KEY is not configured")

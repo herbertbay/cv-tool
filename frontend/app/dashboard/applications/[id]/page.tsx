@@ -9,6 +9,7 @@ import {
   getTailoredContent,
   updateTailoredContent,
   regenerateCv,
+  generateApplicationMotivationLetter,
   downloadPdf,
   downloadLetterPdf,
   computeApplicationScore,
@@ -194,6 +195,9 @@ export default function ApplicationDetailPage() {
   const [tailored, setTailored] = useState<TailoredContent | null>(null);
   const [tailoredLoading, setTailoredLoading] = useState(false);
   const [tailoredSaving, setTailoredSaving] = useState(false);
+  const [letterGenerating, setLetterGenerating] = useState(false);
+  const [letterCopied, setLetterCopied] = useState(false);
+  const [letterError, setLetterError] = useState<string | null>(null);
   const [regenerateProgress, setRegenerateProgress] = useState('');
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [scoreLoading, setScoreLoading] = useState(false);
@@ -300,12 +304,37 @@ export default function ApplicationDetailPage() {
       await updateTailoredContent(app.session_id, {
         tailored_summary: tailored.tailored_summary,
         tailored_experience: tailored.tailored_experience,
-        motivation_letter: tailored.motivation_letter,
       });
     } finally {
       setTailoredSaving(false);
     }
   }, [app?.session_id, tailored]);
+
+  const handleGenerateMotivationLetter = useCallback(async () => {
+    if (!id || !app?.session_id) return;
+    setLetterGenerating(true);
+    setLetterError(null);
+    try {
+      const res = await generateApplicationMotivationLetter(id);
+      setTailored((p) => p ? { ...p, motivation_letter: res.motivation_letter } : p);
+    } catch (e) {
+      setLetterError(e instanceof Error ? e.message : 'Failed to generate motivation letter');
+    } finally {
+      setLetterGenerating(false);
+    }
+  }, [id, app?.session_id]);
+
+  const handleCopyMotivationLetter = useCallback(async () => {
+    const text = tailored?.motivation_letter || '';
+    if (!text.trim()) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setLetterCopied(true);
+      setTimeout(() => setLetterCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  }, [tailored?.motivation_letter]);
 
   const handleRegenerate = useCallback(async () => {
     if (!app?.session_id || !tailored) return;
@@ -651,13 +680,35 @@ export default function ApplicationDetailPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Motivation letter</label>
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={handleGenerateMotivationLetter}
+                            disabled={letterGenerating}
+                            className="inline-flex items-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+                          >
+                            {letterGenerating ? 'Generating…' : 'Generate motivation letter'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCopyMotivationLetter}
+                            disabled={!tailored.motivation_letter?.trim()}
+                            className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                          >
+                            {letterCopied ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        <span className="text-xs text-slate-500">Read-only (auto-updates after generation)</span>
+                      </div>
                       <textarea
                         value={tailored.motivation_letter}
-                        onChange={(e) => setTailored((p) => p ? { ...p, motivation_letter: e.target.value } : null)}
+                        readOnly
                         rows={8}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        placeholder="Motivation letter text"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-50/50"
+                        placeholder="Generate a motivation letter to see it here"
                       />
+                      {letterError && <p className="mt-2 text-sm text-red-600">{letterError}</p>}
                     </div>
                     <button
                       type="button"

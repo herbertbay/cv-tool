@@ -148,7 +148,12 @@ export type AdminUser = {
   created_at: string;
   cv_generations_count: number;
   last_used_at: string | null;
+  last_cv_session_id?: string | null;
 };
+
+export function getAdminDownloadLastCvUrl(userId: string): string {
+  return `${API_BASE}/admin/users/${encodeURIComponent(userId)}/download-last-cv`;
+}
 
 export async function getAdminUsers(): Promise<AdminUser[]> {
   const res = await fetch(`${API_BASE}/admin/users`, fetchOptions);
@@ -593,6 +598,22 @@ export async function regenerateCv(sessionId: string, template?: string): Promis
     ...fetchOptions,
   });
   if (!res.ok) throw new Error('Failed to regenerate CV');
+  return res.json();
+}
+
+/** Generate motivation letter text for an application (uses latest tailored content). */
+export async function generateApplicationMotivationLetter(applicationId: string): Promise<{ session_id: string; motivation_letter: string }> {
+  const res = await fetch(`${API_BASE}/job-applications/${encodeURIComponent(applicationId)}/generate-motivation-letter`, {
+    method: 'POST',
+    ...fetchOptions,
+  });
+  checkAuth(res);
+  if (res.status === 400) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Job description is required');
+  }
+  if (res.status === 404) throw new Error('Application or CV not found');
+  if (!res.ok) throw new Error('Failed to generate motivation letter');
   return res.json();
 }
 

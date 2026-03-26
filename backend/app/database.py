@@ -364,6 +364,23 @@ def get_cv_generation(session_id: str, user_id: str) -> Optional[dict]:
     }
 
 
+def get_last_cv_generation_for_user(user_id: str) -> Optional[dict]:
+    """Return the newest cv_generation for a user (session_id, created_at, cv_path)."""
+    init_db()
+    with _get_conn() as conn:
+        row = conn.execute(
+            "SELECT session_id, created_at, cv_path FROM cv_generations WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+    if not row:
+        return None
+    return {
+        "session_id": row["session_id"],
+        "created_at": row["created_at"],
+        "cv_path": row["cv_path"],
+    }
+
+
 def update_cv_generation_tailored(
     session_id: str,
     user_id: str,
@@ -514,7 +531,14 @@ def get_all_users_for_admin() -> list[dict]:
                 u.email,
                 u.created_at,
                 COUNT(g.session_id) AS cv_generations_count,
-                MAX(g.created_at) AS last_used_at
+                MAX(g.created_at) AS last_used_at,
+                (
+                    SELECT g2.session_id
+                    FROM cv_generations g2
+                    WHERE g2.user_id = u.id
+                    ORDER BY g2.created_at DESC
+                    LIMIT 1
+                ) AS last_cv_session_id
             FROM users u
             LEFT JOIN cv_generations g ON g.user_id = u.id
             GROUP BY u.id, u.email, u.created_at
@@ -528,6 +552,7 @@ def get_all_users_for_admin() -> list[dict]:
             "created_at": r["created_at"],
             "cv_generations_count": r["cv_generations_count"],
             "last_used_at": r["last_used_at"],
+            "last_cv_session_id": r["last_cv_session_id"],
         }
         for r in rows
     ]
