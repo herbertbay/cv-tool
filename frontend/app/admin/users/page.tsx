@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getAdminDownloadLastCvUrl, getAdminUsers, type AdminUser } from '../../lib/api';
+import { adminDeleteUser, getAdminDownloadLastCvUrl, getAdminUsers, type AdminUser } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { formatDate } from '../../lib/date';
 
@@ -13,6 +13,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -26,6 +27,23 @@ export default function AdminUsersPage() {
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load users'))
       .finally(() => setLoading(false));
   }, [user]);
+
+  const handleDeleteUser = async (u: AdminUser) => {
+    const confirmed = window.confirm(
+      `Delete user ${u.email} and all associated data? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+    setError(null);
+    setDeletingId(u.id);
+    try {
+      await adminDeleteUser(u.id);
+      setUsers((prev) => prev.filter((row) => row.id !== u.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete user');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -55,6 +73,7 @@ export default function AdminUsersPage() {
                   <th className="text-left px-4 py-3 font-medium text-slate-700">CVs generated</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Last used</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Download</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-700">Delete</th>
                 </tr>
               </thead>
               <tbody>
@@ -77,11 +96,21 @@ export default function AdminUsersPage() {
                         <span className="text-slate-400 text-xs">—</span>
                       )}
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUser(u)}
+                        disabled={deletingId === u.id}
+                        className="inline-flex items-center rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {deletingId === u.id ? 'Deleting…' : 'Delete user'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td className="px-4 py-4 text-slate-500" colSpan={6}>No users found.</td>
+                    <td className="px-4 py-4 text-slate-500" colSpan={7}>No users found.</td>
                   </tr>
                 )}
               </tbody>

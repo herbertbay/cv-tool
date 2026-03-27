@@ -166,6 +166,19 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
   return Array.isArray(data?.users) ? (data.users as AdminUser[]) : [];
 }
 
+export async function adminDeleteUser(userId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/users/${encodeURIComponent(userId)}/delete`, {
+    method: 'POST',
+    ...fetchOptions,
+  });
+  checkAuth(res);
+  if (!res.ok) {
+    if (res.status === 403) throw new Error('Admin access required');
+    if (res.status === 404) throw new Error('User not found');
+    throw new Error('Failed to delete user');
+  }
+}
+
 // --- ATS match score tool ---
 
 export type AtsMatchPrepareResponse = { result_token: string; message: string };

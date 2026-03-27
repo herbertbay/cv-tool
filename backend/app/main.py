@@ -222,6 +222,19 @@ async def admin_download_last_cv(target_user_id: str, request: Request):
     )
 
 
+@app.post("/api/admin/users/{target_user_id}/delete")
+async def admin_delete_user(target_user_id: str, request: Request):
+    """Admin-only: permanently delete a user and all of their data."""
+    user_id = require_user(request)
+    if not _is_admin_user(user_id):
+        raise HTTPException(403, "Admin access required")
+    target = db_get_user_by_id(target_user_id)
+    if not target:
+        raise HTTPException(404, "User not found")
+    db_delete_user(target_user_id)
+    return {"ok": True}
+
+
 @app.post("/api/job-applications/{application_id}/generate-motivation-letter")
 async def generate_application_motivation_letter(application_id: str, request: Request):
     """Generate and persist motivation letter text for an application (uses latest tailored content). Requires auth."""
