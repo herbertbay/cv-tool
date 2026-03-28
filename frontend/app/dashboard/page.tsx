@@ -55,7 +55,6 @@ function DashboardContent() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
   const [jobIsUrl, setJobIsUrl] = useState(false);
-  const [language, setLanguage] = useState('en');
   const [template, setTemplate] = useState('cv_base.html');
   const [generateProgress, setGenerateProgress] = useState('');
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -117,7 +116,7 @@ function DashboardContent() {
         job_description: jobDescription.trim(),
         personal_summary: userData?.personal_summary?.trim() || undefined,
         additional_urls: urls,
-        language,
+        language: 'en',
         template,
       });
       setGenerateProgress('Creating job application…');
@@ -139,7 +138,7 @@ function DashboardContent() {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed');
       setGenerateProgress('');
     }
-  }, [userData, jobDescription, language, template, router]);
+  }, [userData, jobDescription, template, router]);
 
   if (!user) return null;
   if (loading) {
@@ -198,8 +197,6 @@ function DashboardContent() {
           setJobDescription={setJobDescription}
           jobIsUrl={jobIsUrl}
           setJobIsUrl={setJobIsUrl}
-          language={language}
-          setLanguage={setLanguage}
           template={template}
           setTemplate={setTemplate}
           progress={generateProgress}

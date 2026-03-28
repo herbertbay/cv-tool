@@ -33,7 +33,7 @@ export function LandingPage() {
                   href="/cv-checker"
                   className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-6 py-3 text-base font-medium text-blue-800 hover:bg-blue-100 hover:border-blue-300 transition-colors"
                 >
-                  Free CV checker
+                  Free ATS Checker
                 </Link>
               </div>
             </div>

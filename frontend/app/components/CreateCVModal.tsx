@@ -3,12 +3,6 @@
 import { useState } from 'react';
 import type { GenerateCVResponse } from '../lib/api';
 
-const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'de', label: 'German' },
-  { value: 'fr', label: 'French' },
-];
-
 function ShareOptimalCV() {
   const [copied, setCopied] = useState(false);
   const shareUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -34,8 +28,6 @@ export function CreateCVModal({
   setJobDescription,
   jobIsUrl,
   setJobIsUrl,
-  language,
-  setLanguage,
   template,
   setTemplate,
   progress,
@@ -51,8 +43,6 @@ export function CreateCVModal({
   setJobDescription: (v: string) => void;
   jobIsUrl: boolean;
   setJobIsUrl: (v: boolean) => void;
-  language: string;
-  setLanguage: (v: string) => void;
   template: string;
   setTemplate: (v: string) => void;
   progress: string;
@@ -97,14 +87,7 @@ export function CreateCVModal({
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-              {LANGUAGES.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
+          {/* Language dropdown hidden for now; default language is English ('en'). */}
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">CV template</label>
