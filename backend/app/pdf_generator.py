@@ -47,6 +47,43 @@ def _highlight_keywords_in_text(text: str, keywords: list[str]) -> str:
     return result
 
 
+# Inline markdown: **bold** (after HTML is stripped/escaped)
+_MD_BOLD_RE = re.compile(r"\*\*(.+?)\*\*", re.DOTALL)
+
+
+def _format_cv_text_block(text: str, keywords: list[str]) -> str:
+    """
+    Prepare summary / experience text for the CV PDF:
+    strip accidental raw HTML, escape, apply **bold** markdown, preserve line breaks,
+    then wrap job keywords in <strong> (same as legacy highlight).
+    """
+    if not text:
+        return ""
+    plain = _strip_html(text)
+    escaped = html.escape(plain)
+    escaped = _MD_BOLD_RE.sub(r"<strong>\1</strong>", escaped)
+    escaped = escaped.replace("\n\n", "<br/><br/>").replace("\n", "<br/>")
+    if not keywords:
+        return escaped
+    result = escaped
+    for kw in keywords:
+        if not kw or len(kw) < 2:
+            continue
+        pattern = re.compile(re.escape(kw), re.IGNORECASE)
+        result = pattern.sub(r"<strong>\g<0></strong>", result)
+    return result
+
+
+def format_motivation_letter_html(text: str) -> str:
+    """Motivation letter body: strip raw HTML, escape, **bold**, line breaks to <br/>."""
+    if not text:
+        return ""
+    plain = _strip_html(text)
+    escaped = html.escape(plain)
+    escaped = _MD_BOLD_RE.sub(r"<strong>\1</strong>", escaped)
+    return escaped.replace("\n\n", "<br/><br/>").replace("\n", "<br/>")
+
+
 def _keyword_match(skill: str, keywords: list[str]) -> bool:
     """Jinja filter: True if skill or any keyword matches (case-insensitive substring)."""
     if not skill or not keywords:
@@ -80,7 +117,7 @@ def _prepare_template_context(
         desc = job.get("description") or ""
         experience_rendered.append({
             **job,
-            "description": _highlight_keywords_in_text(desc, keywords_to_highlight),
+            "description": _format_cv_text_block(desc, keywords_to_highlight),
         })
 
     # Normalize additional URLs for template (only valid http(s) URLs)
@@ -90,7 +127,7 @@ def _prepare_template_context(
     return {
         "profile": profile.model_dump(),
         "photo_data_url": photo_data_url,
-        "tailored_summary": _highlight_keywords_in_text(tailored_summary or "", keywords_to_highlight),
+        "tailored_summary": _format_cv_text_block(tailored_summary or "", keywords_to_highlight),
         "tailored_experience": experience_rendered,
         "keywords_to_highlight": keywords_to_highlight,
         "additional_urls": urls_list,
@@ -161,11 +198,11 @@ def generate_letter_pdf(profile: Profile, motivation_letter: str, show_powered_b
         autoescape=select_autoescape(["html", "xml"]),
     )
     template = env.get_template("motivation_letter.html")
-    letter_plain = _strip_html(motivation_letter or "")
+    letter_html = format_motivation_letter_html(motivation_letter or "")
     html_str = template.render(
         profile=profile.model_dump(),
         full_name=profile.full_name,
-        motivation_letter=letter_plain,
+        motivation_letter=letter_html,
         show_powered_by=show_powered_by,
     )
     pdf_buffer = BytesIO()

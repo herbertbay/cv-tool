@@ -6,10 +6,12 @@ import pytest
 
 from app.models import Profile, Position, EducationEntry
 from app.pdf_generator import (
+    _format_cv_text_block,
     _highlight_keywords_in_text,
     _keyword_match,
     _prepare_template_context,
     _strip_html,
+    format_motivation_letter_html,
     generate_cv_pdf,
     TEMPLATES_DIR,
 )
@@ -56,6 +58,18 @@ def test_keyword_match_filter():
     assert _keyword_match("Java", ["Python"]) is False
     assert _keyword_match("", ["Python"]) is False
     assert _keyword_match("Python", []) is False
+
+
+def test_format_cv_text_block_markdown_bold():
+    """**text** becomes <strong> after escape."""
+    out = _format_cv_text_block("Lead **Python** developer.", [])
+    assert "<strong>Python</strong>" in out
+    assert "**" not in out
+
+
+def test_format_motivation_letter_html_line_breaks():
+    out = format_motivation_letter_html("Hello\n\nWorld")
+    assert "<br/>" in out
 
 
 def test_prepare_template_context():

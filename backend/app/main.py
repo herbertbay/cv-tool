@@ -1188,54 +1188,58 @@ async def test_pdf():
 
 @app.get("/api/download-pdf/{session_id}")
 async def download_pdf(session_id: str, request: Request):
-    """Return generated CV PDF for the given session. Requires auth; serves from session or persisted file."""
+    """Return generated CV PDF for the given session. Requires auth.
+
+    Prefer the persisted file on disk so downloads stay correct after re-generate
+    (in-memory session may be missing on another worker or still hold an old PDF).
+    """
     user_id = require_user(request)
-    session = get_session(session_id)
-    if session:
-        pdf_bytes = session.get("pdf_bytes")
-        if pdf_bytes:
-            return HttpResponse(
-                content=pdf_bytes,
-                media_type="application/pdf",
-                headers={"Content-Disposition": f'attachment; filename="cv_{session_id[:8]}.pdf"'},
-            )
     gen = db_get_cv_generation(session_id, user_id)
     if not gen:
         raise HTTPException(404, "Session not found or access denied")
     pdf_bytes = storage_load_pdf_bytes(gen["cv_path"])
-    if not pdf_bytes:
-        raise HTTPException(404, "PDF file not found")
-    return HttpResponse(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="cv_{session_id[:8]}.pdf"'},
-    )
+    if pdf_bytes:
+        return HttpResponse(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="cv_{session_id[:8]}.pdf"'},
+        )
+    session = get_session(session_id)
+    if session and session.get("pdf_bytes"):
+        return HttpResponse(
+            content=session["pdf_bytes"],
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="cv_{session_id[:8]}.pdf"'},
+        )
+    raise HTTPException(404, "PDF file not found")
 
 
 @app.get("/api/download-letter/{session_id}")
 async def download_letter(session_id: str, request: Request):
-    """Return motivation letter PDF for the given session. Requires auth; serves from session or persisted file."""
+    """Return motivation letter PDF for the given session. Requires auth.
+
+    Prefer persisted file on disk (same rationale as CV download).
+    """
     user_id = require_user(request)
-    session = get_session(session_id)
-    if session:
-        pdf_bytes = session.get("letter_pdf_bytes")
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen:
+        raise HTTPException(404, "Session not found or access denied")
+    if gen.get("letter_path"):
+        pdf_bytes = storage_load_pdf_bytes(gen["letter_path"])
         if pdf_bytes:
             return HttpResponse(
                 content=pdf_bytes,
                 media_type="application/pdf",
                 headers={"Content-Disposition": f'attachment; filename="motivation_letter_{session_id[:8]}.pdf"'},
             )
-    gen = db_get_cv_generation(session_id, user_id)
-    if not gen or not gen.get("letter_path"):
-        raise HTTPException(404, "Letter PDF not found or access denied")
-    pdf_bytes = storage_load_pdf_bytes(gen["letter_path"])
-    if not pdf_bytes:
-        raise HTTPException(404, "Letter PDF file not found")
-    return HttpResponse(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="motivation_letter_{session_id[:8]}.pdf"'},
-    )
+    session = get_session(session_id)
+    if session and session.get("letter_pdf_bytes"):
+        return HttpResponse(
+            content=session["letter_pdf_bytes"],
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="motivation_letter_{session_id[:8]}.pdf"'},
+        )
+    raise HTTPException(404, "Letter PDF not found or access denied")
 
 
 @app.get("/api/cv-generations/{session_id}/tailored")

@@ -633,7 +633,8 @@ export default function ApplicationDetailPage() {
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
                 <h2 className="text-lg font-semibold text-slate-800">Tailored CV content</h2>
-                <p className="text-sm text-slate-500 mt-0.5">Edit the summary and experience used for this CV. Save, then re-generate below to update your PDF.</p>
+                <p className="text-sm text-slate-500 mt-0.5">Edit the summary and experience used for this CV. Save tailored content, then re-generate PDFs below so downloads use your latest text.</p>
+                <p className="text-sm text-slate-500 mt-1">Use <code className="text-xs bg-slate-100 px-1 rounded">**double asterisks**</code> around words for bold in the PDF. Line breaks are preserved.</p>
                 <p className="text-sm text-slate-600 mt-2 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
                   <strong>Tip to improve your ATS score:</strong> Use the same wording as the job description for skills and responsibilities where it fits your experience (e.g. copy phrases from the job ad into your summary and bullet points). Keep facts unchanged. Save, then click Re-compute score above to see the impact.
                 </p>
