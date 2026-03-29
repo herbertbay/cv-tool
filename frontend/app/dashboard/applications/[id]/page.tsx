@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import {
@@ -38,22 +38,47 @@ const BREAKDOWN_LABELS: Record<string, string> = {
   education: 'Education',
 };
 
-function MatchScoreCard({
+function CollapsibleSection({
+  title,
+  subtitle,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-4">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full px-5 py-4 flex items-start justify-between gap-4 text-left hover:bg-slate-50/80 transition-colors"
+        aria-expanded={open}
+      >
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-slate-800">{title}</h2>
+          {subtitle ? <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p> : null}
+        </div>
+        <span className="text-slate-400 text-sm shrink-0 mt-0.5 tabular-nums" aria-hidden>
+          {open ? '▼' : '▶'}
+        </span>
+      </button>
+      {open ? <div className="px-5 pb-5 pt-1 border-t border-slate-100">{children}</div> : null}
+    </div>
+  );
+}
+
+function AtsScoreExpandedBody({
   atsScore,
   atsScoreSummary,
   atsScoreBreakdown,
-  scoreLoading,
-  scoreError,
-  canCompute,
-  onComputeScore,
 }: {
-  atsScore: number | null;
+  atsScore: number;
   atsScoreSummary: string | null;
   atsScoreBreakdown: string | null;
-  scoreLoading: boolean;
-  scoreError: string | null;
-  canCompute: boolean;
-  onComputeScore: () => void;
 }) {
   let breakdown: Record<string, number> | null = null;
   if (atsScoreBreakdown) {
@@ -63,109 +88,68 @@ function MatchScoreCard({
       breakdown = null;
     }
   }
-  const scoreTier = atsScore == null ? null : atsScore >= 75 ? 'strong' : atsScore >= 50 ? 'moderate' : 'develop';
-
+  const scoreTier = atsScore >= 75 ? 'strong' : atsScore >= 50 ? 'moderate' : 'develop';
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
-        <h2 className="text-lg font-semibold text-slate-800">ATS match score</h2>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Semantic fit between your CV content and the job description (embedding-based). Re-compute after editing tailored content.
-        </p>
-      </div>
-      <div className="p-6">
-        {atsScore != null ? (
-          <div className="space-y-5">
-            <div className="flex flex-wrap items-end gap-6">
-              <div className="flex items-baseline gap-2">
-                <span
-                  className={`text-4xl font-bold tabular-nums ${
-                    scoreTier === 'strong'
-                      ? 'text-emerald-700'
-                      : scoreTier === 'moderate'
-                        ? 'text-amber-700'
-                        : 'text-slate-800'
-                  }`}
-                >
-                  {atsScore}
-                </span>
-                <span className="text-lg text-slate-500 font-medium">/ 100</span>
-              </div>
-              {scoreTier && (
-                <span
-                  className={`text-sm font-medium uppercase tracking-wider ${
-                    scoreTier === 'strong'
-                      ? 'text-emerald-600'
-                      : scoreTier === 'moderate'
-                        ? 'text-amber-600'
-                        : 'text-slate-500'
-                  }`}
-                >
-                  {scoreTier === 'strong' ? 'Strong match' : scoreTier === 'moderate' ? 'Moderate match' : 'Room to improve'}
-                </span>
-              )}
-            </div>
-            {atsScoreSummary && (
-              <p className="text-sm text-slate-600 leading-relaxed max-w-xl">{atsScoreSummary}</p>
-            )}
-            {breakdown && Object.keys(breakdown).length > 0 && (
-              <div className="pt-2 border-t border-slate-100">
-                <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Breakdown</p>
-                <div className="space-y-3">
-                  {['summary', 'skills', 'experience', 'education'].map((key) => {
-                    const value = breakdown![key];
-                    if (value == null) return null;
-                    const pct = Math.round(Math.max(0, Math.min(100, value)));
-                    const tier = pct >= 70 ? 'high' : pct >= 40 ? 'mid' : 'low';
-                    return (
-                      <div key={key}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="font-medium text-slate-700">{BREAKDOWN_LABELS[key] ?? key}</span>
-                          <span className="tabular-nums text-slate-600">{pct}</span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              tier === 'high'
-                                ? 'bg-emerald-500'
-                                : tier === 'mid'
-                                  ? 'bg-amber-500'
-                                  : 'bg-slate-400'
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {typeof breakdown.education === 'number' && breakdown.education < 60 && (
-                  <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-                    <p className="text-sm font-medium text-amber-900">Education is pulling down your match score</p>
-                    <ul className="mt-1 space-y-1 text-xs text-amber-800">
-                      <li>Use the same degree, certification, and field wording as the job post when accurate.</li>
-                      <li>Add relevant coursework, thesis, and project keywords from the role requirements.</li>
-                      <li>Include tools/technologies used in education (for example: SQL, Python, TensorFlow).</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">No score yet. Compute to see how your CV matches the job.</p>
-        )}
-        {scoreError && <p className="mt-2 text-sm text-red-600">{scoreError}</p>}
-        <button
-          type="button"
-          onClick={onComputeScore}
-          disabled={scoreLoading || !canCompute}
-          className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end gap-4">
+        <span
+          className={`text-3xl font-bold tabular-nums ${
+            scoreTier === 'strong' ? 'text-emerald-700' : scoreTier === 'moderate' ? 'text-amber-700' : 'text-slate-800'
+          }`}
         >
-          {scoreLoading ? 'Computing…' : atsScore != null ? 'Re-compute score' : 'Compute score'}
-        </button>
-        {!canCompute && <p className="mt-2 text-xs text-slate-500">Add a job description to this application to compute the score.</p>}
+          {atsScore}
+        </span>
+        <span className="text-lg text-slate-500 font-medium">/ 100</span>
+        <span
+          className={`text-xs font-medium uppercase tracking-wider ${
+            scoreTier === 'strong' ? 'text-emerald-600' : scoreTier === 'moderate' ? 'text-amber-600' : 'text-slate-500'
+          }`}
+        >
+          {scoreTier === 'strong' ? 'Strong match' : scoreTier === 'moderate' ? 'Moderate match' : 'Room to improve'}
+        </span>
       </div>
+      {atsScoreSummary && (
+        <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">{atsScoreSummary}</p>
+      )}
+      {breakdown && Object.keys(breakdown).length > 0 && (
+        <div className="pt-2 border-t border-slate-100">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">Breakdown</p>
+          <div className="space-y-3 max-w-xl">
+            {['summary', 'skills', 'experience', 'education'].map((key) => {
+              const value = breakdown![key];
+              if (value == null) return null;
+              const pct = Math.round(Math.max(0, Math.min(100, value)));
+              const tier = pct >= 70 ? 'high' : pct >= 40 ? 'mid' : 'low';
+              return (
+                <div key={key}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-slate-700">{BREAKDOWN_LABELS[key] ?? key}</span>
+                    <span className="tabular-nums text-slate-600">{pct}</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        tier === 'high' ? 'bg-emerald-500' : tier === 'mid' ? 'bg-amber-500' : 'bg-slate-400'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {typeof breakdown.education === 'number' && breakdown.education < 60 && (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 max-w-xl">
+              <p className="text-sm font-medium text-amber-900">Education is pulling down your match score</p>
+              <ul className="mt-1 space-y-1 text-xs text-amber-800">
+                <li>Use the same degree, certification, and field wording as the job post when accurate.</li>
+                <li>Add relevant coursework, thesis, and project keywords from the role requirements.</li>
+                <li>Include tools/technologies used in education (for example: SQL, Python, TensorFlow).</li>
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -195,11 +179,11 @@ export default function ApplicationDetailPage() {
   });
   const [tailored, setTailored] = useState<TailoredContent | null>(null);
   const [tailoredLoading, setTailoredLoading] = useState(false);
-  const [tailoredSaving, setTailoredSaving] = useState(false);
+  const [savingPdfs, setSavingPdfs] = useState(false);
+  const [scoreDetailsOpen, setScoreDetailsOpen] = useState(false);
   const [letterGenerating, setLetterGenerating] = useState(false);
   const [letterCopied, setLetterCopied] = useState(false);
   const [letterError, setLetterError] = useState<string | null>(null);
-  const [regenerateProgress, setRegenerateProgress] = useState('');
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [scoreLoading, setScoreLoading] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
@@ -338,18 +322,22 @@ export default function ApplicationDetailPage() {
     }
   }, [id, app, edit]);
 
-  const handleSaveTailored = useCallback(async () => {
+  const handleSyncPdfs = useCallback(async () => {
     if (!app?.session_id || !tailored) return;
-    setTailoredSaving(true);
+    setSavingPdfs(true);
+    setRegenerateError(null);
     try {
       await updateTailoredContent(app.session_id, {
         tailored_summary: tailored.tailored_summary,
         tailored_experience: tailored.tailored_experience,
       });
+      await regenerateCv(app.session_id, tailored.template, edit.tailored_headline);
+    } catch (e) {
+      setRegenerateError(e instanceof Error ? e.message : 'Failed to update PDF files');
     } finally {
-      setTailoredSaving(false);
+      setSavingPdfs(false);
     }
-  }, [app?.session_id, tailored]);
+  }, [app?.session_id, tailored, edit.tailored_headline]);
 
   const handleGenerateMotivationLetter = useCallback(async () => {
     if (!id || !app?.session_id) return;
@@ -376,19 +364,6 @@ export default function ApplicationDetailPage() {
       // ignore
     }
   }, [tailored?.motivation_letter]);
-
-  const handleRegenerate = useCallback(async () => {
-    if (!app?.session_id || !tailored) return;
-    setRegenerateError(null);
-    setRegenerateProgress('Regenerating PDFs…');
-    try {
-      await regenerateCv(app.session_id, tailored.template, edit.tailored_headline);
-      setRegenerateProgress('');
-    } catch (e) {
-      setRegenerateError(e instanceof Error ? e.message : 'Regenerate failed');
-      setRegenerateProgress('');
-    }
-  }, [app?.session_id, tailored, edit.tailored_headline]);
 
   const handleDownloadPdf = useCallback(async () => {
     if (!app?.session_id) return;
@@ -470,12 +445,132 @@ export default function ApplicationDetailPage() {
           <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700">← Back to dashboard</Link>
         </p>
 
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
-            <h1 className="text-xl font-semibold text-slate-800">Job application</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Edit application details. Edit the tailored CV content below and re-generate to update your PDFs.</p>
-          </div>
-          <div className="p-6 space-y-6">
+        {(() => {
+          const canComputeScore = !!app.full_job_description?.trim();
+          const scoreTier =
+            app.ats_score == null ? null : app.ats_score >= 75 ? 'strong' : app.ats_score >= 50 ? 'moderate' : 'develop';
+          return (
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+              <div className="p-6">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                      {edit.company_name?.trim() || 'Application'}
+                    </h1>
+                    <p className="text-lg text-slate-600 mt-1">
+                      {edit.job_title?.trim() || 'Job title'}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <label htmlFor="app-status" className="text-xs font-medium uppercase tracking-wider text-slate-500">Status</label>
+                      <select
+                        id="app-status"
+                        value={edit.application_status}
+                        onChange={(e) => {
+                          const v = e.target.value as ApplicationStatus;
+                          setEdit((p) => ({ ...p, application_status: v }));
+                          updateJobApplication(app.id, { application_status: v }).catch(() => {});
+                        }}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      >
+                        {APPLICATION_STATUSES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  {app.session_id ? (
+                    <div className="shrink-0 flex flex-col gap-3 w-full lg:w-auto lg:min-w-[220px] lg:items-end">
+                      {app.ats_score != null ? (
+                        <>
+                          <div className="flex flex-wrap items-baseline gap-2 lg:justify-end">
+                            <span
+                              className={`text-4xl font-bold tabular-nums ${
+                                scoreTier === 'strong'
+                                  ? 'text-emerald-700'
+                                  : scoreTier === 'moderate'
+                                    ? 'text-amber-700'
+                                    : 'text-slate-800'
+                              }`}
+                            >
+                              {app.ats_score}
+                            </span>
+                            <span className="text-lg text-slate-500 font-medium">/ 100</span>
+                            {scoreTier && (
+                              <span
+                                className={`text-xs font-medium uppercase tracking-wider ${
+                                  scoreTier === 'strong'
+                                    ? 'text-emerald-600'
+                                    : scoreTier === 'moderate'
+                                      ? 'text-amber-600'
+                                      : 'text-slate-500'
+                                }`}
+                              >
+                                {scoreTier === 'strong' ? 'Strong' : scoreTier === 'moderate' ? 'Moderate' : 'Room to improve'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2 lg:justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setScoreDetailsOpen((o) => !o)}
+                              className="text-sm font-medium text-blue-700 hover:text-blue-900"
+                            >
+                              {scoreDetailsOpen ? 'Hide breakdown' : 'Score breakdown'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleComputeScore}
+                              disabled={scoreLoading || !canComputeScore}
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                              {scoreLoading ? 'Computing…' : 'Re-compute'}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-slate-500 lg:text-right">No ATS score yet.</p>
+                          <div className="flex flex-wrap gap-2 lg:justify-end">
+                            <button
+                              type="button"
+                              onClick={handleComputeScore}
+                              disabled={scoreLoading || !canComputeScore}
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                              {scoreLoading ? 'Computing…' : 'Compute score'}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                      {scoreError && <p className="text-sm text-red-600 lg:text-right">{scoreError}</p>}
+                      {!canComputeScore && (
+                        <p className="text-xs text-slate-500 lg:text-right max-w-xs">
+                          Save a full job description under Application &amp; job to compute ATS match.
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+                {app.session_id && scoreDetailsOpen && app.ats_score != null && (
+                  <div className="mt-6 pt-6 border-t border-slate-100">
+                    <AtsScoreExpandedBody
+                      atsScore={app.ats_score}
+                      atsScoreSummary={app.ats_score_summary}
+                      atsScoreBreakdown={app.ats_score_breakdown}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        <CollapsibleSection
+          title="Application & job"
+          subtitle="Core details, dates, full job description, tailored headline & skills (saved on blur)"
+          defaultOpen={false}
+        >
+          <div className="space-y-6 pt-2">
             <section className="space-y-4">
               <h3 className="text-sm font-semibold text-slate-800">Core details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -516,24 +611,8 @@ export default function ApplicationDetailPage() {
             </section>
 
             <section className="space-y-4 border-t border-slate-100 pt-4">
-              <h3 className="text-sm font-semibold text-slate-800">Application tracking</h3>
+              <h3 className="text-sm font-semibold text-slate-800">Dates & links</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Status</label>
-                  <select
-                    value={edit.application_status}
-                    onChange={(e) => {
-                      const v = e.target.value as ApplicationStatus;
-                      setEdit((p) => ({ ...p, application_status: v }));
-                      updateJobApplication(app.id, { application_status: v }).catch(() => {});
-                    }}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  >
-                    {APPLICATION_STATUSES.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
                 <div>
                   <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Application date (optional)</label>
                   <input
@@ -655,32 +734,22 @@ export default function ApplicationDetailPage() {
             </section>
             {saving && <p className="text-xs text-slate-500">Saving changes…</p>}
           </div>
-        </div>
-
-        {app.session_id && (app.full_job_description?.trim() || app.ats_score != null) && (
-          <MatchScoreCard
-            atsScore={app.ats_score}
-            atsScoreSummary={app.ats_score_summary}
-            atsScoreBreakdown={app.ats_score_breakdown}
-            scoreLoading={scoreLoading}
-            scoreError={scoreError}
-            canCompute={!!app.full_job_description?.trim()}
-            onComputeScore={handleComputeScore}
-          />
-        )}
+        </CollapsibleSection>
 
         {app.session_id && (
           <>
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
-                <h2 className="text-lg font-semibold text-slate-800">Tailored CV content</h2>
-                <p className="text-sm text-slate-500 mt-0.5">Edit the summary and experience used for this CV. Save tailored content, then re-generate PDFs below so downloads use your latest text.</p>
-                <p className="text-sm text-slate-500 mt-1">Use <code className="text-xs bg-slate-100 px-1 rounded">**double asterisks**</code> around words for bold in the PDF. Line breaks are preserved.</p>
-                <p className="text-sm text-slate-600 mt-2 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
-                  <strong>Tip to improve your ATS score:</strong> Use the same wording as the job description for skills and responsibilities where it fits your experience (e.g. copy phrases from the job ad into your summary and bullet points). Keep facts unchanged. Save, then click Re-compute score above to see the impact.
+            <CollapsibleSection
+              title="CV & motivation letter text"
+              subtitle="Preview updates live. Use Update PDF files when you want downloads to match."
+              defaultOpen
+            >
+              <div className="space-y-4 pt-2">
+                <p className="text-sm text-slate-500">
+                  Use <code className="text-xs bg-slate-100 px-1 rounded">**double asterisks**</code> for bold in the PDF. Line breaks are preserved.
                 </p>
-              </div>
-              <div className="p-6 space-y-4">
+                <p className="text-sm text-slate-600 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
+                  <strong>ATS tip:</strong> Mirror job-description wording in summary and experience where truthful, then re-compute score in the header.
+                </p>
                 {tailoredLoading && <p className="text-sm text-slate-500">Loading tailored content…</p>}
                 {!tailoredLoading && tailored && (
                   <>
@@ -752,27 +821,43 @@ export default function ApplicationDetailPage() {
                       />
                       {letterError && <p className="mt-2 text-sm text-red-600">{letterError}</p>}
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleSaveTailored}
-                      disabled={tailoredSaving}
-                      className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
-                    >
-                      {tailoredSaving ? 'Saving…' : 'Save tailored content'}
-                    </button>
+                    <div className="flex flex-col gap-4 pt-4 border-t border-slate-100 sm:flex-row sm:flex-wrap sm:items-end">
+                      <div className="min-w-[180px] flex-1">
+                        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">CV template</label>
+                        <select
+                          value={tailored.template}
+                          onChange={(e) => setTailored((p) => p ? { ...p, template: e.target.value } : null)}
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        >
+                          {CV_TEMPLATES.map((t) => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSyncPdfs}
+                        disabled={savingPdfs}
+                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        {savingPdfs ? 'Saving & updating PDFs…' : 'Update PDF files'}
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Saves summary &amp; experience to the server and rebuilds CV/letter PDFs for download. Preview above already reflects your edits.
+                    </p>
+                    {regenerateError && <p className="text-sm text-red-600">{regenerateError}</p>}
                   </>
                 )}
               </div>
-            </div>
+            </CollapsibleSection>
 
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
-                <h2 className="text-lg font-semibold text-slate-800">CV preview (PDF layout)</h2>
-                <p className="text-sm text-slate-500 mt-0.5">
-                  Same HTML as the generated PDF. Reflects your tailored summary and experience, the job-specific headline above, and the selected template. Updates as you edit (short delay).
-                </p>
-              </div>
-              <div className="p-6">
+            <CollapsibleSection
+              title="Resume preview"
+              subtitle="Same HTML as the PDF (updates shortly after you edit)"
+              defaultOpen
+            >
+              <div className="pt-2">
                 {previewLoading && <p className="text-sm text-slate-500 mb-3">Updating preview…</p>}
                 {previewError && <p className="text-sm text-red-600 mb-3">{previewError}</p>}
                 {previewHtml ? (
@@ -786,66 +871,27 @@ export default function ApplicationDetailPage() {
                   <p className="text-sm text-slate-500">Preview will appear when tailored content is loaded.</p>
                 ) : null}
               </div>
-            </div>
+            </CollapsibleSection>
 
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
-                <h2 className="text-lg font-semibold text-slate-800">Re-generate PDFs</h2>
-                <p className="text-sm text-slate-500 mt-0.5">Choose a template and generate new CV and motivation letter PDFs with your current tailored content.</p>
+            <CollapsibleSection title="Downloads" subtitle="CV and motivation letter PDFs" defaultOpen={false}>
+              <div className="pt-2 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  className="inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                >
+                  Download CV (PDF)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadLetter}
+                  className="inline-flex rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                >
+                  Download motivation letter (PDF)
+                </button>
               </div>
-              <div className="p-6 space-y-4">
-                {tailored && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">CV template</label>
-                      <select
-                        value={tailored.template}
-                        onChange={(e) => setTailored((p) => p ? { ...p, template: e.target.value } : null)}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                      >
-                        {CV_TEMPLATES.map((t) => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRegenerate}
-                      disabled={!!regenerateProgress}
-                      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-                    >
-                    {regenerateProgress || 'Re-generate CV & motivation letter PDFs'}
-                    </button>
-                    {regenerateError && <p className="text-sm text-red-600">{regenerateError}</p>}
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
-                <h2 className="text-lg font-semibold text-slate-800">Download</h2>
-              </div>
-              <div className="p-6">
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={handleDownloadPdf}
-                    className="inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-                  >
-                    Download CV (PDF)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDownloadLetter}
-                    className="inline-flex rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-                  >
-                    Download motivation letter (PDF)
-                  </button>
-                </div>
-                {downloadError && <p className="mt-2 text-sm text-red-600">{downloadError}</p>}
-              </div>
-            </div>
+              {downloadError && <p className="mt-3 text-sm text-red-600">{downloadError}</p>}
+            </CollapsibleSection>
           </>
         )}
 
