@@ -660,6 +660,58 @@ def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
     }
 
 
+def get_job_application_by_session_id(session_id: str, user_id: str) -> dict | None:
+    """Return the most recent job application linked to this CV session for the user, if any."""
+    if not session_id or not session_id.strip():
+        return None
+    init_db()
+    base_cols = (
+        "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, "
+        "archived, full_job_description, session_id, application_date, job_url, created_at"
+    )
+    full_cols = base_cols + ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, tailored_education"
+    sid = session_id.strip()
+    with _get_conn() as conn:
+        try:
+            row = conn.execute(
+                f"SELECT {full_cols} FROM job_applications WHERE session_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1",
+                (sid, user_id),
+            ).fetchone()
+        except sqlite3.OperationalError as e:
+            if "no such column" not in str(e).lower():
+                raise
+            row = conn.execute(
+                f"SELECT {base_cols} FROM job_applications WHERE session_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1",
+                (sid, user_id),
+            ).fetchone()
+    if not row:
+        return None
+    if "ats_score" in row.keys():
+        return _row_to_job_application(row)
+    return {
+        "id": row["id"],
+        "user_id": row["user_id"],
+        "company_name": row["company_name"] or "",
+        "description": row["description"] or "",
+        "salary_from": row["salary_from"],
+        "salary_to": row["salary_to"],
+        "job_title": row["job_title"] or "",
+        "application_status": row["application_status"] or "Interested",
+        "archived": bool(row["archived"]),
+        "full_job_description": row["full_job_description"] or "",
+        "session_id": row["session_id"],
+        "application_date": row["application_date"],
+        "job_url": row["job_url"],
+        "created_at": row["created_at"],
+        "ats_score": None,
+        "ats_score_summary": None,
+        "ats_score_breakdown": None,
+        "tailored_headline": None,
+        "tailored_skills": [],
+        "tailored_education": [],
+    }
+
+
 def _row_to_job_application(r: sqlite3.Row) -> dict:
     """Map a job_applications row to dict; works even if ats_* columns are missing (old DB). sqlite3.Row has no .get()."""
     keys = r.keys() if hasattr(r, "keys") else []

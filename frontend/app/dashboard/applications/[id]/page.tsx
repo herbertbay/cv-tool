@@ -8,6 +8,7 @@ import {
   updateJobApplication,
   getTailoredContent,
   updateTailoredContent,
+  postCvGenerationPreviewHtml,
   regenerateCv,
   generateApplicationMotivationLetter,
   downloadPdf,
@@ -202,6 +203,9 @@ export default function ApplicationDetailPage() {
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [scoreLoading, setScoreLoading] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     if (!id || !user) return;
@@ -252,6 +256,43 @@ export default function ApplicationDetailPage() {
       return;
     }
   }, [user, router]);
+
+  useEffect(() => {
+    if (!app?.session_id || !tailored) {
+      setPreviewHtml('');
+      setPreviewLoading(false);
+      setPreviewError(null);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      setPreviewLoading(true);
+      setPreviewError(null);
+      postCvGenerationPreviewHtml(app.session_id!, {
+        tailored_summary: tailored.tailored_summary,
+        tailored_experience: tailored.tailored_experience,
+        template: tailored.template,
+        tailored_headline: edit.tailored_headline,
+        keywords_to_highlight: tailored.keywords_to_highlight,
+      })
+        .then((html) => {
+          if (!cancelled) {
+            setPreviewHtml(html);
+            setPreviewError(null);
+          }
+        })
+        .catch((e) => {
+          if (!cancelled) setPreviewError(e instanceof Error ? e.message : 'Preview failed');
+        })
+        .finally(() => {
+          if (!cancelled) setPreviewLoading(false);
+        });
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [app?.session_id, tailored, edit.tailored_headline]);
 
   const handleSave = useCallback(async () => {
     if (!id || !app) return;
@@ -341,13 +382,13 @@ export default function ApplicationDetailPage() {
     setRegenerateError(null);
     setRegenerateProgress('Regenerating PDFs…');
     try {
-      await regenerateCv(app.session_id, tailored.template);
+      await regenerateCv(app.session_id, tailored.template, edit.tailored_headline);
       setRegenerateProgress('');
     } catch (e) {
       setRegenerateError(e instanceof Error ? e.message : 'Regenerate failed');
       setRegenerateProgress('');
     }
-  }, [app?.session_id, tailored]);
+  }, [app?.session_id, tailored, edit.tailored_headline]);
 
   const handleDownloadPdf = useCallback(async () => {
     if (!app?.session_id) return;
@@ -721,6 +762,29 @@ export default function ApplicationDetailPage() {
                     </button>
                   </>
                 )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+                <h2 className="text-lg font-semibold text-slate-800">CV preview (PDF layout)</h2>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  Same HTML as the generated PDF. Reflects your tailored summary and experience, the job-specific headline above, and the selected template. Updates as you edit (short delay).
+                </p>
+              </div>
+              <div className="p-6">
+                {previewLoading && <p className="text-sm text-slate-500 mb-3">Updating preview…</p>}
+                {previewError && <p className="text-sm text-red-600 mb-3">{previewError}</p>}
+                {previewHtml ? (
+                  <iframe
+                    title="CV PDF preview"
+                    sandbox=""
+                    className="w-full h-[min(85vh,920px)] border border-slate-200 rounded-lg bg-white shadow-inner"
+                    srcDoc={previewHtml}
+                  />
+                ) : !previewLoading && !previewError ? (
+                  <p className="text-sm text-slate-500">Preview will appear when tailored content is loaded.</p>
+                ) : null}
               </div>
             </div>
 

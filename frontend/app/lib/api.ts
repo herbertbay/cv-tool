@@ -603,11 +603,44 @@ export async function updateTailoredContent(
   if (!res.ok) throw new Error('Failed to update tailored content');
 }
 
-export async function regenerateCv(sessionId: string, template?: string): Promise<{ ok: boolean; session_id: string }> {
+/** Same HTML as PDF pipeline; optional fields override unsaved editor state. */
+export async function postCvGenerationPreviewHtml(
+  sessionId: string,
+  overrides: {
+    tailored_summary?: string;
+    tailored_experience?: TailoredContent['tailored_experience'];
+    template?: string;
+    tailored_headline?: string;
+    keywords_to_highlight?: string[];
+  }
+): Promise<string> {
+  const res = await fetch(`${API_BASE}/cv-generations/${encodeURIComponent(sessionId)}/preview-html`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(overrides),
+    ...fetchOptions,
+  });
+  checkAuth(res);
+  if (!res.ok) throw new Error('Failed to load CV preview');
+  return res.text();
+}
+
+export async function regenerateCv(
+  sessionId: string,
+  template?: string,
+  tailoredHeadline?: string
+): Promise<{ ok: boolean; session_id: string }> {
+  const payload: Record<string, string> = {
+    session_id: sessionId,
+    template: template || 'cv_base.html',
+  };
+  if (tailoredHeadline !== undefined) {
+    payload.tailored_headline = tailoredHeadline;
+  }
   const res = await fetch(`${API_BASE}/regenerate-cv`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, template: template || 'cv_base.html' }),
+    body: JSON.stringify(payload),
     ...fetchOptions,
   });
   if (!res.ok) throw new Error('Failed to regenerate CV');

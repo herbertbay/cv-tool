@@ -38,6 +38,7 @@ from app.database import (
     delete_ats_match_result as db_delete_ats_match_result,
     insert_job_application as db_insert_job_application,
     get_job_application_by_id as db_get_job_application_by_id,
+    get_job_application_by_session_id as db_get_job_application_by_session_id,
     get_job_applications_by_user as db_get_job_applications_by_user,
     update_job_application as db_update_job_application,
 )
@@ -1297,9 +1298,64 @@ async def patch_cv_generation_tailored(session_id: str, request: Request, body: 
     return {"ok": True}
 
 
+@app.post("/api/cv-generations/{session_id}/preview-html")
+async def preview_cv_generation_html(session_id: str, request: Request, body: dict | None = Body(None)):
+    """Return CV HTML using the same renderer as the PDF (WeasyPrint input). Optional body overrides current editor state."""
+    user_id = require_user(request)
+    gen = db_get_cv_generation(session_id, user_id)
+    if not gen:
+        raise HTTPException(404, "Session not found or access denied")
+    data = db_get_user_data(user_id)
+    if not data or not data.get("profile"):
+        raise HTTPException(400, "Profile not found")
+    profile = data["profile"] if isinstance(data["profile"], Profile) else Profile(**data["profile"])
+    extra_urls = [u for u in (data.get("additional_urls") or []) if u and str(u).strip().startswith(("http://", "https://"))]
+    show_powered_by = not _is_premium_user(user_id)
+
+    tailored_summary = gen.get("tailored_summary") or ""
+    tailored_experience = gen.get("tailored_experience") or []
+    keywords = gen.get("keywords_to_highlight") or []
+    template_name = (gen.get("template") or "cv_base.html").strip()
+    if template_name not in ("cv_base.html", "cv_executive.html"):
+        template_name = "cv_base.html"
+
+    b = body if isinstance(body, dict) else {}
+    if isinstance(b.get("tailored_summary"), str):
+        tailored_summary = b["tailored_summary"]
+    if isinstance(b.get("tailored_experience"), list):
+        tailored_experience = b["tailored_experience"]
+    if isinstance(b.get("keywords_to_highlight"), list):
+        keywords = [str(k) for k in b["keywords_to_highlight"] if str(k).strip()]
+    if isinstance(b.get("template"), str):
+        tn = b["template"].strip()
+        if tn in ("cv_base.html", "cv_executive.html"):
+            template_name = tn
+
+    if "tailored_headline" in b:
+        th = str(b.get("tailored_headline") or "").strip()
+        profile = profile.model_copy(update={"headline": th or profile.headline})
+    else:
+        app_row = db_get_job_application_by_session_id(session_id, user_id)
+        if app_row:
+            th = (app_row.get("tailored_headline") or "").strip()
+            if th:
+                profile = profile.model_copy(update={"headline": th})
+
+    html_str = render_cv_html(
+        profile=profile,
+        tailored_summary=tailored_summary,
+        tailored_experience=tailored_experience,
+        keywords_to_highlight=keywords,
+        template_name=template_name,
+        additional_urls=extra_urls,
+        show_powered_by=show_powered_by,
+    )
+    return HTMLResponse(html_str)
+
+
 @app.post("/api/regenerate-cv")
 async def regenerate_cv(request: Request, body: dict = Body(...)):
-    """Re-generate CV and optional letter PDF for a session. Body: session_id, template? (cv_base.html | cv_executive.html). Uses persisted tailored content and user profile. Requires auth."""
+    """Re-generate CV and optional letter PDF for a session. Body: session_id, template? (cv_base.html | cv_executive.html), tailored_headline? (job-specific title). Uses persisted tailored content and user profile. Requires auth."""
     user_id = require_user(request)
     session_id = (body.get("session_id") or "").strip()
     if not session_id:
@@ -1318,6 +1374,13 @@ async def regenerate_cv(request: Request, body: dict = Body(...)):
     if not data or not data.get("profile"):
         raise HTTPException(400, "User profile not found; cannot regenerate")
     profile = data["profile"] if isinstance(data["profile"], Profile) else Profile(**data["profile"])
+    if "tailored_headline" in body:
+        tailored_h = str(body.get("tailored_headline") or "").strip()
+    else:
+        app_row = db_get_job_application_by_session_id(session_id, user_id)
+        tailored_h = (app_row.get("tailored_headline") or "").strip() if app_row else ""
+    if tailored_h:
+        profile = profile.model_copy(update={"headline": tailored_h})
     extra_urls = [u for u in (data.get("additional_urls") or []) if u and str(u).strip().startswith(("http://", "https://"))]
     show_powered_by = not _is_premium_user(user_id)
     cv_pdf_bytes = generate_cv_pdf(
