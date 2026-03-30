@@ -63,6 +63,7 @@ from app.url_fetcher import fetch_job_description, fetch_additional_urls
 from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score, extract_job_application, generate_motivation_letter
 from app.ats_scorer import compute_ats_match
 from app.pdf_generator import generate_cv_pdf, generate_letter_pdf, render_cv_html
+from app.cv_section_includes import merge_application_skills_education, apply_cv_section_includes
 from app.session_store import (
     create_session_id,
     save_session,
@@ -91,6 +92,25 @@ def _is_admin_user(user_id: str) -> bool:
         return False
     email = (user.get("email") or "").lower().strip()
     return email in ADMIN_EMAILS
+
+
+def _effective_cv_includes(app_row: dict | None, body: dict | None) -> dict:
+    if body and isinstance(body.get("cv_section_includes"), dict):
+        return body["cv_section_includes"]
+    if app_row and isinstance(app_row.get("cv_section_includes"), dict):
+        return app_row["cv_section_includes"]
+    return {}
+
+
+def _position_from_exp_dict(p: dict) -> Position:
+    return Position(
+        title=p.get("title", "") or "",
+        company=p.get("company", "") or "",
+        start_date=p.get("start_date"),
+        end_date=p.get("end_date"),
+        description=p.get("description"),
+        location=p.get("location"),
+    )
 
 
 @asynccontextmanager
@@ -867,49 +887,35 @@ def _compute_and_store_application_score(user_id: str, application_id: str) -> d
     if not settings.openai_api_key:
         raise HTTPException(503, "Score computation is not configured.")
     profile = data["profile"] if isinstance(data["profile"], Profile) else Profile(**data["profile"])
-    tailored_summary = gen.get("tailored_summary") or ""
-    tailored_experience = gen.get("tailored_experience") or []
-    exp_list = []
-    for p in tailored_experience:
-        exp_list.append(Position(
-            title=p.get("title", "") or "",
-            company=p.get("company", "") or "",
-            start_date=p.get("start_date"),
-            end_date=p.get("end_date"),
-            description=p.get("description"),
-            location=p.get("location"),
-        ))
+    profile = merge_application_skills_education(profile, app)
     app_tailored_headline = (app.get("tailored_headline") or "").strip() or profile.headline
-    app_tailored_skills = app.get("tailored_skills") if isinstance(app.get("tailored_skills"), list) else []
-    app_tailored_education = app.get("tailored_education") if isinstance(app.get("tailored_education"), list) else []
-    edu_list = []
-    for e in app_tailored_education:
-        if not isinstance(e, dict):
-            continue
-        edu_list.append(
-            EducationEntry(
-                school=e.get("school", "") or "",
-                degree=e.get("degree"),
-                field=e.get("field"),
-                start_date=e.get("start_date"),
-                end_date=e.get("end_date"),
-                description=e.get("description"),
-            )
-        )
+    profile = profile.model_copy(update={"headline": app_tailored_headline})
+    tailored_summary = gen.get("tailored_summary") or ""
+    raw_te = gen.get("tailored_experience") or []
+    if not isinstance(raw_te, list):
+        raw_te = []
+    inc = _effective_cv_includes(app, None)
+    p_vis, sum_vis, exp_vis, _urls = apply_cv_section_includes(
+        profile, tailored_summary, raw_te, [], inc,
+    )
+    if raw_te:
+        exp_positions = [_position_from_exp_dict(p) for p in exp_vis if isinstance(p, dict)]
+    else:
+        exp_positions = list(p_vis.experience or [])
     profile_for_score = Profile(
-        full_name=profile.full_name,
-        headline=app_tailored_headline,
-        summary=tailored_summary,
-        email=profile.email,
-        phone=profile.phone,
-        address=profile.address,
-        linkedin_url=profile.linkedin_url,
-        photo_base64=profile.photo_base64,
-        experience=exp_list or profile.experience,
-        education=edu_list or profile.education,
-        skills=app_tailored_skills or profile.skills,
-        certifications=profile.certifications,
-        languages=profile.languages,
+        full_name=p_vis.full_name,
+        headline=p_vis.headline,
+        summary=sum_vis,
+        email=p_vis.email,
+        phone=p_vis.phone,
+        address=p_vis.address,
+        linkedin_url=p_vis.linkedin_url,
+        photo_base64=p_vis.photo_base64,
+        experience=exp_positions,
+        education=p_vis.education,
+        skills=p_vis.skills,
+        certifications=p_vis.certifications,
+        languages=p_vis.languages,
     )
     keywords_highlight = gen.get("keywords_to_highlight") or []
     try:
@@ -1090,6 +1096,14 @@ async def patch_job_application(application_id: str, request: Request, body: dic
     if "tailored_education" in body:
         raw = body.get("tailored_education")
         updates["tailored_education"] = raw if isinstance(raw, list) else None
+    if "cv_section_includes" in body:
+        inc = body.get("cv_section_includes")
+        if inc is None:
+            updates["cv_section_includes"] = None
+        elif isinstance(inc, dict):
+            updates["cv_section_includes"] = inc
+        else:
+            raise HTTPException(400, "cv_section_includes must be an object or null")
     if not updates:
         raise HTTPException(400, "No valid fields to update")
     ok = db_update_job_application(application_id, user_id, **updates)
@@ -1309,6 +1323,8 @@ async def preview_cv_generation_html(session_id: str, request: Request, body: di
     if not data or not data.get("profile"):
         raise HTTPException(400, "Profile not found")
     profile = data["profile"] if isinstance(data["profile"], Profile) else Profile(**data["profile"])
+    app_row = db_get_job_application_by_session_id(session_id, user_id)
+    profile = merge_application_skills_education(profile, app_row)
     extra_urls = [u for u in (data.get("additional_urls") or []) if u and str(u).strip().startswith(("http://", "https://"))]
     show_powered_by = not _is_premium_user(user_id)
 
@@ -1334,12 +1350,15 @@ async def preview_cv_generation_html(session_id: str, request: Request, body: di
     if "tailored_headline" in b:
         th = str(b.get("tailored_headline") or "").strip()
         profile = profile.model_copy(update={"headline": th or profile.headline})
-    else:
-        app_row = db_get_job_application_by_session_id(session_id, user_id)
-        if app_row:
-            th = (app_row.get("tailored_headline") or "").strip()
-            if th:
-                profile = profile.model_copy(update={"headline": th})
+    elif app_row:
+        th = (app_row.get("tailored_headline") or "").strip()
+        if th:
+            profile = profile.model_copy(update={"headline": th})
+
+    inc = _effective_cv_includes(app_row, b)
+    profile, tailored_summary, tailored_experience, extra_urls = apply_cv_section_includes(
+        profile, tailored_summary, tailored_experience, extra_urls, inc,
+    )
 
     html_str = render_cv_html(
         profile=profile,
@@ -1374,15 +1393,20 @@ async def regenerate_cv(request: Request, body: dict = Body(...)):
     if not data or not data.get("profile"):
         raise HTTPException(400, "User profile not found; cannot regenerate")
     profile = data["profile"] if isinstance(data["profile"], Profile) else Profile(**data["profile"])
+    app_row = db_get_job_application_by_session_id(session_id, user_id)
+    profile = merge_application_skills_education(profile, app_row)
     if "tailored_headline" in body:
         tailored_h = str(body.get("tailored_headline") or "").strip()
     else:
-        app_row = db_get_job_application_by_session_id(session_id, user_id)
         tailored_h = (app_row.get("tailored_headline") or "").strip() if app_row else ""
     if tailored_h:
         profile = profile.model_copy(update={"headline": tailored_h})
     extra_urls = [u for u in (data.get("additional_urls") or []) if u and str(u).strip().startswith(("http://", "https://"))]
     show_powered_by = not _is_premium_user(user_id)
+    inc = _effective_cv_includes(app_row, body if isinstance(body, dict) else None)
+    profile, tailored_summary, tailored_experience, extra_urls = apply_cv_section_includes(
+        profile, tailored_summary, tailored_experience, extra_urls, inc,
+    )
     cv_pdf_bytes = generate_cv_pdf(
         profile=profile,
         tailored_summary=tailored_summary,

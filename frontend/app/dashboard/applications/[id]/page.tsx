@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import {
@@ -14,10 +14,13 @@ import {
   downloadPdf,
   downloadLetterPdf,
   computeApplicationScore,
+  getProfile,
   type JobApplication,
   type ApplicationStatus,
   type TailoredContent,
+  type Profile,
 } from '../../../lib/api';
+import { defaultCvIncludes, toApiPayload, type CvSectionIncludesState } from '../../../lib/cv-section-includes';
 import { useAuth } from '../../../lib/auth-context';
 
 const APPLICATION_STATUSES: ApplicationStatus[] = ['Interested', 'Applied', 'Interview', 'Rejected', 'Offer'];
@@ -140,11 +143,14 @@ function AtsScoreExpandedBody({
           </div>
           {typeof breakdown.education === 'number' && breakdown.education < 60 && (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 max-w-xl">
-              <p className="text-sm font-medium text-amber-900">Education is pulling down your match score</p>
-              <ul className="mt-1 space-y-1 text-xs text-amber-800">
-                <li>Use the same degree, certification, and field wording as the job post when accurate.</li>
-                <li>Add relevant coursework, thesis, and project keywords from the role requirements.</li>
-                <li>Include tools/technologies used in education (for example: SQL, Python, TensorFlow).</li>
+              <p className="text-sm font-medium text-amber-900">Education score is often lower — this is common</p>
+              <p className="mt-1 text-xs text-amber-900/90 leading-relaxed">
+                Many job posts barely mention degrees. Keyword-style checkers score overlap per section; some products list education as its own checklist instead of folding it into one headline number. Here, your education block is compared semantically to the whole job text like other sections, so a posting that omits schooling can yield a low education bar even when the CV is appropriate.
+              </p>
+              <ul className="mt-2 space-y-1 text-xs text-amber-800 list-disc list-inside">
+                <li>When the post names a degree or field, mirror that wording if truthful.</li>
+                <li>Weigh summary, skills, and experience more for “fit”; treat a weak education bar as informational if the role does not emphasize schooling.</li>
+                <li>Add relevant coursework, thesis topics, or tools (e.g. SQL, Python) that appear in the role.</li>
               </ul>
             </div>
           )}
@@ -190,6 +196,9 @@ export default function ApplicationDetailPage() {
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [baseProfile, setBaseProfile] = useState<Profile | null>(null);
+  const [cvIncludes, setCvIncludes] = useState<CvSectionIncludesState>(() => defaultCvIncludes(0, 0, null));
+  const profileHydratedForApp = useRef<string | null>(null);
 
   const load = useCallback(() => {
     if (!id || !user) return;
@@ -208,8 +217,10 @@ export default function ApplicationDetailPage() {
           application_date: data.application_date ?? toDateOnly(new Date()),
           job_url: data.job_url ?? '',
           tailored_headline: data.tailored_headline ?? '',
-          tailored_skills: Array.isArray(data.tailored_skills) ? data.tailored_skills.join(', ') : '',
-          tailored_education: Array.isArray(data.tailored_education) ? data.tailored_education : [],
+          tailored_skills:
+            data.tailored_skills != null && Array.isArray(data.tailored_skills) ? data.tailored_skills.join(', ') : '',
+          tailored_education:
+            data.tailored_education != null && Array.isArray(data.tailored_education) ? data.tailored_education : [],
         });
       })
       .catch(() => setApp(null))
@@ -242,6 +253,57 @@ export default function ApplicationDetailPage() {
   }, [user, router]);
 
   useEffect(() => {
+    if (!user) return;
+    getProfile()
+      .then((d) => setBaseProfile(d.profile))
+      .catch(() => setBaseProfile(null));
+  }, [user]);
+
+  useEffect(() => {
+    profileHydratedForApp.current = null;
+  }, [id]);
+
+  useEffect(() => {
+    if (!app?.id || !baseProfile) return;
+    if (profileHydratedForApp.current === app.id) return;
+    profileHydratedForApp.current = app.id;
+    setEdit((e) => ({
+      ...e,
+      tailored_skills:
+        app.tailored_skills != null && Array.isArray(app.tailored_skills)
+          ? app.tailored_skills.join(', ')
+          : baseProfile.skills.join(', '),
+      tailored_education:
+        app.tailored_education != null && Array.isArray(app.tailored_education)
+          ? app.tailored_education
+          : baseProfile.education.map((ed) => ({
+              school: ed.school,
+              degree: ed.degree ?? '',
+              field: ed.field ?? '',
+              start_date: ed.start_date ?? '',
+              end_date: ed.end_date ?? '',
+              description: ed.description ?? '',
+            })),
+    }));
+  }, [app, baseProfile]);
+
+  useEffect(() => {
+    if (!app) return;
+    const expN = tailored?.tailored_experience?.length ?? 0;
+    const eduN = edit.tailored_education.length;
+    setCvIncludes(defaultCvIncludes(expN, eduN, app.cv_section_includes ?? null));
+  }, [app?.id, app?.cv_section_includes, tailored?.tailored_experience?.length, edit.tailored_education.length]);
+
+  const persistCvIncludes = useCallback(
+    (next: CvSectionIncludesState) => {
+      setCvIncludes(next);
+      if (!id) return;
+      updateJobApplication(id, { cv_section_includes: toApiPayload(next) }).catch(() => {});
+    },
+    [id]
+  );
+
+  useEffect(() => {
     if (!app?.session_id || !tailored) {
       setPreviewHtml('');
       setPreviewLoading(false);
@@ -258,6 +320,7 @@ export default function ApplicationDetailPage() {
         template: tailored.template,
         tailored_headline: edit.tailored_headline,
         keywords_to_highlight: tailored.keywords_to_highlight,
+        cv_section_includes: toApiPayload(cvIncludes),
       })
         .then((html) => {
           if (!cancelled) {
@@ -276,7 +339,7 @@ export default function ApplicationDetailPage() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [app?.session_id, tailored, edit.tailored_headline]);
+  }, [app?.session_id, tailored, edit.tailored_headline, cvIncludes]);
 
   const handleSave = useCallback(async () => {
     if (!id || !app) return;
@@ -331,13 +394,13 @@ export default function ApplicationDetailPage() {
         tailored_summary: tailored.tailored_summary,
         tailored_experience: tailored.tailored_experience,
       });
-      await regenerateCv(app.session_id, tailored.template, edit.tailored_headline);
+      await regenerateCv(app.session_id, tailored.template, edit.tailored_headline, toApiPayload(cvIncludes));
     } catch (e) {
       setRegenerateError(e instanceof Error ? e.message : 'Failed to update PDF files');
     } finally {
       setSavingPdfs(false);
     }
-  }, [app?.session_id, tailored, edit.tailored_headline]);
+  }, [app?.session_id, tailored, edit.tailored_headline, cvIncludes]);
 
   const handleGenerateMotivationLetter = useCallback(async () => {
     if (!id || !app?.session_id) return;
@@ -566,8 +629,243 @@ export default function ApplicationDetailPage() {
         })()}
 
         <CollapsibleSection
+          title="CV layout: what appears on the PDF"
+          subtitle="Every row maps a resume block to its source (base profile vs. this application). Uncheck to omit from the CV, downloads, and ATS score for this application."
+          defaultOpen={false}
+        >
+          <div className="pt-2 space-y-4 text-sm">
+            <p className="text-slate-600">
+              <strong>General resume (profile)</strong> is your uploaded source. <strong>This application</strong> overrides headline, skills, and education when set below; summary and role text come from the generated CV session.
+            </p>
+            {!baseProfile && <p className="text-slate-500">Loading base profile…</p>}
+            {baseProfile && (
+              <div className="rounded-lg border border-slate-200 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                      <th className="px-3 py-2 w-10">CV</th>
+                      <th className="px-3 py-2">Section</th>
+                      <th className="px-3 py-2">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    <tr className="bg-slate-50/50">
+                      <td className="px-3 py-2 text-center">
+                        <input type="checkbox" checked disabled className="rounded border-slate-300" title="Always on" />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Full name</td>
+                      <td className="px-3 py-2 text-slate-600">Base profile</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.photo}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, photo: !cvIncludes.photo })}
+                          className="rounded border-slate-300"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Photo</td>
+                      <td className="px-3 py-2 text-slate-600">Base profile</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.contact}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, contact: !cvIncludes.contact })}
+                          className="rounded border-slate-300"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Contact (email, phone, address, LinkedIn)</td>
+                      <td className="px-3 py-2 text-slate-600">Base profile</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.additional_urls}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, additional_urls: !cvIncludes.additional_urls })}
+                          className="rounded border-slate-300"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Extra links</td>
+                      <td className="px-3 py-2 text-slate-600">Base profile (settings)</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.headline}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, headline: !cvIncludes.headline })}
+                          className="rounded border-slate-300"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Headline / title</td>
+                      <td className="px-3 py-2 text-slate-600">This application</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.summary}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, summary: !cvIncludes.summary })}
+                          className="rounded border-slate-300"
+                          disabled={!app.session_id}
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Summary</td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {app.session_id ? 'CV session (tailored)' : '— (generate a CV for this application)'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center align-top">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.experience}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, experience: !cvIncludes.experience })}
+                          className="rounded border-slate-300"
+                          disabled={!app.session_id}
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800 align-top">Experience</td>
+                      <td className="px-3 py-2 text-slate-600 align-top">
+                        {app.session_id && tailored?.tailored_experience?.length ? (
+                          <ul className="space-y-2 mt-1">
+                            {tailored.tailored_experience.map((exp, i) => {
+                              const base = baseProfile.experience[i];
+                              const baseLabel = base
+                                ? `${base.title ?? '—'} · ${base.company ?? '—'}`
+                                : 'No matching base role (same order as profile)';
+                              return (
+                                <li key={i} className="flex flex-col gap-1 border-t border-slate-100 pt-2 first:border-t-0 first:pt-0">
+                                  <label className="flex items-start gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={cvIncludes.experience_rows[i] !== false}
+                                      disabled={!cvIncludes.experience}
+                                      onChange={() => {
+                                        const next = [...cvIncludes.experience_rows];
+                                        next[i] = !next[i];
+                                        persistCvIncludes({ ...cvIncludes, experience_rows: next });
+                                      }}
+                                      className="rounded border-slate-300 mt-1"
+                                    />
+                                    <span>
+                                      <span className="font-medium text-slate-800">
+                                        {exp.title ?? '—'} at {exp.company ?? '—'}
+                                      </span>
+                                      <span className="block text-xs text-slate-500 mt-0.5">Profile source: {baseLabel}</span>
+                                    </span>
+                                  </label>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : app.session_id ? (
+                          <span className="text-slate-500">No roles in session</span>
+                        ) : (
+                          '— (generate a CV)'
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.skills}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, skills: !cvIncludes.skills })}
+                          className="rounded border-slate-300"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Skills</td>
+                      <td className="px-3 py-2 text-slate-600">
+                        This application (or base profile if not customized)
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center align-top">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.education}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, education: !cvIncludes.education })}
+                          className="rounded border-slate-300"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800 align-top">Education</td>
+                      <td className="px-3 py-2 text-slate-600 align-top">
+                        {edit.tailored_education.length > 0 ? (
+                          <ul className="space-y-2 mt-1">
+                            {edit.tailored_education.map((edu, i) => {
+                              const base = baseProfile.education[i];
+                              const baseLabel = base
+                                ? `${String(base.degree ?? '—')} · ${String(base.school ?? '—')}`
+                                : 'No matching base entry (same order as profile)';
+                              return (
+                                <li key={i} className="flex flex-col gap-1 border-t border-slate-100 pt-2 first:border-t-0 first:pt-0">
+                                  <label className="flex items-start gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={cvIncludes.education_rows[i] !== false}
+                                      disabled={!cvIncludes.education}
+                                      onChange={() => {
+                                        const next = [...cvIncludes.education_rows];
+                                        next[i] = !next[i];
+                                        persistCvIncludes({ ...cvIncludes, education_rows: next });
+                                      }}
+                                      className="rounded border-slate-300 mt-1"
+                                    />
+                                    <span>
+                                      <span className="font-medium text-slate-800">
+                                        {String(edu.degree ?? '—')} · {String(edu.school ?? '—')}
+                                      </span>
+                                      <span className="block text-xs text-slate-500 mt-0.5">Profile source: {baseLabel}</span>
+                                    </span>
+                                  </label>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <span className="text-slate-500">No education rows</span>
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.certifications}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, certifications: !cvIncludes.certifications })}
+                          className="rounded border-slate-300"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Certifications</td>
+                      <td className="px-3 py-2 text-slate-600">Base profile</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={cvIncludes.languages}
+                          onChange={() => persistCvIncludes({ ...cvIncludes, languages: !cvIncludes.languages })}
+                          className="rounded border-slate-300"
+                        />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-800">Languages</td>
+                      <td className="px-3 py-2 text-slate-600">Base profile</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection
           title="Application & job"
-          subtitle="Core details, dates, full job description, tailored headline & skills (saved on blur)"
+          subtitle="Core details, dates, and full job description for ATS scoring (saved on blur)"
           defaultOpen={false}
         >
           <div className="space-y-6 pt-2">
@@ -673,122 +971,190 @@ export default function ApplicationDetailPage() {
                 />
               </div>
             </section>
-
-            <section className="space-y-4 border-t border-slate-100 pt-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">ATS-tailored profile fields</p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored headline/title</label>
-                  <input
-                    type="text"
-                    value={edit.tailored_headline}
-                    onChange={(e) => setEdit((p) => ({ ...p, tailored_headline: e.target.value }))}
-                    onBlur={handleSave}
-                    placeholder="Headline optimized for this job"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored skills (comma-separated)</label>
-                  <input
-                    type="text"
-                    value={edit.tailored_skills}
-                    onChange={(e) => setEdit((p) => ({ ...p, tailored_skills: e.target.value }))}
-                    onBlur={handleSave}
-                    placeholder="Python, SQL, Stakeholder management, ..."
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-1">
-                    <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Tailored education</label>
-                    <span className="text-[11px] text-slate-500">Include exact job-relevant keywords where truthful</span>
-                  </div>
-                  <div className="space-y-3">
-                    {edit.tailored_education.map((edu, i) => (
-                      <div key={i} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50">
-                        <div className="space-y-0.5 mb-2">
-                          <p className="text-xs text-slate-700 font-medium">{String(edu.degree ?? 'Degree not set')} {edu.field ? `in ${String(edu.field)}` : ''}</p>
-                          <p className="text-xs text-slate-600">{String(edu.school ?? 'School not set')}</p>
-                        </div>
-                        <textarea
-                          value={String(edu.description ?? '')}
-                          onChange={(e) => {
-                            const next = [...edit.tailored_education];
-                            next[i] = { ...next[i], description: e.target.value };
-                            setEdit((p) => ({ ...p, tailored_education: next }));
-                          }}
-                          onBlur={handleSave}
-                          rows={3}
-                          className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
-                          placeholder="Tailored education description (coursework, thesis, projects, tools, certifications)"
-                        />
-                      </div>
-                    ))}
-                    {edit.tailored_education.length === 0 && (
-                      <p className="text-sm text-slate-500">No tailored education entries available for this application.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-            {saving && <p className="text-xs text-slate-500">Saving changes…</p>}
           </div>
         </CollapsibleSection>
+
+        <CollapsibleSection
+          title="ATS-tailored profile fields"
+          subtitle="Job-specific headline on the CV; saved on blur"
+          defaultOpen
+        >
+          <div className="pt-2">
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored headline / title</label>
+              <input
+                type="text"
+                value={edit.tailored_headline}
+                onChange={(e) => setEdit((p) => ({ ...p, tailored_headline: e.target.value }))}
+                onBlur={handleSave}
+                placeholder="Headline optimized for this job"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+        </CollapsibleSection>
+
+        {app.session_id ? (
+          <CollapsibleSection
+            title="Summary"
+            subtitle="Professional summary for this role — preview updates live; use Update PDF files to persist for downloads"
+            defaultOpen
+          >
+            <div className="space-y-3 pt-2">
+              <p className="text-sm text-slate-600 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
+                <strong>ATS tip:</strong> Mirror job-description wording where truthful, then re-compute score in the header.
+              </p>
+              <p className="text-sm text-slate-500">
+                Use <code className="text-xs bg-slate-100 px-1 rounded">**double asterisks**</code> for bold in the PDF.
+              </p>
+              {tailoredLoading && <p className="text-sm text-slate-500">Loading tailored content…</p>}
+              {!tailoredLoading && !tailored && (
+                <p className="text-sm text-slate-500">Tailored content could not be loaded.</p>
+              )}
+              {!tailoredLoading && tailored && (
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored summary</label>
+                  <textarea
+                    value={tailored.tailored_summary}
+                    onChange={(e) => setTailored((p) => (p ? { ...p, tailored_summary: e.target.value } : null))}
+                    rows={5}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    placeholder="Professional summary tailored to this job"
+                  />
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+        ) : (
+          <CollapsibleSection
+            title="Summary"
+            subtitle="Available after you generate a CV linked to this application"
+            defaultOpen={false}
+          >
+            <p className="text-sm text-slate-500 pt-2">Generate a CV from the dashboard flow to edit a tailored summary here.</p>
+          </CollapsibleSection>
+        )}
+
+        <CollapsibleSection
+          title="Skills"
+          subtitle="Comma-separated; used in ATS scoring and on the CV (saved on blur)"
+          defaultOpen={false}
+        >
+          <div className="pt-2">
+            <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored skills</label>
+            <input
+              type="text"
+              value={edit.tailored_skills}
+              onChange={(e) => setEdit((p) => ({ ...p, tailored_skills: e.target.value }))}
+              onBlur={handleSave}
+              placeholder="Python, SQL, Stakeholder management, …"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+        </CollapsibleSection>
+
+        {app.session_id ? (
+          <CollapsibleSection
+            title="Experience"
+            subtitle="Tailored bullets per role — preview updates live; use Update PDF files to persist for downloads"
+            defaultOpen
+          >
+            <div className="pt-2 space-y-3">
+              {tailoredLoading && <p className="text-sm text-slate-500">Loading tailored content…</p>}
+              {!tailoredLoading && !tailored && (
+                <p className="text-sm text-slate-500">Tailored content could not be loaded.</p>
+              )}
+              {!tailoredLoading && tailored && (
+                <div className="space-y-3">
+                  {tailored.tailored_experience.map((exp, i) => (
+                    <div key={i} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50">
+                      <p className="text-xs font-medium text-slate-600 mb-1">
+                        {exp.title ?? '—'} at {exp.company ?? '—'} {exp.start_date ?? ''} – {exp.end_date ?? ''}
+                      </p>
+                      <textarea
+                        value={exp.description ?? ''}
+                        onChange={(e) => {
+                          const next = [...(tailored.tailored_experience || [])];
+                          next[i] = { ...next[i], description: e.target.value };
+                          setTailored((p) => (p ? { ...p, tailored_experience: next } : null));
+                        }}
+                        rows={4}
+                        className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
+                        placeholder="Tailored description"
+                      />
+                    </div>
+                  ))}
+                  {(!tailored.tailored_experience || tailored.tailored_experience.length === 0) && (
+                    <p className="text-sm text-slate-500">No experience entries.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+        ) : (
+          <CollapsibleSection
+            title="Experience"
+            subtitle="Available after you generate a CV linked to this application"
+            defaultOpen={false}
+          >
+            <p className="text-sm text-slate-500 pt-2">Generate a CV from the dashboard flow to edit tailored experience here.</p>
+          </CollapsibleSection>
+        )}
+
+        <CollapsibleSection
+          title="Education"
+          subtitle="We compare this block to the whole job description; many postings omit degree details, which can lower the education score (see breakdown note below)"
+          defaultOpen={false}
+        >
+          <div className="pt-2 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-[11px] text-slate-500">Saved on blur. Add job-relevant tools, coursework, or projects where truthful.</span>
+            </div>
+            {edit.tailored_education.map((edu, i) => (
+              <div key={i} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50">
+                <div className="space-y-0.5 mb-2">
+                  <p className="text-xs text-slate-700 font-medium">
+                    {String(edu.degree ?? 'Degree not set')}
+                    {edu.field ? ` in ${String(edu.field)}` : ''}
+                  </p>
+                  <p className="text-xs text-slate-600">{String(edu.school ?? 'School not set')}</p>
+                </div>
+                <textarea
+                  value={String(edu.description ?? '')}
+                  onChange={(e) => {
+                    const next = [...edit.tailored_education];
+                    next[i] = { ...next[i], description: e.target.value };
+                    setEdit((p) => ({ ...p, tailored_education: next }));
+                  }}
+                  onBlur={handleSave}
+                  rows={3}
+                  className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
+                  placeholder="Coursework, thesis, projects, tools, certifications aligned with the role"
+                />
+              </div>
+            ))}
+            {edit.tailored_education.length === 0 && (
+              <p className="text-sm text-slate-500">No tailored education entries for this application.</p>
+            )}
+          </div>
+        </CollapsibleSection>
+
+        {saving && <p className="text-xs text-slate-500 mb-2">Saving application fields…</p>}
 
         {app.session_id && (
           <>
             <CollapsibleSection
-              title="CV & motivation letter text"
-              subtitle="Preview updates live. Use Update PDF files when you want downloads to match."
+              title="Motivation letter & PDF export"
+              subtitle="Generate letter, pick template, sync files for download"
               defaultOpen
             >
               <div className="space-y-4 pt-2">
-                <p className="text-sm text-slate-500">
-                  Use <code className="text-xs bg-slate-100 px-1 rounded">**double asterisks**</code> for bold in the PDF. Line breaks are preserved.
-                </p>
-                <p className="text-sm text-slate-600 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
-                  <strong>ATS tip:</strong> Mirror job-description wording in summary and experience where truthful, then re-compute score in the header.
-                </p>
-                {tailoredLoading && <p className="text-sm text-slate-500">Loading tailored content…</p>}
+                {tailoredLoading && <p className="text-sm text-slate-500">Loading…</p>}
+                {!tailoredLoading && !tailored && (
+                  <p className="text-sm text-slate-500">Tailored content could not be loaded.</p>
+                )}
                 {!tailoredLoading && tailored && (
                   <>
-                    <div>
-                      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Tailored summary</label>
-                      <textarea
-                        value={tailored.tailored_summary}
-                        onChange={(e) => setTailored((p) => p ? { ...p, tailored_summary: e.target.value } : null)}
-                        rows={4}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        placeholder="Professional summary tailored to this job"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Experience (tailored descriptions)</label>
-                      <div className="space-y-3">
-                        {tailored.tailored_experience.map((exp, i) => (
-                          <div key={i} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50">
-                            <p className="text-xs font-medium text-slate-600 mb-1">
-                              {exp.title ?? '—'} at {exp.company ?? '—'} {exp.start_date ?? ''} – {exp.end_date ?? ''}
-                            </p>
-                            <textarea
-                              value={exp.description ?? ''}
-                              onChange={(e) => {
-                                const next = [...(tailored.tailored_experience || [])];
-                                next[i] = { ...next[i], description: e.target.value };
-                                setTailored((p) => p ? { ...p, tailored_experience: next } : null);
-                              }}
-                              rows={3}
-                              className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm"
-                              placeholder="Tailored description"
-                            />
-                          </div>
-                        ))}
-                        {(!tailored.tailored_experience || tailored.tailored_experience.length === 0) && (
-                          <p className="text-sm text-slate-500">No experience entries.</p>
-                        )}
-                      </div>
-                    </div>
                     <div>
                       <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Motivation letter</label>
                       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -844,7 +1210,7 @@ export default function ApplicationDetailPage() {
                       </button>
                     </div>
                     <p className="text-xs text-slate-500">
-                      Saves summary &amp; experience to the server and rebuilds CV/letter PDFs for download. Preview above already reflects your edits.
+                      Saves summary &amp; experience to the server and rebuilds CV/letter PDFs for download. The resume preview below already reflects your edits.
                     </p>
                     {regenerateError && <p className="text-sm text-red-600">{regenerateError}</p>}
                   </>

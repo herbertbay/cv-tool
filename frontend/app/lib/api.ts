@@ -479,8 +479,10 @@ export type JobApplication = {
   /** JSON string of { summary, skills, experience, education } each 0-100 */
   ats_score_breakdown: string | null;
   tailored_headline?: string | null;
-  tailored_skills?: string[];
-  tailored_education?: Array<Record<string, unknown>>;
+  tailored_skills?: string[] | null;
+  tailored_education?: Array<Record<string, unknown>> | null;
+  /** Parsed JSON: which CV blocks appear on the PDF for this application */
+  cv_section_includes?: Record<string, unknown> | null;
 };
 
 export async function getJobApplications(includeArchived = false): Promise<JobApplication[]> {
@@ -541,6 +543,7 @@ export async function updateJobApplication(
     tailored_headline?: string | null;
     tailored_skills?: string[];
     tailored_education?: Array<Record<string, unknown>>;
+    cv_section_includes?: Record<string, unknown> | null;
   }
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/job-applications/${id}`, {
@@ -612,6 +615,7 @@ export async function postCvGenerationPreviewHtml(
     template?: string;
     tailored_headline?: string;
     keywords_to_highlight?: string[];
+    cv_section_includes?: Record<string, unknown>;
   }
 ): Promise<string> {
   const res = await fetch(`${API_BASE}/cv-generations/${encodeURIComponent(sessionId)}/preview-html`, {
@@ -628,14 +632,18 @@ export async function postCvGenerationPreviewHtml(
 export async function regenerateCv(
   sessionId: string,
   template?: string,
-  tailoredHeadline?: string
+  tailoredHeadline?: string,
+  cvSectionIncludes?: Record<string, unknown> | null
 ): Promise<{ ok: boolean; session_id: string }> {
-  const payload: Record<string, string> = {
+  const payload: Record<string, unknown> = {
     session_id: sessionId,
     template: template || 'cv_base.html',
   };
   if (tailoredHeadline !== undefined) {
     payload.tailored_headline = tailoredHeadline;
+  }
+  if (cvSectionIncludes !== undefined) {
+    payload.cv_section_includes = cvSectionIncludes;
   }
   const res = await fetch(`${API_BASE}/regenerate-cv`, {
     method: 'POST',

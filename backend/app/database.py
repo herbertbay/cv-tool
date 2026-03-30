@@ -7,7 +7,9 @@ import json
 import sqlite3
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
+_UNSET = object()
 
 from app.config import settings
 from app.models import Profile
@@ -130,6 +132,11 @@ def init_db() -> None:
             except sqlite3.OperationalError as e:
                 if "duplicate column" not in str(e).lower():
                     raise
+        try:
+            conn.execute("ALTER TABLE job_applications ADD COLUMN cv_section_includes TEXT DEFAULT NULL")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
         for col in ["ats_summary", "ats_breakdown"]:
             try:
                 conn.execute(f"ALTER TABLE ats_match_results ADD COLUMN {col} TEXT DEFAULT NULL")
@@ -618,7 +625,10 @@ def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
         "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, "
         "archived, full_job_description, session_id, application_date, job_url, created_at"
     )
-    full_cols = base_cols + ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, tailored_education"
+    full_cols = (
+        base_cols + ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, "
+        "tailored_education, cv_section_includes"
+    )
     with _get_conn() as conn:
         try:
             row = conn.execute(
@@ -655,8 +665,9 @@ def get_job_application_by_id(application_id: str, user_id: str) -> dict | None:
         "ats_score_summary": None,
         "ats_score_breakdown": None,
         "tailored_headline": None,
-        "tailored_skills": [],
-        "tailored_education": [],
+        "tailored_skills": None,
+        "tailored_education": None,
+        "cv_section_includes": None,
     }
 
 
@@ -669,7 +680,10 @@ def get_job_application_by_session_id(session_id: str, user_id: str) -> dict | N
         "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, "
         "archived, full_job_description, session_id, application_date, job_url, created_at"
     )
-    full_cols = base_cols + ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, tailored_education"
+    full_cols = (
+        base_cols + ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, "
+        "tailored_education, cv_section_includes"
+    )
     sid = session_id.strip()
     with _get_conn() as conn:
         try:
@@ -707,8 +721,9 @@ def get_job_application_by_session_id(session_id: str, user_id: str) -> dict | N
         "ats_score_summary": None,
         "ats_score_breakdown": None,
         "tailored_headline": None,
-        "tailored_skills": [],
-        "tailored_education": [],
+        "tailored_skills": None,
+        "tailored_education": None,
+        "cv_section_includes": None,
     }
 
 
@@ -717,14 +732,47 @@ def _row_to_job_application(r: sqlite3.Row) -> dict:
     keys = r.keys() if hasattr(r, "keys") else []
     skills_raw = r["tailored_skills"] if "tailored_skills" in keys else None
     education_raw = r["tailored_education"] if "tailored_education" in keys else None
-    try:
-        parsed_skills = json.loads(skills_raw) if isinstance(skills_raw, str) and skills_raw.strip() else (skills_raw if isinstance(skills_raw, list) else [])
-    except Exception:
-        parsed_skills = []
-    try:
-        parsed_education = json.loads(education_raw) if isinstance(education_raw, str) and education_raw.strip() else (education_raw if isinstance(education_raw, list) else [])
-    except Exception:
-        parsed_education = []
+    # NULL column => None (use base profile); explicit JSON [] => empty list
+    parsed_skills: list[str] | None
+    if "tailored_skills" not in keys or skills_raw is None or (isinstance(skills_raw, str) and not str(skills_raw).strip()):
+        parsed_skills = None
+    else:
+        try:
+            if isinstance(skills_raw, str):
+                v = json.loads(skills_raw)
+                parsed_skills = v if isinstance(v, list) else None
+            elif isinstance(skills_raw, list):
+                parsed_skills = skills_raw
+            else:
+                parsed_skills = None
+        except Exception:
+            parsed_skills = None
+    parsed_education: list | None
+    if "tailored_education" not in keys or education_raw is None or (isinstance(education_raw, str) and not str(education_raw).strip()):
+        parsed_education = None
+    else:
+        try:
+            if isinstance(education_raw, str):
+                v = json.loads(education_raw)
+                parsed_education = v if isinstance(v, list) else None
+            elif isinstance(education_raw, list):
+                parsed_education = education_raw
+            else:
+                parsed_education = None
+        except Exception:
+            parsed_education = None
+    parsed_includes: dict | None = None
+    if "cv_section_includes" in keys:
+        includes_raw = r["cv_section_includes"]
+        if includes_raw is not None and not (isinstance(includes_raw, str) and not str(includes_raw).strip()):
+            try:
+                if isinstance(includes_raw, str):
+                    v = json.loads(includes_raw)
+                    parsed_includes = v if isinstance(v, dict) else None
+                elif isinstance(includes_raw, dict):
+                    parsed_includes = includes_raw
+            except Exception:
+                parsed_includes = None
     return {
         "id": r["id"],
         "user_id": r["user_id"],
@@ -746,6 +794,7 @@ def _row_to_job_application(r: sqlite3.Row) -> dict:
         "tailored_headline": (r["tailored_headline"] or None) if "tailored_headline" in keys else None,
         "tailored_skills": parsed_skills,
         "tailored_education": parsed_education,
+        "cv_section_includes": parsed_includes if "cv_section_includes" in keys else None,
     }
 
 
@@ -756,7 +805,10 @@ def get_job_applications_by_user(user_id: str, include_archived: bool = False) -
         "id, user_id, company_name, description, salary_from, salary_to, job_title, application_status, "
         "archived, full_job_description, session_id, application_date, job_url, created_at"
     )
-    optional_cols = ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, tailored_education"
+    optional_cols = (
+        ", ats_score, ats_score_summary, ats_score_breakdown, tailored_headline, tailored_skills, "
+        "tailored_education, cv_section_includes"
+    )
     with _get_conn() as conn:
         try:
             cols = base_cols + optional_cols
@@ -804,8 +856,9 @@ def get_job_applications_by_user(user_id: str, include_archived: bool = False) -
                     "ats_score_summary": None,
                     "ats_score_breakdown": None,
                     "tailored_headline": None,
-                    "tailored_skills": [],
-                    "tailored_education": [],
+                    "tailored_skills": None,
+                    "tailored_education": None,
+                    "cv_section_includes": None,
                 }
                 for r in rows
             ]
@@ -832,6 +885,7 @@ def update_job_application(
     tailored_headline: str | None = None,
     tailored_skills: list[str] | None = None,
     tailored_education: list[dict] | None = None,
+    cv_section_includes: Any = _UNSET,
 ) -> bool:
     """Update job application fields. Returns True if a row was updated."""
     init_db()
@@ -885,6 +939,14 @@ def update_job_application(
     if tailored_education is not None:
         updates.append("tailored_education = ?")
         params.append(json.dumps(tailored_education))
+    if cv_section_includes is not _UNSET:
+        updates.append("cv_section_includes = ?")
+        if cv_section_includes is None:
+            params.append(None)
+        elif isinstance(cv_section_includes, str):
+            params.append(cv_section_includes.strip() or None)
+        else:
+            params.append(json.dumps(cv_section_includes))
     if not updates:
         return False
     params.extend([application_id, user_id])

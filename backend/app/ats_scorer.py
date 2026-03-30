@@ -15,12 +15,14 @@ from app.models import Profile
 logger = logging.getLogger(__name__)
 
 EMBEDDING_MODEL = "text-embedding-3-small"
-# Weights for overall score (must sum to 1.0)
+# Weights for overall score (must sum to 1.0).
+# Education is weighted lower: many JDs omit degree detail, so semantic similarity for that block is often weak
+# compared to skills/experience; commercial "ATS" tools often de-emphasize education in a single headline score.
 WEIGHTS = {
     "summary": 0.20,
     "skills": 0.30,
-    "experience": 0.35,
-    "education": 0.15,
+    "experience": 0.40,
+    "education": 0.10,
 }
 # Max chars per segment to stay within embedding token limits
 MAX_CHARS = 7500
