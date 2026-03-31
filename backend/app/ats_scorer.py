@@ -2,9 +2,13 @@
 CV/ATS match score using embedding cosine similarity.
 Used everywhere a CV–job match score is calculated (cv-checker, application detail, optimize).
 State-of-the-art: semantic similarity over skills, experience, education, and summary.
+
+If the job description does not signal education/degree requirements, the education dimension
+receives weight 0 in the overall score and summary/skills/experience weights are renormalized.
+The education subscore is still returned for reference.
 """
-import json
 import logging
+import re
 from typing import Any
 
 from openai import OpenAI
@@ -26,6 +30,45 @@ WEIGHTS = {
 }
 # Max chars per segment to stay within embedding token limits
 MAX_CHARS = 7500
+
+# Job text signals that education is a stated requirement (degree, school level, etc.)
+_JOB_EDUCATION_SIGNALS = re.compile(
+    r"\b("
+    r"bachelor'?s?|bachelors?|b\.\s*s\.?\b|b\.\s*a\.?\b|bs\b|ba\b|undergraduate|"
+    r"master'?s?|masters?|m\.\s*s\.?\b|m\.\s*a\.?\b|ms\b|ma\b|mba\b|mphil|"
+    r"ph\.?\s*d\.?|phd\b|doctorate|doctoral|post-?doc|post-?doctoral|"
+    r"\bdegree\b|college\s+degree|university\s+degree|\bdiploma\b|ged\b|"
+    r"qualifications?|accredited\s+(program|institution)|"
+    r"\buniversity\b(?!\s+hospital)|\bcollege\b|higher\s+education|academic\s+background|"
+    r"field\s+of\s+study|major\s+in|minor\s+in|graduated|graduate\s+degree|post-?graduate|"
+    r"associate'?s?|assoc\.?\s*degree|high\s+school\s+diploma|vocational\s+training"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def job_description_mentions_education(job_text: str) -> bool:
+    """True if the job description plausibly states education/degree requirements."""
+    t = (job_text or "").strip()
+    if len(t) < 12:
+        return False
+    return bool(_JOB_EDUCATION_SIGNALS.search(t))
+
+
+def _effective_weights_for_job(job_description: str) -> tuple[dict[str, float], bool]:
+    """
+    Base weights from WEIGHTS; set education to 0 when JD has no education signals, then renormalize.
+    Returns (weights dict summing to 1.0, education_counted_in_overall).
+    """
+    base = dict(WEIGHTS)
+    edu_relevant = job_description_mentions_education(job_description)
+    if not edu_relevant:
+        base["education"] = 0.0
+    total = sum(base.values())
+    if total <= 0:
+        return dict(WEIGHTS), True
+    normalized = {k: v / total for k, v in base.items()}
+    return normalized, edu_relevant
 
 
 def _get_client() -> OpenAI:
@@ -121,19 +164,29 @@ def _similarity_to_score(sim: float) -> int:
     return round(x * 100)
 
 
-def _generate_summary(breakdown: dict[str, int], overall: int) -> str:
+def _generate_summary(
+    breakdown: dict[str, int],
+    overall: int,
+    *,
+    education_counted_in_overall: bool = True,
+) -> str:
     """One or two professional sentences from breakdown and overall score."""
     if not settings.openai_api_key:
-        return _fallback_summary(breakdown, overall)
+        return _fallback_summary(breakdown, overall, education_counted_in_overall=education_counted_in_overall)
     try:
         client = _get_client()
+        edu_note = (
+            ""
+            if education_counted_in_overall
+            else "\nImportant: The job description does not state education requirements, so the education subscore was NOT used in the overall score (weight 0); it is shown for reference only. Do not tell the candidate to improve education for this posting unless relevant."
+        )
         prompt = f"""Based on this ATS match breakdown, write exactly 1-2 short, professional sentences for the candidate. Be factual and constructive. No bullet points.
 
 Overall score: {overall}/100
 - Summary match: {breakdown.get('summary', 0)}/100
 - Skills match: {breakdown.get('skills', 0)}/100
 - Experience match: {breakdown.get('experience', 0)}/100
-- Education match: {breakdown.get('education', 0)}/100"""
+- Education match: {breakdown.get('education', 0)}/100{edu_note}"""
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
@@ -141,15 +194,23 @@ Overall score: {overall}/100
             max_tokens=120,
         )
         text = (resp.choices[0].message.content or "").strip()
-        return text if text else _fallback_summary(breakdown, overall)
+        return text if text else _fallback_summary(breakdown, overall, education_counted_in_overall=education_counted_in_overall)
     except Exception as e:
         logger.warning("ATS summary generation failed: %s", e)
-        return _fallback_summary(breakdown, overall)
+        return _fallback_summary(breakdown, overall, education_counted_in_overall=education_counted_in_overall)
 
 
-def _fallback_summary(breakdown: dict[str, int], overall: int) -> str:
+def _fallback_summary(
+    breakdown: dict[str, int],
+    overall: int,
+    *,
+    education_counted_in_overall: bool = True,
+) -> str:
     strong = [k for k, v in breakdown.items() if v >= 70]
     weak = [k for k, v in breakdown.items() if v < 50 and v > 0]
+    if not education_counted_in_overall:
+        weak = [k for k in weak if k != "education"]
+        strong = [k for k in strong if k != "education"]
     if overall >= 75:
         return "Strong overall match. Your profile aligns well with the role’s requirements."
     if overall >= 50:
@@ -158,8 +219,14 @@ def _fallback_summary(breakdown: dict[str, int], overall: int) -> str:
             parts.append(f"Strongest alignment in: {', '.join(strong)}.")
         if weak:
             parts.append(f"Consider strengthening: {', '.join(weak)}.")
-        return " ".join(parts)
-    return f"Match score {overall}/100. Consider tailoring your summary and experience to the job description to improve ATS ranking."
+        out = " ".join(parts)
+        if not education_counted_in_overall:
+            out += " Education was not factored into the overall score because the job description does not specify education requirements."
+        return out
+    base = f"Match score {overall}/100. Consider tailoring your summary and experience to the job description to improve ATS ranking."
+    if not education_counted_in_overall:
+        return base + " Education is shown for reference only and was not weighted."
+    return base
 
 
 def compute_ats_match(
@@ -209,16 +276,21 @@ def compute_ats_match(
         "experience": _similarity_to_score(_cosine_similarity(job_vec, experience_vec)),
         "education": _similarity_to_score(_cosine_similarity(job_vec, education_vec)),
     }
+    weights, education_counted = _effective_weights_for_job(job_text)
     overall = round(
-        breakdown["summary"] * WEIGHTS["summary"]
-        + breakdown["skills"] * WEIGHTS["skills"]
-        + breakdown["experience"] * WEIGHTS["experience"]
-        + breakdown["education"] * WEIGHTS["education"]
+        breakdown["summary"] * weights["summary"]
+        + breakdown["skills"] * weights["skills"]
+        + breakdown["experience"] * weights["experience"]
+        + breakdown["education"] * weights["education"]
     )
     overall = max(0, min(100, overall))
-    summary_text = _generate_summary(breakdown, overall)
+    summary_text = _generate_summary(
+        breakdown, overall, education_counted_in_overall=education_counted
+    )
     return {
         "score": overall,
         "summary": summary_text,
         "breakdown": breakdown,
+        "score_weights": weights,
+        "education_counted_in_overall_score": education_counted,
     }

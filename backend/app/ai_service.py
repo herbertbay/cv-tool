@@ -214,6 +214,8 @@ def calculate_ats_match_score(
         "score": result["score"],
         "summary": result["summary"],
         "breakdown": result.get("breakdown"),
+        "score_weights": result.get("score_weights"),
+        "education_counted_in_overall_score": result.get("education_counted_in_overall_score"),
     }
 
 
