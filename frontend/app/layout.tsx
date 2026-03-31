@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from './lib/auth-context';
+import { getSiteUrl } from './lib/site';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://optimalcv.com';
+const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -35,14 +36,57 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const jsonLd = {
+const jsonLdGraph = {
   '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Optimal CV',
-  description: 'Job-specific CV builder and motivation letter generator. Create a CV tailored to every job you apply to.',
-  url: siteUrl,
-  applicationCategory: 'BusinessApplication',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      name: 'Optimal CV',
+      description:
+        'Job-specific CV builder and motivation letter generator. Create a CV tailored to every job you apply to.',
+      url: siteUrl,
+      applicationCategory: 'BusinessApplication',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    },
+    {
+      '@type': 'Organization',
+      name: 'Optimal CV',
+      url: siteUrl,
+      description: 'Job-specific CV and motivation letter tool for applicants.',
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'How is Optimal CV different from a regular resume builder?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text:
+              'Most resume builders help you create one static CV. Optimal CV is built for applying to many jobs: you keep one profile and generate a new, tailored CV and motivation letter for each role. Your experience is rewritten and emphasized to match what each job description asks for, so you stay relevant to both hiring managers and applicant tracking systems.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Is it free?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text:
+              'You can sign up and use Optimal CV to create job-specific CVs and motivation letters. Create an account to save your profile and access your generation history.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Is my data safe?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text:
+              'We use your profile and job descriptions only to generate your tailored CV and motivation letter. We do not sell your data. You can delete your account and all associated data at any time from your profile settings.',
+          },
+        },
+      ],
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -55,7 +99,7 @@ export default function RootLayout({
       <body className="min-h-screen antialiased font-sans">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
         />
         <AuthProvider>{children}</AuthProvider>
       </body>

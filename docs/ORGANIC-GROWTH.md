@@ -11,7 +11,7 @@ For **business model** (profitable pricing given short usage windows) and **rete
 | Step | Action | Why |
 |------|--------|-----|
 | **1** | **Stabilize & monitor** | Fix any remaining auth/PDF issues; confirm ATS → signup → create CV flow works end-to-end. Watch Railway logs and a few real runs. |
-| **2** | **One more growth lever** (Share CTA done) | Add either: **Share CTA** after generating a CV (“Share with a friend”), or **first 2–3 SEO pages** (“CV for Software Engineer”, “How to tailor your CV to a job”). Don’t do both at once. |
+| **2** | **SEO / content next** (Share CTA done) | **Share CTA** is live (Create CV modal + ATS flow). Next lever: **first 2–3 SEO pages** or “how to” articles (see checklist below)—still the highest-impact gap vs technical polish. |
 | **3** | **Then add payment** | See **[STEP-3-PAYMENT.md](./STEP-3-PAYMENT.md)** for your detailed checklist. Once you have ~50–100 signups or 2–4 weeks of steady traffic, add a paid tier. By then you’ll have feedback and a clear value moment to monetize. |
 
 **Payment — recommendation:**  
@@ -26,7 +26,7 @@ Adding payment now is possible but adds friction before you’ve validated deman
 - [x] **CV/ATS match score tool** — Standalone page: upload CV (PDF) + job description (text or URL), get match score; sign up to view and get optimized version; create tailored CV from result. *Done.*
 - [ ] **Job description keyword extractor** — Paste job ad → list of suggested keywords for your CV. Free, no account; CTA to Optimal CV.
 - [x] **Share CTA after generating a CV** — “Share Optimal CV with a friend” with one-click copy link in Create CV modal and ATS done step. *Done.*
-- [ ] **Optional “Created with Optimal CV” on PDF** — Toggle in settings; off by default for paid tier.
+- [x] **“Powered by Optimal.cv” on PDFs** — Footer on generated CV and motivation letter PDFs when `show_powered_by` is on (non‑premium users); omitted for premium (hardcoded allowlist in backend). *Not* a user-facing settings toggle yet—only the premium gate.
 - [ ] **Referral tracking** — Referral codes or UTM params; track which channel/user drives signups.
 - [ ] **Welcome email sequence** — (1) Confirm + “Create your first tailored CV”; (2) “Tip: paste the job description”; (3) “Your CV is ready — use it for the next application.”
 - [ ] **Re-engagement email** — If no generation in 2–3 weeks: “Ready for your next application? Add a new job and we’ll tailor your CV again.”
@@ -34,13 +34,14 @@ Adding payment now is possible but adds friction before you’ve validated deman
 
 ### Website & SEO
 
-- [ ] **“Resources” or “Blog” section** — Add to site and link from footer.
-- [ ] **5–10 “CV for [Job Title]” pages** — e.g. CV for Software Engineer, Marketing Manager. Each: short intro, 3–5 tips, CTA to Optimal CV. Job title as H1 and in meta.
-- [ ] **2–3 “how to” articles** — e.g. “How to tailor your CV to a job description”, “How to pass ATS screening”, “Best CV format for [year]”. Link to product where relevant.
-- [ ] **Internal linking** — Every article and job page links to main app (Get started / Build your CV).
-- [ ] **Sitemap** — Add and submit for key pages.
-- [ ] **Schema markup** — FAQ and/or HowTo where it fits.
-- [ ] **Canonical URLs & indexability** — Confirm landing and key pages are correct and fast.
+- [x] **Technical SEO baseline (code)** — `robots.ts`, `sitemap.ts`, dynamic **`/llms.txt`**, `getSiteUrl()` / **`NEXT_PUBLIC_SITE_URL`**, `noindex` on dashboard/profile/auth/admin/get-started. *Ongoing:* Core Web Vitals monitoring, **[SEO-ASO-TODO.md](./SEO-ASO-TODO.md)** (registrations, Search Console, etc.).
+- [x] **“Resources” hub** — `/resources` with guides + job-title pages; linked from landing footer and CV checker header.
+- [x] **10 “CV for [Job Title]” pages** — Under `/resources/cv-for/…` (static generation + sitemap + Article JSON-LD).
+- [x] **3 “how to” articles** — `/resources/guides/how-to-tailor-cv-to-job-description`, `how-to-pass-ats-screening`, `best-cv-format-2026` (+ CTAs to register / CV checker).
+- [x] **Internal linking** — Each resource page CTA to **Get started** / **CV checker**; hub links all children.
+- [x] **Sitemap** — `app/sitemap.ts` lists `/`, `/cv-checker`, `/resources`, and all resource URLs. *You still:* submit in Search Console / Bing (see **[SEO-REGISTRATIONS.md](./SEO-REGISTRATIONS.md)**).
+- [x] **Schema markup** — Root `@graph`: WebApplication, Organization, FAQPage (aligned with landing FAQ). Resource articles use **Article** JSON-LD.
+- [x] **Canonicals & indexability** — Resource pages + CV checker set `alternates.canonical`; private areas `robots: noindex`. *Verify in production:* `NEXT_PUBLIC_SITE_URL` matches live domain.
 
 ### Social proof & content
 
@@ -60,8 +61,8 @@ Adding payment now is possible but adds friction before you’ve validated deman
 
 ### Messaging (already on landing; reuse elsewhere)
 
-- [ ] Use pain-point lines in ads/social: “Ghosted after applying?” / “Stop sending the same CV to every job. Stand out with Optimal CV.”
-- [ ] Keep hero, why-tailor, and final CTA copy consistent (see Messaging section below).
+- [ ] **Pain-point lines in ads/social** — Reuse the same angles as the landing (ghosted / ignored / silence after applying) in paid and organic social; landing already embodies them below.
+- [x] **Hero, why-tailor, and final CTA** — Implemented on `LandingPage.tsx` (ghosted hook, “Stop getting ignored…”, “Tired of silence…” / “impossible to ignore”). Keep in sync when you edit the **Messaging (pain → solution)** section below.
 
 ---
 
@@ -83,7 +84,7 @@ Keep the tone direct and empathetic; avoid sounding preachy or desperate.
 - **Target one job per page.** Create thin, high-intent pages: “CV for [Job Title]” (e.g. “CV for Software Engineer”, “CV for Marketing Manager”). Each page: short intro, 3–5 tailored tips, strong CTA to use Optimal CV. Use job titles as H1s and in meta titles/descriptions.
 - **Answer “how to” queries.** Publish 1–2 posts per month that match real search demand: “How to tailor your CV to a job description”, “How to pass ATS screening”, “Best CV format for [year]”, “How to write a cover letter for [industry]”. Keep articles practical and link to the product where it solves the problem.
 - **Internal linking.** Link from every article and job page to the main app (Get started / Build your CV). Add a “Resources” or “Blog” section on the site and link to it from the footer.
-- **Technical SEO.** Ensure the landing and key pages are indexable, have canonical URLs, and load fast. Consider a sitemap and simple schema (e.g. FAQ, HowTo) where it fits.
+- **Technical SEO.** Landing has default metadata, OG/Twitter, `WebApplication` JSON-LD, and `robots` allow. Add a **sitemap** (and `llms.txt` if desired—see [SEO-ASO-TODO.md](./SEO-ASO-TODO.md)); add FAQ/HowTo schema only where content matches guidelines.
 
 ---
 
@@ -113,8 +114,8 @@ Keep the tone direct and empathetic; avoid sounding preachy or desperate.
 
 ## 5. Referral and sharing built into the product
 
-- **“Share your result.”** After generating a CV: “Share Optimal CV with a friend — they get [X], you get [Y]” (e.g. extra template, priority support, or just goodwill). One-click copy link or share to LinkedIn/Twitter.
-- **Light branding on free tier.** Optional “Created with Optimal CV” (or “Tailored with Optimal CV”) on the PDF. Make it easy to turn off for paid users. Every application becomes a potential referral.
+- **“Share your result.”** *[Done — baseline]* After generating a CV / in the flow: “Share Optimal CV with a friend” + copy link (Create CV modal; ATS checker share line exists too). *Optional next:* referral rewards or native share to LinkedIn/X.
+- **Light branding on free tier.** *[Done — via premium gate]* PDF footer “Powered by Optimal.cv” on CV and letter when not premium; hidden for premium accounts. *Still optional:* user-facing toggle in profile/settings instead of email allowlist only.
 - **Referral tracking.** Simple referral codes or UTM links so you can measure which channels and users bring signups. Double down on what works.
 
 ---
@@ -140,7 +141,7 @@ Keep the tone direct and empathetic; avoid sounding preachy or desperate.
 | Priority | Action | Why |
 |----------|--------|-----|
 | 1 | ~~Launch one free “viral” tool (score or keyword extractor)~~ Done. | Drives signups and shares. |
-| 2 | Add referral/share CTA + optional PDF branding | Turns every user into a potential acquirer. |
+| 2 | ~~Share CTA + PDF footer branding~~ **Done** (share + “Powered by” for non‑premium). **Next:** referral tracking / UTM discipline + optional settings toggle for branding. |
 | 3 | Publish 5–10 “CV for [Job Title]” pages + 2–3 “how to” posts | Captures high-intent search and builds topical authority. |
 | 4 | Show up in 1–2 communities (e.g. r/resumes, LinkedIn) | Builds trust and direct traffic without ads. |
 | 5 | Simple email sequence + one re-engagement email | Converts and brings back organic signups. |

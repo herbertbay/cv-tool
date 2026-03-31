@@ -12,8 +12,9 @@ export function CvCheckerHeader() {
         <Link href="/" className="text-lg font-semibold tracking-tight text-slate-800 hover:text-blue-800 transition-colors">
           Optimal CV
         </Link>
-        <nav className="flex items-center gap-4">
+        <nav className="flex flex-wrap items-center gap-4">
           <Link href="/" className="text-slate-600 hover:text-blue-700 text-sm">Home</Link>
+          <Link href="/resources" className="text-slate-600 hover:text-blue-700 text-sm">Resources</Link>
           {user ? (
             <Link href="/dashboard" className="text-sm text-slate-500">{user.email}</Link>
           ) : (

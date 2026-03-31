@@ -177,7 +177,8 @@ export function LandingPage() {
           <Link href="/" className="text-sm font-semibold text-slate-800 hover:text-slate-900">
             Optimal CV
           </Link>
-          <nav className="flex items-center gap-6 text-sm text-slate-600">
+          <nav className="flex flex-wrap items-center gap-6 text-sm text-slate-600">
+            <Link href="/resources" className="hover:text-slate-900">Resources</Link>
             <Link href="/cv-checker" className="hover:text-slate-900">CV checker</Link>
             <Link href="/login" className="hover:text-slate-900">Sign in</Link>
             <Link href="/register" className="hover:text-slate-900">Sign up</Link>
