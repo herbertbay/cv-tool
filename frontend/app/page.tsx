@@ -76,7 +76,7 @@ function HomePageContent() {
     router.replace(create === '1' ? '/dashboard?create=1' : '/dashboard');
   }, [user, loading, userData, router, searchParams]);
 
-  // —— Onboarding: Step 1 — Upload CV
+  // —— Onboarding: Step 1 — Upload resume
   const handleCVUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -245,7 +245,7 @@ function OnboardingUI({
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm max-w-2xl mx-auto space-y-6">
       <h2 className="text-xl font-semibold text-slate-800">
-        {step === 1 && 'Step 1: Upload your CV'}
+        {step === 1 && 'Step 1: Upload your resume'}
         {step === 2 && 'Step 2: Additional links (optional)'}
         {step === 3 && 'Step 3: Profile photo (optional)'}
       </h2>
@@ -253,7 +253,7 @@ function OnboardingUI({
       {step === 1 && (
         <>
           <p className="text-sm text-slate-600">
-            Upload your CV as a PDF (e.g. exported from LinkedIn or other sources). We’ll extract your information.
+            Upload your resume as a PDF (e.g. exported from LinkedIn or other sources). We’ll extract your information.
           </p>
           <input
             type="file"

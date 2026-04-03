@@ -12,7 +12,7 @@ export default function ResourcesIndexPage() {
     <article className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Resources</h1>
       <p className="mt-4 text-lg text-slate-600">
-        Practical guides and role-specific CV tips. Every page links to{' '}
+        Practical guides and role-specific resume tips. Every page links to{' '}
         <Link href="/register" className="text-blue-800 font-medium hover:underline">
           Optimal CV
         </Link>{' '}
@@ -42,7 +42,7 @@ export default function ResourcesIndexPage() {
 
       <section className="mt-12" aria-labelledby="roles-heading">
         <h2 id="roles-heading" className="text-xl font-semibold text-slate-900">
-          CV tips by job title
+          Resume tips by job title
         </h2>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {CV_FOR_ROLES.map((r) => (
@@ -51,7 +51,7 @@ export default function ResourcesIndexPage() {
                 href={`/resources/cv-for/${r.slug}`}
                 className="text-blue-800 font-medium hover:underline"
               >
-                CV for {r.title}
+                Resume for {r.title}
               </Link>
             </li>
           ))}
@@ -60,9 +60,9 @@ export default function ResourcesIndexPage() {
 
       <p className="mt-12 text-slate-600">
         <Link href="/cv-checker" className="text-blue-800 font-medium hover:underline">
-          Free ATS CV checker
+          Free ATS resume checker
         </Link>
-        {' — '}upload your CV and a job description to see how well you match before you apply.
+        {' — '}upload your resume and a job description to see how well you match before you apply.
       </p>
     </article>
   );

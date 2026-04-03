@@ -58,7 +58,7 @@ export function CreateCVModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-800">Create tailored CV &amp; motivation letter</h3>
+          <h3 className="text-lg font-semibold text-slate-800">Create tailored resume &amp; motivation letter</h3>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
         </div>
 
@@ -90,7 +90,7 @@ export function CreateCVModal({
           {/* Language dropdown hidden for now; default language is English ('en'). */}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">CV template</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Resume template</label>
             <select value={template} onChange={(e) => setTemplate(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
               <option value="cv_base.html">Modern</option>
               <option value="cv_executive.html">Executive</option>
@@ -114,7 +114,7 @@ export function CreateCVModal({
               <p className="text-sm font-medium text-slate-700">Done. Download your files:</p>
               <div className="flex flex-col gap-2">
                 <button type="button" onClick={() => onDownloadPdf(result.session_id)} className="inline-flex justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
-                  Download CV (PDF)
+                  Download resume (PDF)
                 </button>
                 {result.motivation_letter?.trim() && (
                   <button type="button" onClick={() => onDownloadLetter(result.session_id)} className="inline-flex justify-center rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">

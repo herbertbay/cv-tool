@@ -70,7 +70,7 @@ export default function AdminUsersPage() {
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Email</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">User ID</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Created</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-700">CVs generated</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-700">Resumes generated</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Last used</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Download</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Delete</th>
@@ -90,7 +90,7 @@ export default function AdminUsersPage() {
                           href={getAdminDownloadLastCvUrl(u.id)}
                           className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                         >
-                          Download last CV
+                          Download last resume
                         </a>
                       ) : (
                         <span className="text-slate-400 text-xs">—</span>

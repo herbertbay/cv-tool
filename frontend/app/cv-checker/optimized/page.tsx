@@ -29,7 +29,7 @@ function OptimizedShareCTA() {
   return (
     <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/80 p-4">
       <p className="text-base font-semibold text-slate-800">Share with a friend</p>
-      <p className="mt-1 text-sm text-slate-600">Know someone job hunting? Send them the free CV checker.</p>
+      <p className="mt-1 text-sm text-slate-600">Know someone job hunting? Send them the free resume checker.</p>
       <button
         type="button"
         onClick={onCopy}
@@ -103,7 +103,7 @@ function OptimizedContent() {
       if (typeof window !== 'undefined') sessionStorage.removeItem(`${OPTIMIZE_STORAGE_KEY}-${token}`);
       router.push('/cv-checker/complete');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create CV');
+      setError(e instanceof Error ? e.message : 'Failed to create resume');
     } finally {
       setCreateLoading(false);
     }
@@ -118,19 +118,19 @@ function OptimizedContent() {
       <h1 className="text-2xl font-bold text-slate-900 mb-2">Optimized score</h1>
       <p className="text-slate-600 mb-6">
         {hasImprovement
-          ? 'Your tailored CV would score higher. Create it now.'
-          : 'Your CV already matches this role well. We\'ve still tailored it for this role — create and download it below.'}
+          ? 'Your tailored resume would score higher. Create it now.'
+          : 'Your resume already matches this role well. We\'ve still tailored it for this role — create and download it below.'}
       </p>
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">New score</p>
         <p className="mt-2 text-4xl font-bold text-slate-900">{optimizeData.new_score}<span className="text-2xl font-normal text-slate-500">/100</span></p>
         {hasImprovement ? (
           <>
-            <p className="mt-4 text-emerald-600 font-medium">+{optimizeData.improvement_pct}% improvement with a tailored CV</p>
-            <p className="mt-2 text-slate-600">Your original score was {optimizeData.original_score}. Download your tailored CV and motivation letter.</p>
+            <p className="mt-4 text-emerald-600 font-medium">+{optimizeData.improvement_pct}% improvement with a tailored resume</p>
+            <p className="mt-2 text-slate-600">Your original score was {optimizeData.original_score}. Download your tailored resume and motivation letter.</p>
           </>
         ) : (
-          <p className="mt-4 text-slate-600">Your profile already fits this job. We&apos;ve tailored your CV to the role — download it below.</p>
+          <p className="mt-4 text-slate-600">Your profile already fits this job. We&apos;ve tailored your resume to the role — download it below.</p>
         )}
         <button
           type="button"
@@ -138,7 +138,7 @@ function OptimizedContent() {
           disabled={createLoading}
           className="mt-4 inline-flex rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
         >
-          {createLoading ? 'Creating…' : 'Create tailored CV & motivation letter'}
+          {createLoading ? 'Creating…' : 'Create tailored resume & motivation letter'}
         </button>
       </div>
       <div className="mt-6">

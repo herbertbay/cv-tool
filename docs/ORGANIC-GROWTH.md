@@ -70,10 +70,10 @@ Adding payment now is possible but adds friction before you’ve validated deman
 
 Use the “ghosted / ignored” angle consistently so people recognize the problem and the fix:
 
-- **Hero / above the fold:** “Tired of being ghosted by recruiters? Get a CV that gets you noticed.”
+- **Hero / above the fold:** “Tired of being ghosted by recruiters? Get a resume that gets you noticed.”
 - **Why tailor:** “Stop getting ignored—stand out with Optimal CV.”
-- **Final CTA:** “Tired of silence after applying? Make your next CV impossible to ignore.”
-- **Alternatives for ads or social:** “Ghosted after applying? Your CV might be the reason.” / “Stop sending the same CV to every job. Stand out with Optimal CV.”
+- **Final CTA:** “Tired of silence after applying? Make your next resume impossible to ignore.”
+- **Alternatives for ads or social:** “Ghosted after applying? Your resume might be the reason.” / “Stop sending the same resume to every job. Stand out with Optimal CV.”
 
 Keep the tone direct and empathetic; avoid sounding preachy or desperate.
 

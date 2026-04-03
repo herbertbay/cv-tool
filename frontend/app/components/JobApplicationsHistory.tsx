@@ -13,7 +13,7 @@ import { formatDate } from '../lib/date';
 
 const APPLICATION_STATUSES: ApplicationStatus[] = ['Interested', 'Applied', 'Interview', 'Rejected', 'Offer'];
 
-/** History = generated CVs & motivation letters, augmented with job application data. Only shows applications that have a linked generated CV (session_id). */
+/** History = generated resumes & motivation letters, augmented with job application data. Only shows applications that have a linked generated session (session_id). */
 export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: number } = {}) {
   const { user } = useAuth();
   const router = useRouter();
@@ -73,7 +73,7 @@ export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: nu
         {loading && <p className="text-sm text-slate-500 py-4">Loading…</p>}
         {!loading && applications.length === 0 && (
           <p className="text-sm text-slate-500 py-4">
-            No history yet. Create a tailored CV (and optionally a motivation letter) to add your first entry.
+            No history yet. Create a tailored resume (and optionally a motivation letter) to add your first entry.
           </p>
         )}
         {!loading && applications.length > 0 && (

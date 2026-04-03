@@ -20,7 +20,7 @@ function JobFitScoreShare({ score, jobPreview }: { score: number; jobPreview: st
   const [copied, setCopied] = useState(false);
   const jobTitle = jobTitleFromPreview(jobPreview);
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/cv-checker` : '';
-  const shareText = `My CV match score for ${jobTitle} is ${score}%! Check yours at Optimal CV.`;
+  const shareText = `My resume match score for ${jobTitle} is ${score}%! Check yours at Optimal CV.`;
 
   const onCopyLink = useCallback(() => {
     if (!shareUrl) return;
@@ -148,11 +148,11 @@ function ScoreContent() {
   return (
     <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
       <h1 className="text-2xl font-bold text-slate-900 mb-2">Your match score</h1>
-      <p className="text-slate-600 mb-6">See how well your CV matches the job and how much you can improve.</p>
+      <p className="text-slate-600 mb-6">See how well your resume matches the job and how much you can improve.</p>
       {optimizeLoading ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm text-center">
           <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" aria-hidden />
-          <p className="mt-4 text-lg font-medium text-slate-800">Optimizing your CV</p>
+          <p className="mt-4 text-lg font-medium text-slate-800">Optimizing your resume</p>
           <p className="mt-1 text-sm text-slate-500">Creating a tailored version and recalculating your score…</p>
         </div>
       ) : (
@@ -193,7 +193,7 @@ function ScoreContent() {
               </div>
             </div>
           )}
-          <p className="mt-4 text-slate-600">Get a tailored CV with Optimal CV to improve your score.</p>
+          <p className="mt-4 text-slate-600">Get a tailored resume with Optimal CV to improve your score.</p>
           <button
             type="button"
             onClick={handleOptimize}

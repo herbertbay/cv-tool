@@ -13,7 +13,7 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: Props): Metadata {
   const role = getCvForRole(params.slug);
   if (!role) return { title: 'Not found' };
-  const title = `CV for ${role.title}`;
+  const title = `Resume for ${role.title}`;
   return {
     title,
     description: role.metaDescription,
@@ -33,7 +33,7 @@ export default function CvForRolePage({ params }: Props) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: `CV for ${role.title}`,
+    headline: `Resume for ${role.title}`,
     description: role.metaDescription,
     url: `${site}/resources/cv-for/${role.slug}`,
     author: { '@type': 'Organization', name: 'Optimal CV' },
@@ -49,10 +49,10 @@ export default function CvForRolePage({ params }: Props) {
             Resources
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-slate-700">CV for {role.title}</span>
+          <span className="text-slate-700">Resume for {role.title}</span>
         </p>
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-          CV for {role.title}
+          Resume for {role.title}
         </h1>
         <p className="mt-6 text-lg text-slate-600 leading-relaxed">{role.intro}</p>
 
@@ -67,7 +67,7 @@ export default function CvForRolePage({ params }: Props) {
         </ol>
 
         <div className="mt-12 rounded-xl border border-blue-200 bg-blue-50/80 p-6">
-          <p className="font-medium text-slate-900">Turn this into a tailored CV</p>
+          <p className="font-medium text-slate-900">Turn this into a tailored resume</p>
           <p className="mt-2 text-sm text-slate-600">
             Paste your next job description—Optimal CV rewrites your summary and experience to match, and exports a
             professional PDF.
@@ -83,7 +83,7 @@ export default function CvForRolePage({ params }: Props) {
               href="/cv-checker"
               className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
-              Try the CV checker
+              Try the resume checker
             </Link>
           </div>
         </div>

@@ -7,7 +7,7 @@ export function GET() {
   const lines = [
     '# Optimal CV',
     '',
-    '> Job-specific CV builder and motivation letter generator. One profile; tailored PDFs per job description.',
+    '> Job-specific resume builder and motivation letter generator. One profile; tailored PDFs per job description.',
     '',
     '## Main',
     `- ${base}/`,

@@ -1,4 +1,4 @@
-/** SEO resources: “CV for [role]” and how-to guides. */
+/** SEO resources: resume tips by role and how-to guides (URLs keep /cv-for/ for stability). */
 
 export type CvForRole = {
   slug: string;
@@ -21,7 +21,7 @@ export const CV_FOR_ROLES: CvForRole[] = [
     slug: 'software-engineer',
     title: 'Software Engineer',
     metaDescription:
-      'How to tailor your CV for software engineer roles: keywords, structure, and ATS tips. Build a job-specific CV with Optimal CV.',
+      'How to tailor your resume for software engineer roles: keywords, structure, and ATS tips. Build a job-specific resume with Optimal CV.',
     intro:
       'Software engineering roles compete on technical depth, impact, and keyword alignment with the job description. Recruiters and ATS systems look for stacks, ownership, and measurable outcomes—not a generic “passionate developer” line.',
     tips: [
@@ -29,16 +29,16 @@ export const CV_FOR_ROLES: CvForRole[] = [
       'Lead with impact: shipped features, latency wins, reliability, scale, or revenue—not only responsibilities.',
       'Use one tight technical skills block aligned to the posting; drop unrelated buzzwords that dilute relevance.',
       'For each role, echo the job’s vocabulary (e.g. “CI/CD”, “microservices”, “observability”) when it matches your experience.',
-      'Keep a master profile, then generate a separate CV per application so keywords stay job-specific.',
+      'Keep a master profile, then generate a separate resume per application so keywords stay job-specific.',
     ],
   },
   {
     slug: 'marketing-manager',
     title: 'Marketing Manager',
     metaDescription:
-      'CV tips for marketing manager applications: metrics, channels, and tailoring to the job ad. Try Optimal CV for job-specific CVs.',
+      'Resume tips for marketing manager applications: metrics, channels, and tailoring to the job ad. Try Optimal CV for job-specific resumes.',
     intro:
-      'Marketing manager CVs win on measurable outcomes—pipeline, CAC, ROAS, retention—and channel fit with the role (B2B vs B2C, product vs growth).',
+      'Marketing manager resumes win on measurable outcomes—pipeline, CAC, ROAS, retention—and channel fit with the role (B2B vs B2C, product vs growth).',
     tips: [
       'Quantify: campaigns, budgets, conversion lifts, audience growth, and revenue influenced where you can.',
       'Align channel language with the job (content, performance, lifecycle, brand, product marketing).',
@@ -51,9 +51,9 @@ export const CV_FOR_ROLES: CvForRole[] = [
     slug: 'data-scientist',
     title: 'Data Scientist',
     metaDescription:
-      'How to shape a data scientist CV for each role: modeling, experimentation, and business impact. Tailor with Optimal CV.',
+      'How to shape a data scientist resume for each role: modeling, experimentation, and business impact. Tailor with Optimal CV.',
     intro:
-      'Data science postings mix statistics, engineering, and product sense. Your CV should reflect the blend this employer emphasizes.',
+      'Data science postings mix statistics, engineering, and product sense. Your resume should reflect the blend this employer emphasizes.',
     tips: [
       'Highlight modeling approaches and domains (forecasting, NLP, causal inference) that match the posting.',
       'Name stacks honestly: Python/R, SQL, Spark, cloud ML, notebooks, and experiment platforms.',
@@ -66,22 +66,22 @@ export const CV_FOR_ROLES: CvForRole[] = [
     slug: 'product-manager',
     title: 'Product Manager',
     metaDescription:
-      'Product manager CV advice: outcomes, discovery, and roadmap language aligned to the job. Use Optimal CV to tailor.',
+      'Product manager resume advice: outcomes, discovery, and roadmap language aligned to the job. Use Optimal CV to tailor.',
     intro:
-      'PM CVs should read like a narrative of problems solved, users served, and metrics moved—using the hiring company’s product vocabulary.',
+      'PM resumes should read like a narrative of problems solved, users served, and metrics moved—using the hiring company’s product vocabulary.',
     tips: [
       'Lead with outcomes: launches, adoption, retention, revenue, or time-to-value—not only “owned roadmap”.',
       'Mirror the domain: B2B SaaS, marketplace, consumer, hardware, or internal tools as appropriate.',
       'Show discovery habits: research, experiments, data partnerships, and stakeholder alignment.',
       'Use the job’s keywords for methodologies (OKRs, agile, discovery, GTM) when they fit your work.',
-      'Avoid one generic PM CV; tailor emphasis per vertical and seniority.',
+      'Avoid one generic PM resume; tailor emphasis per vertical and seniority.',
     ],
   },
   {
     slug: 'registered-nurse',
     title: 'Registered Nurse',
     metaDescription:
-      'CV guidance for registered nurse roles: units, certifications, and compliance keywords. Tailor your nursing CV with Optimal CV.',
+      'Resume guidance for registered nurse roles: units, certifications, and compliance keywords. Tailor your nursing resume with Optimal CV.',
     intro:
       'Clinical roles reward specificity: patient populations, acuity, charting systems, and certifications that match the facility’s needs.',
     tips: [
@@ -96,22 +96,22 @@ export const CV_FOR_ROLES: CvForRole[] = [
     slug: 'teacher',
     title: 'Teacher',
     metaDescription:
-      'How to tailor a teacher CV for each school or district: curriculum, assessments, and classroom outcomes.',
+      'How to tailor a teacher resume for each school or district: curriculum, assessments, and classroom outcomes.',
     intro:
-      'Teaching CVs should reflect grade levels, subjects, standards alignment, and classroom results relevant to the posting.',
+      'Teaching resumes should reflect grade levels, subjects, standards alignment, and classroom results relevant to the posting.',
     tips: [
       'Match curriculum and assessment language (state standards, IB, AP, differentiation) to the role.',
       'Quantify where possible: class size, growth data, programs led, or extracurricular impact.',
       'Include tools: LMS, classroom tech, behavior systems, and PD that appear in the job ad.',
       'Tailor your philosophy and summary to the school’s mission when authentic.',
-      'Generate a fresh CV per district or school type without rewriting your whole history by hand.',
+      'Generate a fresh resume per district or school type without rewriting your whole history by hand.',
     ],
   },
   {
     slug: 'sales-representative',
     title: 'Sales Representative',
     metaDescription:
-      'Sales representative CV tips: quota, cycle, and industry fit. Create tailored CVs for each sales job with Optimal CV.',
+      'Sales representative resume tips: quota, cycle, and industry fit. Create tailored resumes for each sales job with Optimal CV.',
     intro:
       'Sales hiring is about proof: quota attainment, deal size, cycle length, and industry or motion match.',
     tips: [
@@ -126,9 +126,9 @@ export const CV_FOR_ROLES: CvForRole[] = [
     slug: 'project-manager',
     title: 'Project Manager',
     metaDescription:
-      'Project manager CV advice: delivery, methodology, and stakeholder scale. Tailor PM CVs with Optimal CV.',
+      'Project manager resume advice: delivery, methodology, and stakeholder scale. Tailor PM resumes with Optimal CV.',
     intro:
-      'PM roles differ by methodology, domain, and scale. Your CV should echo the posting’s delivery model and constraints.',
+      'PM roles differ by methodology, domain, and scale. Your resume should echo the posting’s delivery model and constraints.',
     tips: [
       'Highlight methodology fit: Agile, Scrum, Kanban, waterfall, hybrid—use their terms when accurate.',
       'Show budget, timeline, and risk outcomes; name program scale (teams, geographies, vendors).',
@@ -141,14 +141,14 @@ export const CV_FOR_ROLES: CvForRole[] = [
     slug: 'graphic-designer',
     title: 'Graphic Designer',
     metaDescription:
-      'Graphic designer CV tips: portfolio alignment, tools, and brand work. Job-specific CVs with Optimal CV.',
+      'Graphic designer resume tips: portfolio alignment, tools, and brand work. Job-specific resumes with Optimal CV.',
     intro:
-      'Design hiring pairs visual portfolio review with CV scannability: tools, brand work, and campaign types that match the brief.',
+      'Design hiring pairs visual portfolio review with resume scannability: tools, brand work, and campaign types that match the brief.',
     tips: [
       'Mirror the job’s medium: digital, print, brand, motion, UI—where your work applies.',
       'List tools (Figma, Adobe CC, After Effects) exactly as the posting does.',
       'Reference industries and deliverables they care about: social, packaging, B2B decks.',
-      'Keep the CV concise; let the portfolio carry visuals—the CV carries keywords and scope.',
+      'Keep the resume concise; let the portfolio carry visuals—the resume carries keywords and scope.',
       'Tailor language per agency vs in-house vs startup needs.',
     ],
   },
@@ -156,9 +156,9 @@ export const CV_FOR_ROLES: CvForRole[] = [
     slug: 'accountant',
     title: 'Accountant',
     metaDescription:
-      'Accountant and finance CV guidance: GAAP, systems, and closing cycles. Tailor with Optimal CV.',
+      'Accountant and finance resume guidance: GAAP, systems, and closing cycles. Tailor with Optimal CV.',
     intro:
-      'Accounting roles hinge on standards, systems, close cadence, and industry exposure—your CV should speak that language.',
+      'Accounting roles hinge on standards, systems, close cadence, and industry exposure—your resume should speak that language.',
     tips: [
       'Specify GAAP/IFRS, audit vs industry, and entity type (public, nonprofit, SMB).',
       'Name ERPs and tools (NetSuite, SAP, QuickBooks) the job lists.',
@@ -172,11 +172,11 @@ export const CV_FOR_ROLES: CvForRole[] = [
 export const GUIDE_ARTICLES: GuideArticle[] = [
   {
     slug: 'how-to-tailor-cv-to-job-description',
-    title: 'How to tailor your CV to a job description',
+    title: 'How to tailor your resume to a job description',
     metaDescription:
-      'Step-by-step: read the job description, extract keywords, mirror truthful experience, and generate a tailored CV. Use Optimal CV to automate tailoring.',
+      'Step-by-step: read the job description, extract keywords, mirror truthful experience, and generate a tailored resume. Use Optimal CV to automate tailoring.',
     intro:
-      'Tailoring means aligning your CV’s language and emphasis with a specific posting—without inventing facts. It improves both human scanability and ATS relevance.',
+      'Tailoring means aligning your resume’s language and emphasis with a specific posting—without inventing facts. It improves both human scanability and ATS relevance.',
     sections: [
       {
         heading: '1. Read for requirements, not titles',
@@ -186,10 +186,10 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       {
         heading: '2. Map keywords to evidence',
         body:
-          'For each major requirement, find a bullet or skill on your CV that proves it. If nothing matches, consider a different role or an honest gap you can close with adjacent experience.',
+          'For each major requirement, find a bullet or skill on your resume that proves it. If nothing matches, consider a different role or an honest gap you can close with adjacent experience.',
       },
       {
-        heading: '3. Rewrite the top of your CV',
+        heading: '3. Rewrite the top of your resume',
         body:
           'Adjust your headline and professional summary so they reflect the role’s focus. Use the employer’s vocabulary where it accurately describes your work.',
       },
@@ -206,7 +206,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       {
         heading: '6. Use a tool for repeat applications',
         body:
-          'Optimal CV keeps one profile and generates a tailored CV and motivation letter per job description, so you can apply widely without maintaining dozens of files by hand.',
+          'Optimal CV keeps one profile and generates a tailored resume and motivation letter per job description, so you can apply widely without maintaining dozens of files by hand.',
       },
     ],
   },
@@ -214,9 +214,9 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     slug: 'how-to-pass-ats-screening',
     title: 'How to pass ATS screening',
     metaDescription:
-      'What applicant tracking systems look for: structure, keywords, and clarity—plus how to test your CV. Free ATS checker from Optimal CV.',
+      'What applicant tracking systems look for: structure, keywords, and clarity—plus how to test your resume. Free ATS checker from Optimal CV.',
     intro:
-      'ATS tools parse and rank CVs against job descriptions. You pass screening by being relevant, parseable, and specific—not by tricks that harm readability.',
+      'ATS tools parse and rank resumes against job descriptions. You pass screening by being relevant, parseable, and specific—not by tricks that harm readability.',
     sections: [
       {
         heading: '1. Use a clear structure',
@@ -236,20 +236,20 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       {
         heading: '4. Test before you apply',
         body:
-          'Use Optimal CV’s free CV checker: upload your CV and job description (or URL) to see a match-style score and improvement path, then generate a tailored CV when you sign up.',
+          'Use Optimal CV’s free resume checker: upload your resume and job description (or URL) to see a match-style score and improvement path, then generate a tailored resume when you sign up.',
       },
       {
         heading: '5. Keep one source of truth',
         body:
-          'Maintain a full profile once; generate job-specific CVs so each submission stays focused without manual copy-paste errors.',
+          'Maintain a full profile once; generate job-specific resumes so each submission stays focused without manual copy-paste errors.',
       },
     ],
   },
   {
     slug: 'best-cv-format-2026',
-    title: 'Best CV format in 2026',
+    title: 'Best resume format in 2026',
     metaDescription:
-      'Modern CV format for 2026: length, sections, file type, and what recruiters and ATS expect. Build tailored PDFs with Optimal CV.',
+      'Modern resume format for 2026: length, sections, file type, and what recruiters and ATS expect. Build tailored PDFs with Optimal CV.',
     intro:
       'The “best” format is the one that is easy to read, honest, and aligned to the role. In 2026, that still means clarity first—plus job-specific wording when you apply.',
     sections: [
@@ -266,7 +266,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       {
         heading: 'File type',
         body:
-          'Submit PDF unless the employer asks for Word. Ensure text is selectable so parsers and recruiters can quote your CV.',
+          'Submit PDF unless the employer asks for Word. Ensure text is selectable so parsers and recruiters can quote your resume.',
       },
       {
         heading: 'Tailoring beats a single “perfect” template',
@@ -276,7 +276,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       {
         heading: 'Use Optimal CV for PDFs and letters',
         body:
-          'Generate a tailored CV and motivation letter per job from one profile—professional layout, job-specific text, and downloadable PDFs.',
+          'Generate a tailored resume and motivation letter per job from one profile—professional layout, job-specific text, and downloadable PDFs.',
       },
     ],
   },

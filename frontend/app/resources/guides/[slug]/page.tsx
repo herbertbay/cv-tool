@@ -65,13 +65,13 @@ export default function GuidePage({ params }: Props) {
         <div className="mt-12 rounded-xl border border-blue-200 bg-blue-50/80 p-6">
           <p className="font-medium text-slate-900">Apply this with Optimal CV</p>
           <p className="mt-2 text-sm text-slate-600">
-            Save one profile, paste any job description, and download a tailored CV and motivation letter as PDFs.
+            Save one profile, paste any job description, and download a tailored resume and motivation letter as PDFs.
           </p>
           <Link
             href="/register"
             className="mt-4 inline-flex rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900"
           >
-            Create your tailored CV
+            Create your tailored resume
           </Link>
         </div>
       </article>

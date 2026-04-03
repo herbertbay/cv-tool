@@ -59,7 +59,7 @@ export default function AdminStatsPage() {
               <span className="text-slate-900 font-mono">{data.profiles}</span>
             </li>
             <li>
-              <span className="font-medium text-slate-700">CV generations</span>{' '}
+              <span className="font-medium text-slate-700">Resume generations</span>{' '}
               <span className="text-slate-900 font-mono">{data.cv_generations}</span>
             </li>
           </ul>

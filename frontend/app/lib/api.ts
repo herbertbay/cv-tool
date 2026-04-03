@@ -269,7 +269,7 @@ export async function parseCV(file: File): Promise<Profile> {
   });
   checkAuth(res);
   if (!res.ok) {
-    if (res.status === 401) throw new Error('Please sign in to upload and save your CV.');
+    if (res.status === 401) throw new Error('Please sign in to upload and save your resume.');
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || 'Failed to parse file');
   }
@@ -390,7 +390,7 @@ export async function generateCV(
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || 'Failed to generate CV');
+    throw new Error(err.detail || 'Failed to generate resume');
   }
   return res.json();
 }
@@ -427,7 +427,7 @@ export type GeneratedCVItem = {
 export async function getGeneratedCVs(): Promise<GeneratedCVItem[]> {
   const res = await fetch(`${API_BASE}/generated-cvs`, fetchOptions);
   if (res.status === 401) return [];
-  if (!res.ok) throw new Error('Failed to load generated CVs');
+  if (!res.ok) throw new Error('Failed to load generated resumes');
   return res.json();
 }
 
@@ -568,9 +568,9 @@ export async function computeApplicationScore(applicationId: string): Promise<{ 
   checkAuth(res);
   if (res.status === 400) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Job description and a generated CV are required to compute the score.');
+    throw new Error(err.detail || 'Job description and a generated resume are required to compute the score.');
   }
-  if (res.status === 404) throw new Error('Application or CV not found');
+  if (res.status === 404) throw new Error('Application or resume not found');
   if (!res.ok) throw new Error('Failed to compute score');
   return res.json();
 }
@@ -625,7 +625,7 @@ export async function postCvGenerationPreviewHtml(
     ...fetchOptions,
   });
   checkAuth(res);
-  if (!res.ok) throw new Error('Failed to load CV preview');
+  if (!res.ok) throw new Error('Failed to load resume preview');
   return res.text();
 }
 
@@ -651,7 +651,7 @@ export async function regenerateCv(
     body: JSON.stringify(payload),
     ...fetchOptions,
   });
-  if (!res.ok) throw new Error('Failed to regenerate CV');
+  if (!res.ok) throw new Error('Failed to regenerate resume');
   return res.json();
 }
 
@@ -666,7 +666,7 @@ export async function generateApplicationMotivationLetter(applicationId: string)
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || 'Job description is required');
   }
-  if (res.status === 404) throw new Error('Application or CV not found');
+  if (res.status === 404) throw new Error('Application or resume not found');
   if (!res.ok) throw new Error('Failed to generate motivation letter');
   return res.json();
 }

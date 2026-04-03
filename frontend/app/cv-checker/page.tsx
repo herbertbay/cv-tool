@@ -18,7 +18,7 @@ function CvCheckerForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cvFile || !jobInput.trim()) {
-      setError('Upload a PDF CV and enter the job description.');
+      setError('Upload a PDF resume and enter the job description.');
       return;
     }
     setLoading(true);
@@ -42,7 +42,7 @@ function CvCheckerForm() {
       <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
         <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm text-center">
           <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" aria-hidden />
-          <p className="mt-4 text-lg font-medium text-slate-800">Analyzing your CV and job description</p>
+          <p className="mt-4 text-lg font-medium text-slate-800">Analyzing your resume and job description</p>
           <p className="mt-1 text-sm text-slate-500">This usually takes a few seconds…</p>
         </div>
       </main>
@@ -51,15 +51,15 @@ function CvCheckerForm() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">CV checker</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">Resume checker</h1>
       <p className="text-slate-600 mb-6">
         {user
-          ? 'Upload your CV and job description to see how well you match and get an optimized version.'
-          : 'Upload your CV and job description to see how well you match. Sign up to view your score and get an optimized version.'}
+          ? 'Upload your resume and job description to see how well you match and get an optimized version.'
+          : 'Upload your resume and job description to see how well you match. Sign up to view your score and get an optimized version.'}
       </p>
       <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">CV (PDF)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Resume (PDF)</label>
           <input
             type="file"
             accept=".pdf"

@@ -30,7 +30,7 @@ Ordered todos to rank well in search engines (web) and app stores (ASO), includi
 
 11. **Keyword / intent map**: one primary intent per URL; avoid cannibalization (merge or differentiate overlapping pages).
 12. **Title tags + meta descriptions** per page type; unique, within reasonable pixel limits; aligned with search intent.
-13. **Landing pages** for main jobs-to-be-done (e.g. “CV for [role]”, “ATS checker”, “tailor resume to job”): clear H1, FAQ, proof (trust signals).
+13. **Landing pages** for main jobs-to-be-done (e.g. “Resume for [role]”, “ATS checker”, “tailor resume to job”): clear H1, FAQ, proof (trust signals).
 14. **E-E-A-T**: about/org pages, contact, privacy/terms; refresh dates where they improve trust.
 15. **Image SEO**: descriptive filenames, meaningful `alt` text; **Open Graph / Twitter** images for sharing.
 

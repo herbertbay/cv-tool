@@ -145,7 +145,7 @@ function AtsScoreExpandedBody({
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 max-w-xl">
               <p className="text-sm font-medium text-amber-900">Education score is often lower — this is common</p>
               <p className="mt-1 text-xs text-amber-900/90 leading-relaxed">
-                Many job posts barely mention degrees. Keyword-style checkers score overlap per section; some products list education as its own checklist instead of folding it into one headline number. Here, your education block is compared semantically to the whole job text like other sections, so a posting that omits schooling can yield a low education bar even when the CV is appropriate.
+                Many job posts barely mention degrees. Keyword-style checkers score overlap per section; some products list education as its own checklist instead of folding it into one headline number. Here, your education block is compared semantically to the whole job text like other sections, so a posting that omits schooling can yield a low education bar even when the resume is appropriate.
               </p>
               <ul className="mt-2 space-y-1 text-xs text-amber-800 list-disc list-inside">
                 <li>When the post names a degree or field, mirror that wording if truthful.</li>
@@ -629,13 +629,13 @@ export default function ApplicationDetailPage() {
         })()}
 
         <CollapsibleSection
-          title="CV layout: what appears on the PDF"
-          subtitle="Every row maps a resume block to its source (base profile vs. this application). Uncheck to omit from the CV, downloads, and ATS score for this application."
+          title="Resume layout: what appears on the PDF"
+          subtitle="Every row maps a resume block to its source (base profile vs. this application). Uncheck to omit from the resume PDF, downloads, and ATS score for this application."
           defaultOpen={false}
         >
           <div className="pt-2 space-y-4 text-sm">
             <p className="text-slate-600">
-              <strong>General resume (profile)</strong> is your uploaded source. <strong>This application</strong> overrides headline, skills, and education when set below; summary and role text come from the generated CV session.
+              <strong>General resume (profile)</strong> is your uploaded source. <strong>This application</strong> overrides headline, skills, and education when set below; summary and role text come from the generated tailoring session.
             </p>
             {!baseProfile && <p className="text-slate-500">Loading base profile…</p>}
             {baseProfile && (
@@ -643,7 +643,7 @@ export default function ApplicationDetailPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
-                      <th className="px-3 py-2 w-10">CV</th>
+                      <th className="px-3 py-2 w-10">Resume</th>
                       <th className="px-3 py-2">Section</th>
                       <th className="px-3 py-2">Source</th>
                     </tr>
@@ -716,7 +716,7 @@ export default function ApplicationDetailPage() {
                       </td>
                       <td className="px-3 py-2 font-medium text-slate-800">Summary</td>
                       <td className="px-3 py-2 text-slate-600">
-                        {app.session_id ? 'CV session (tailored)' : '— (generate a CV for this application)'}
+                        {app.session_id ? 'Tailored session' : '— (generate a resume for this application)'}
                       </td>
                     </tr>
                     <tr>
@@ -766,7 +766,7 @@ export default function ApplicationDetailPage() {
                         ) : app.session_id ? (
                           <span className="text-slate-500">No roles in session</span>
                         ) : (
-                          '— (generate a CV)'
+                          '— (generate a resume)'
                         )}
                       </td>
                     </tr>
@@ -976,7 +976,7 @@ export default function ApplicationDetailPage() {
 
         <CollapsibleSection
           title="ATS-tailored profile fields"
-          subtitle="Job-specific headline on the CV; saved on blur"
+          subtitle="Job-specific headline on the resume; saved on blur"
           defaultOpen
         >
           <div className="pt-2">
@@ -1028,16 +1028,16 @@ export default function ApplicationDetailPage() {
         ) : (
           <CollapsibleSection
             title="Summary"
-            subtitle="Available after you generate a CV linked to this application"
+            subtitle="Available after you generate a resume linked to this application"
             defaultOpen={false}
           >
-            <p className="text-sm text-slate-500 pt-2">Generate a CV from the dashboard flow to edit a tailored summary here.</p>
+            <p className="text-sm text-slate-500 pt-2">Generate a resume from the dashboard flow to edit a tailored summary here.</p>
           </CollapsibleSection>
         )}
 
         <CollapsibleSection
           title="Skills"
-          subtitle="Comma-separated; used in ATS scoring and on the CV (saved on blur)"
+          subtitle="Comma-separated; used in ATS scoring and on the resume (saved on blur)"
           defaultOpen={false}
         >
           <div className="pt-2">
@@ -1094,10 +1094,10 @@ export default function ApplicationDetailPage() {
         ) : (
           <CollapsibleSection
             title="Experience"
-            subtitle="Available after you generate a CV linked to this application"
+            subtitle="Available after you generate a resume linked to this application"
             defaultOpen={false}
           >
-            <p className="text-sm text-slate-500 pt-2">Generate a CV from the dashboard flow to edit tailored experience here.</p>
+            <p className="text-sm text-slate-500 pt-2">Generate a resume from the dashboard flow to edit tailored experience here.</p>
           </CollapsibleSection>
         )}
 
@@ -1189,7 +1189,7 @@ export default function ApplicationDetailPage() {
                     </div>
                     <div className="flex flex-col gap-4 pt-4 border-t border-slate-100 sm:flex-row sm:flex-wrap sm:items-end">
                       <div className="min-w-[180px] flex-1">
-                        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">CV template</label>
+                        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Resume template</label>
                         <select
                           value={tailored.template}
                           onChange={(e) => setTailored((p) => p ? { ...p, template: e.target.value } : null)}
@@ -1210,7 +1210,7 @@ export default function ApplicationDetailPage() {
                       </button>
                     </div>
                     <p className="text-xs text-slate-500">
-                      Saves summary &amp; experience to the server and rebuilds CV/letter PDFs for download. The resume preview below already reflects your edits.
+                      Saves summary &amp; experience to the server and rebuilds resume and letter PDFs for download. The resume preview below already reflects your edits.
                     </p>
                     {regenerateError && <p className="text-sm text-red-600">{regenerateError}</p>}
                   </>
@@ -1228,7 +1228,7 @@ export default function ApplicationDetailPage() {
                 {previewError && <p className="text-sm text-red-600 mb-3">{previewError}</p>}
                 {previewHtml ? (
                   <iframe
-                    title="CV PDF preview"
+                    title="Resume PDF preview"
                     sandbox=""
                     className="w-full h-[min(85vh,920px)] border border-slate-200 rounded-lg bg-white shadow-inner"
                     srcDoc={previewHtml}
@@ -1239,14 +1239,14 @@ export default function ApplicationDetailPage() {
               </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Downloads" subtitle="CV and motivation letter PDFs" defaultOpen={false}>
+            <CollapsibleSection title="Downloads" subtitle="Resume and motivation letter PDFs" defaultOpen={false}>
               <div className="pt-2 flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={handleDownloadPdf}
                   className="inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                 >
-                  Download CV (PDF)
+                  Download resume (PDF)
                 </button>
                 <button
                   type="button"

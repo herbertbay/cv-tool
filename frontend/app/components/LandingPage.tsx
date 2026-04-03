@@ -8,7 +8,7 @@ export function LandingPage() {
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
             <div>
               <p className="text-sm font-medium uppercase tracking-wider text-blue-700 mb-3">
-                Tired of being ghosted by recruiters? Get a CV that gets you noticed.
+                Tired of being ghosted by recruiters? Get a resume that gets you noticed.
               </p>
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                 Your resume, tailored to every job you apply to
@@ -50,25 +50,25 @@ export function LandingPage() {
             How it works
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-            One profile. Add any job. Get a tailored CV and motivation letter in minutes.
+            One profile. Add any job. Get a tailored resume and motivation letter in minutes.
           </p>
           <div className="mt-12 grid gap-10 sm:grid-cols-3">
             <StepCard
               step={1}
-              title="Upload your CV or build your profile"
+              title="Upload your resume or build your profile"
               description="Start with your existing resume or enter your experience. We parse your content so you do not have to retype everything."
               icon={<StepOneIcon />}
             />
             <StepCard
               step={2}
               title="Add the job description"
-              description="Paste the job description or paste a link to the listing. We use it to tailor your CV and motivation letter to that specific role."
+              description="Paste the job description or paste a link to the listing. We use it to tailor your resume and motivation letter to that specific role."
               icon={<StepTwoIcon />}
             />
             <StepCard
               step={3}
-              title="Download your tailored CV and motivation letter"
-              description="Get a professional PDF CV and motivation letter optimized for that job. Use the same profile for every application."
+              title="Download your tailored resume and motivation letter"
+              description="Get a professional PDF resume and motivation letter optimized for that job. Use the same profile for every application."
               icon={<StepThreeIcon />}
             />
           </div>
@@ -77,7 +77,7 @@ export function LandingPage() {
               href="/register"
               className="inline-flex items-center rounded-lg bg-blue-800 px-6 py-3 text-base font-medium text-white hover:bg-blue-900 transition-colors"
             >
-              Create your first tailored CV
+              Create your first tailored resume
             </Link>
           </div>
         </div>
@@ -89,22 +89,22 @@ export function LandingPage() {
             One profile, countless applications
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-            Generic resumes get overlooked. Job-specific CVs get shortlisted. Stop getting ignored—stand out with Optimal CV.
+            Generic resumes get overlooked. Job-specific resumes get shortlisted. Stop getting ignored—stand out with Optimal CV.
           </p>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <FeatureBlock
               title="Built for modern hiring"
-              description="Your CV is optimized to align with how employers and screening tools evaluate candidates today."
+              description="Your resume is optimized to align with how employers and screening tools evaluate candidates today."
               icon={<TargetIcon />}
             />
             <FeatureBlock
               title="Match the job description"
-              description="Keywords and phrasing from the role are reflected in your CV and motivation letter so you stand out."
+              description="Keywords and phrasing from the role are reflected in your resume and motivation letter so you stand out."
               icon={<MatchIcon />}
             />
             <FeatureBlock
               title="Professional PDFs"
-              description="Download clean, ATS-friendly CV and motivation letter PDFs ready to upload to any job board."
+              description="Download clean, ATS-friendly resume and motivation letter PDFs ready to upload to any job board."
               icon={<PdfIcon />}
             />
             <FeatureBlock
@@ -125,19 +125,19 @@ export function LandingPage() {
             <li>
               <h3 className="text-lg font-semibold text-slate-900">How is Optimal CV different from a regular resume builder?</h3>
               <p className="mt-2 text-slate-600">
-                Most resume builders help you create one static CV. Optimal CV is built for applying to many jobs: you keep one profile and generate a new, tailored CV and motivation letter for each role. Your experience is rewritten and emphasized to match what each job description asks for, so you stay relevant to both hiring managers and applicant tracking systems.
+                Most resume builders help you create one static document. Optimal CV is built for applying to many jobs: you keep one profile and generate a new, tailored resume and motivation letter for each role. Your experience is rewritten and emphasized to match what each job description asks for, so you stay relevant to both hiring managers and applicant tracking systems.
               </p>
             </li>
             <li>
               <h3 className="text-lg font-semibold text-slate-900">Is it free?</h3>
               <p className="mt-2 text-slate-600">
-                You can sign up and use Optimal CV to create job-specific CVs and motivation letters. Create an account to save your profile and access your generation history.
+                You can sign up and use Optimal CV to create job-specific resumes and motivation letters. Create an account to save your profile and access your generation history.
               </p>
             </li>
             <li>
               <h3 className="text-lg font-semibold text-slate-900">Is my data safe?</h3>
               <p className="mt-2 text-slate-600">
-                We use your profile and job descriptions only to generate your tailored CV and motivation letter. We do not sell your data. You can delete your account and all associated data at any time from your profile settings.
+                We use your profile and job descriptions only to generate your tailored resume and motivation letter. We do not sell your data. You can delete your account and all associated data at any time from your profile settings.
               </p>
             </li>
           </ul>
@@ -150,10 +150,10 @@ export function LandingPage() {
             Tired of silence after applying?
           </p>
           <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
-            Make your next CV impossible to ignore
+            Make your next resume impossible to ignore
           </h2>
           <p className="mt-3 text-blue-100 max-w-xl mx-auto">
-            Join job seekers who tailor their application to every role. One profile, professional CVs and letters for each job—with Optimal CV.
+            Join job seekers who tailor their application to every role. One profile, professional resumes and letters for each job—with Optimal CV.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
@@ -179,7 +179,7 @@ export function LandingPage() {
           </Link>
           <nav className="flex flex-wrap items-center gap-6 text-sm text-slate-600">
             <Link href="/resources" className="hover:text-slate-900">Resources</Link>
-            <Link href="/cv-checker" className="hover:text-slate-900">CV checker</Link>
+            <Link href="/cv-checker" className="hover:text-slate-900">Resume checker</Link>
             <Link href="/login" className="hover:text-slate-900">Sign in</Link>
             <Link href="/register" className="hover:text-slate-900">Sign up</Link>
           </nav>
