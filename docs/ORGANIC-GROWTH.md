@@ -56,7 +56,7 @@ Adding payment now is possible but adds friction before you’ve validated deman
 ### Community & distribution
 
 - [ ] **Reddit presence** — r/resumes, r/careerguidance, r/jobs, etc. Helpful comments first; mention Optimal CV only when it fits. Aim for one valuable comment per day.
-- [ ] **LinkedIn** — Short posts (“One change that made my CV get more callbacks”, “Why I tailor my CV for every application”); link to tool or product in comment/bio.
+- [x] **LinkedIn** — Short posts (“One change that made my CV get more callbacks”, “Why I tailor my CV for every application”); link to tool or product in comment/bio.
 - [ ] **Quora / Q&A** — Answer “How do I improve my CV?” and “How do I tailor my resume?” with actionable answers + soft plug where relevant.
 
 ### Messaging (already on landing; reuse elsewhere)
