@@ -40,7 +40,7 @@ Adding payment now is possible but adds friction before you’ve validated deman
 - [x] **3 “how to” articles** — `/resources/guides/how-to-tailor-cv-to-job-description`, `how-to-pass-ats-screening`, `best-cv-format-2026` (+ CTAs to register / CV checker).
 - [x] **Internal linking** — Each resource page CTA to **Get started** / **CV checker**; hub links all children.
 - [x] **Sitemap** — `app/sitemap.ts` lists `/`, `/cv-checker`, `/resources`, and all resource URLs. *You still:* submit in Search Console / Bing (see **[SEO-REGISTRATIONS.md](./SEO-REGISTRATIONS.md)**).
-- [x] **Schema markup** — Root `@graph`: WebApplication, Organization, FAQPage (aligned with landing FAQ). Resource articles use **Article** JSON-LD.
+- [x] **Schema markup** — Root `@graph`: Service + Organization (linked), FAQPage (aligned with landing FAQ). Resource articles use **Article** JSON-LD.
 - [x] **Canonicals & indexability** — Resource pages + CV checker set `alternates.canonical`; private areas `robots: noindex`. *Verify in production:* `NEXT_PUBLIC_SITE_URL` matches live domain.
 
 ### Social proof & content
@@ -84,7 +84,7 @@ Keep the tone direct and empathetic; avoid sounding preachy or desperate.
 - **Target one job per page.** Create thin, high-intent pages: “CV for [Job Title]” (e.g. “CV for Software Engineer”, “CV for Marketing Manager”). Each page: short intro, 3–5 tailored tips, strong CTA to use Optimal CV. Use job titles as H1s and in meta titles/descriptions.
 - **Answer “how to” queries.** Publish 1–2 posts per month that match real search demand: “How to tailor your CV to a job description”, “How to pass ATS screening”, “Best CV format for [year]”, “How to write a cover letter for [industry]”. Keep articles practical and link to the product where it solves the problem.
 - **Internal linking.** Link from every article and job page to the main app (Get started / Build your CV). Add a “Resources” or “Blog” section on the site and link to it from the footer.
-- **Technical SEO.** Landing has default metadata, OG/Twitter, `WebApplication` JSON-LD, and `robots` allow. Add a **sitemap** (and `llms.txt` if desired—see [SEO-ASO-TODO.md](./SEO-ASO-TODO.md)); add FAQ/HowTo schema only where content matches guidelines.
+- **Technical SEO.** Landing has default metadata, OG/Twitter, `Service` + `Organization` JSON-LD, and `robots` allow. Add a **sitemap** (and `llms.txt` if desired—see [SEO-ASO-TODO.md](./SEO-ASO-TODO.md)); add FAQ/HowTo schema only where content matches guidelines.
 
 ---
 

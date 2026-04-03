@@ -37,23 +37,28 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+const organizationId = `${siteUrl}#organization`;
+
+/** Service (not WebApplication) avoids Software App rich-result rules that require operatingSystem + aggregateRating. */
 const jsonLdGraph = {
   '@context': 'https://schema.org',
   '@graph': [
     {
-      '@type': 'WebApplication',
+      '@type': 'Organization',
+      '@id': organizationId,
+      name: 'Optimal CV',
+      url: siteUrl,
+      description: 'Job-specific resume and motivation letter tool for applicants.',
+    },
+    {
+      '@type': 'Service',
       name: 'Optimal CV',
       description:
         'Job-specific resume builder and motivation letter generator. Create a resume tailored to every job you apply to.',
       url: siteUrl,
-      applicationCategory: 'BusinessApplication',
+      serviceType: 'Online resume builder and job application software',
+      provider: { '@id': organizationId },
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    },
-    {
-      '@type': 'Organization',
-      name: 'Optimal CV',
-      url: siteUrl,
-      description: 'Job-specific resume and motivation letter tool for applicants.',
     },
     {
       '@type': 'FAQPage',

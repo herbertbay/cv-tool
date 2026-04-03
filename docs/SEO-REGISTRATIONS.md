@@ -30,7 +30,7 @@ Use this after your production domain and **`NEXT_PUBLIC_SITE_URL`** match (e.g.
 
 ## Rich results & validation
 
-8. **[Rich Results Test](https://search.google.com/test/rich-results)** — Paste public URLs to validate FAQ / Article / WebApplication JSON-LD.
+8. **[Rich Results Test](https://search.google.com/test/rich-results)** — Paste public URLs to validate FAQ / Article / Service + Organization JSON-LD.
 
 9. **[Schema Markup Validator](https://validator.schema.org/)** — Paste JSON-LD snippets or URLs.
 
