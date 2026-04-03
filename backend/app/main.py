@@ -5,11 +5,12 @@ CV upload only; user from cookie; profile in local DB; motivation letter as sepa
 import json
 import logging
 import secrets
+import threading
 import time
 from contextlib import asynccontextmanager
 from io import BytesIO
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, Response, BackgroundTasks
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response as HttpResponse, HTMLResponse
 
@@ -116,7 +117,14 @@ def _position_from_exp_dict(p: dict) -> Position:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: optional cleanup. Shutdown: nothing."""
+    """Startup: log email config. Shutdown: session cleanup."""
+    if (settings.resend_api_key or "").strip():
+        if (settings.resend_from_email or "").strip():
+            logger.info("Resend: welcome email enabled (RESEND_API_KEY + RESEND_FROM_EMAIL set)")
+        else:
+            logger.warning("Resend: RESEND_API_KEY set but RESEND_FROM_EMAIL missing — welcome emails disabled")
+    else:
+        logger.warning("Resend: RESEND_API_KEY missing — welcome emails disabled")
     yield
     cleanup_old_sessions(settings.session_ttl_seconds)
 
@@ -301,13 +309,16 @@ async def generate_application_motivation_letter(application_id: str, request: R
 # --- Auth ---
 
 
+def _welcome_email_thread(user_id: str, email: str) -> None:
+    """Run welcome send off the ASGI response path (reliable behind Next.js api-proxy)."""
+    try:
+        send_welcome_email_if_needed(user_id, email)
+    except Exception:
+        logger.exception("Welcome email thread crashed user_id=%s", user_id)
+
+
 @app.post("/api/auth/register")
-async def register(
-    request: Request,
-    response: Response,
-    background_tasks: BackgroundTasks,
-    body: dict = Body(...),
-):
+async def register(request: Request, response: Response, body: dict = Body(...)):
     """Register with email and password. Logs in on success."""
     email = (body.get("email") or "").strip()
     password = body.get("password") or ""
@@ -328,7 +339,12 @@ async def register(
         **_session_cookie_kwargs(request),
     )
     user = db_get_user_by_id(user_id)
-    background_tasks.add_task(send_welcome_email_if_needed, user_id, user["email"])
+    threading.Thread(
+        target=_welcome_email_thread,
+        args=(user_id, user["email"]),
+        name="welcome-email",
+        daemon=True,
+    ).start()
     return {"user": {"id": user["id"], "email": user["email"]}}
 
 

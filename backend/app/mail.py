@@ -23,7 +23,7 @@ def send_welcome_email(to_address: str) -> bool:
     key = (settings.resend_api_key or "").strip()
     from_addr = (settings.resend_from_email or "").strip()
     if not key:
-        logger.debug("Welcome email skipped: RESEND_API_KEY not set")
+        logger.warning("Welcome email skipped: RESEND_API_KEY not set (set on the API backend, not Next.js)")
         return False
     if not from_addr:
         logger.warning("Welcome email skipped: RESEND_FROM_EMAIL not set")
@@ -73,6 +73,12 @@ def send_welcome_email(to_address: str) -> bool:
                 },
             )
         if r.is_success:
+            rid = ""
+            try:
+                rid = r.json().get("id") or ""
+            except Exception:
+                pass
+            logger.info("Resend API OK status=%s email_id=%s", r.status_code, rid)
             return True
         logger.error(
             "Resend welcome email failed: %s %s",
@@ -86,11 +92,19 @@ def send_welcome_email(to_address: str) -> bool:
 
 
 def send_welcome_email_if_needed(user_id: str, email: str) -> None:
-    """Background task: send welcome once per user (idempotent)."""
+    """Send welcome once per user (idempotent). Called from a daemon thread after signup."""
     from app.database import get_user_by_id, mark_welcome_email_sent
 
     user = get_user_by_id(user_id)
-    if not user or user.get("welcome_email_sent_at"):
+    if not user:
+        logger.warning("Welcome email skipped: user not found user_id=%s", user_id)
         return
+    if user.get("welcome_email_sent_at"):
+        logger.info("Welcome email skipped: already sent user_id=%s", user_id)
+        return
+    logger.info("Welcome email: sending via Resend user_id=%s", user_id)
     if send_welcome_email(email):
         mark_welcome_email_sent(user_id)
+        logger.info("Welcome email: Resend accepted user_id=%s", user_id)
+    else:
+        logger.warning("Welcome email: send failed or Resend error user_id=%s", user_id)
