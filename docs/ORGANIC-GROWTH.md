@@ -28,7 +28,7 @@ Adding payment now is possible but adds friction before you’ve validated deman
 - [x] **Share CTA after generating a CV** — “Share Optimal CV with a friend” with one-click copy link in Create CV modal and ATS done step. *Done.*
 - [x] **“Powered by Optimal.cv” on PDFs** — Footer on generated CV and motivation letter PDFs when `show_powered_by` is on (non‑premium users); omitted for premium (hardcoded allowlist in backend). *Not* a user-facing settings toggle yet—only the premium gate.
 - [ ] **Referral tracking** — Referral codes or UTM params; track which channel/user drives signups.
-- [ ] **Welcome email sequence** — (1) Confirm + “Create your first tailored CV”; (2) “Tip: paste the job description”; (3) “Your CV is ready — use it for the next application.”
+- [x] **Welcome email (v1)** — Single transactional email after signup (Resend): dashboard + resume checker links with UTM. Configure `RESEND_API_KEY` and `RESEND_FROM_EMAIL` on the **backend** (see `backend/.env.example`). *Optional later:* multi-step drip (2–3 emails).
 - [ ] **Re-engagement email** — If no generation in 2–3 weeks: “Ready for your next application? Add a new job and we’ll tailor your CV again.”
 - [ ] **Monthly email** — One short career/CV tip or product update.
 

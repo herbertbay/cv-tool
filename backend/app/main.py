@@ -9,11 +9,12 @@ import time
 from contextlib import asynccontextmanager
 from io import BytesIO
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, Response
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Body, Request, Response, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response as HttpResponse, HTMLResponse
 
 from app.config import settings
+from app.mail import send_welcome_email_if_needed
 
 logger = logging.getLogger(__name__)
 from app.database import (
@@ -301,7 +302,12 @@ async def generate_application_motivation_letter(application_id: str, request: R
 
 
 @app.post("/api/auth/register")
-async def register(request: Request, response: Response, body: dict = Body(...)):
+async def register(
+    request: Request,
+    response: Response,
+    background_tasks: BackgroundTasks,
+    body: dict = Body(...),
+):
     """Register with email and password. Logs in on success."""
     email = (body.get("email") or "").strip()
     password = body.get("password") or ""
@@ -322,6 +328,7 @@ async def register(request: Request, response: Response, body: dict = Body(...))
         **_session_cookie_kwargs(request),
     )
     user = db_get_user_by_id(user_id)
+    background_tasks.add_task(send_welcome_email_if_needed, user_id, user["email"])
     return {"user": {"id": user["id"], "email": user["email"]}}
 
 

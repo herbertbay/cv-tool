@@ -105,6 +105,11 @@ def init_db() -> None:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
         """)
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN welcome_email_sent_at TEXT DEFAULT NULL")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
         for col, default in [("application_date", "NULL"), ("job_url", "NULL")]:
             try:
                 conn.execute(f"ALTER TABLE job_applications ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -161,17 +166,33 @@ def create_user(email: str, password_hash: str) -> str:
     return user_id
 
 
+def mark_welcome_email_sent(user_id: str) -> None:
+    """Set welcome_email_sent_at after Resend accepts the welcome email."""
+    init_db()
+    import time
+
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    with _get_conn() as conn:
+        conn.execute("UPDATE users SET welcome_email_sent_at = ? WHERE id = ?", (ts, user_id))
+        conn.commit()
+
+
 def get_user_by_id(user_id: str) -> Optional[dict]:
-    """Return user row (id, email, created_at) or None."""
+    """Return user row (id, email, created_at, welcome_email_sent_at) or None."""
     init_db()
     with _get_conn() as conn:
         row = conn.execute(
-            "SELECT id, email, created_at FROM users WHERE id = ?",
+            "SELECT id, email, created_at, welcome_email_sent_at FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
     if not row:
         return None
-    return {"id": row["id"], "email": row["email"], "created_at": row["created_at"]}
+    return {
+        "id": row["id"],
+        "email": row["email"],
+        "created_at": row["created_at"],
+        "welcome_email_sent_at": row["welcome_email_sent_at"],
+    }
 
 
 def get_user_by_email(email: str) -> Optional[dict]:
@@ -179,7 +200,7 @@ def get_user_by_email(email: str) -> Optional[dict]:
     init_db()
     with _get_conn() as conn:
         row = conn.execute(
-            "SELECT id, email, password_hash, created_at FROM users WHERE email = ?",
+            "SELECT id, email, password_hash, created_at, welcome_email_sent_at FROM users WHERE email = ?",
             (email.lower().strip(),),
         ).fetchone()
     if not row:
@@ -548,7 +569,7 @@ def get_all_users_for_admin() -> list[dict]:
                 ) AS last_cv_session_id
             FROM users u
             LEFT JOIN cv_generations g ON g.user_id = u.id
-            GROUP BY u.id, u.email, u.created_at
+            GROUP BY u.id, u.email, u.created_at, u.welcome_email_sent_at
             ORDER BY u.created_at DESC
             """
         ).fetchall()
