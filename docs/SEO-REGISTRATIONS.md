@@ -1,6 +1,6 @@
 # Where to register for SEO & discovery (3rd-party tools)
 
-Use this after your production domain and **`NEXT_PUBLIC_SITE_URL`** match (e.g. `https://optimalcv.com`).
+Use this after your production domain and **`NEXT_PUBLIC_SITE_URL`** match (e.g. `https://optimal.cv`).
 
 ## Essential (search)
 
