@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { AnalyticsScripts, GoogleTagManagerNoScript } from './components/Analytics';
 import { AuthProvider } from './lib/auth-context';
 import { getSiteUrl } from './lib/site';
 
@@ -97,6 +98,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen antialiased font-sans">
+        <GoogleTagManagerNoScript />
+        <AnalyticsScripts />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
