@@ -12,10 +12,11 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Optimal CV — Job-Specific Resume Builder & Motivation Letter Generator',
+    default: 'Optimal CV — Resume Optimizer & Job Application Manager',
     template: '%s | Optimal CV',
   },
-  description: 'Create a resume tailored to every job you apply to. A job-specific resume builder that adapts your experience to each role so you pass modern screening and get shortlisted. Professional PDFs and motivation letters included.',
+  description:
+    'Optimize your resume for every job and manage applications in one place. Tailor your CV and motivation letter to each role, track status on your dashboard, and pass ATS screening with professional PDFs. Free resume checker.',
   keywords: ['resume builder', 'tailored resume', 'job-specific resume', 'CV builder', 'motivation letter generator', 'ATS resume', 'applicant tracking system', 'professional resume', 'resume optimizer', 'motivation letter'],
   authors: [{ name: 'Optimal CV' }],
   openGraph: {
@@ -23,13 +24,14 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: siteUrl,
     siteName: 'Optimal CV',
-    title: 'Optimal CV — Job-Specific Resume Builder & Motivation Letter Generator',
-    description: 'Your resume, tailored to every job you apply to. Stand out with job-specific resumes and motivation letters that get you shortlisted.',
+    title: 'Optimal CV — Resume Optimizer & Job Application Manager',
+    description:
+      'Tailor your resume and cover letter to every job. Track applications on your dashboard. ATS-friendly PDFs and a free resume checker.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Optimal CV — Job-Specific Resume Builder',
-    description: 'Create a resume tailored to every job. Professional PDFs and motivation letters that pass modern screening.',
+    title: 'Optimal CV — Resume Optimizer & Job Application Manager',
+    description: 'Optimize resumes per job, manage applications, and download tailored PDFs.',
   },
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230f172a'/></svg>",
