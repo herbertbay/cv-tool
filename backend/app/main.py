@@ -16,6 +16,7 @@ from fastapi.responses import Response as HttpResponse, HTMLResponse
 
 from app.config import settings
 from app.mail import send_welcome_email_if_needed
+from app.profile_reminders import run_profile_incomplete_reminders
 
 logger = logging.getLogger(__name__)
 from app.database import (
@@ -232,6 +233,21 @@ async def admin_users(request: Request):
     if not _is_admin_user(user_id):
         raise HTTPException(403, "Admin access required")
     return {"users": db_get_all_users_for_admin()}
+
+
+@app.post("/api/admin/cron/send-profile-incomplete-reminders")
+def admin_cron_send_profile_incomplete_reminders(request: Request, secret: str = ""):
+    """
+    Send one reminder email per user (incomplete required profile, account ≥1 day old, not sent yet).
+    Call from a daily scheduler (e.g. Railway Cron) with ADMIN_SECRET as ?secret= or X-Admin-Secret header.
+    """
+    expected = (getattr(settings, "admin_secret", None) or "").strip()
+    if not expected:
+        raise HTTPException(404, "Admin cron not configured (set ADMIN_SECRET)")
+    provided = secret.strip() or (request.headers.get("X-Admin-Secret") or "").strip()
+    if provided != expected:
+        raise HTTPException(401, "Unauthorized")
+    return run_profile_incomplete_reminders()
 
 
 @app.get("/api/admin/users/{target_user_id}/download-last-cv")

@@ -14,6 +14,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -34,14 +35,21 @@ export default function AdminUsersPage() {
     const usersWithResume = users.filter((u) => (u.cv_generations_count ?? 0) > 0).length;
     const avgPerUser = totalUsers > 0 ? totalResumes / totalUsers : 0;
     const pctUsersWithResume = totalUsers > 0 ? (100 * usersWithResume) / totalUsers : 0;
+    const incompleteProfiles = users.filter((u) => u.profile_incomplete).length;
     return {
       totalUsers,
       totalResumes,
       usersWithResume,
       avgPerUser,
       pctUsersWithResume,
+      incompleteProfiles,
     };
   }, [users]);
+
+  const displayedUsers = useMemo(() => {
+    if (!showIncompleteOnly) return users;
+    return users.filter((u) => u.profile_incomplete);
+  }, [users, showIncompleteOnly]);
 
   const handleDeleteUser = async (u: AdminUser) => {
     const confirmed = window.confirm(
@@ -74,11 +82,22 @@ export default function AdminUsersPage() {
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">
         <h1 className="text-2xl font-bold text-slate-900 mb-2">All users</h1>
-        <p className="text-slate-600 mb-6">Admin view of registered user emails.</p>
+        <p className="text-slate-600 mb-4">
+          Admin view of registered users. Required-profile completeness matches the dashboard (empty required fields block tailored CV generation).
+        </p>
+        <label className="mb-6 flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={showIncompleteOnly}
+            onChange={(e) => setShowIncompleteOnly(e.target.checked)}
+            className="rounded border-slate-300"
+          />
+          Show only users with incomplete required profile ({stats.incompleteProfiles})
+        </label>
         {loading && <p className="text-slate-500">Loading…</p>}
         {error && <p className="text-red-600">{error}</p>}
         {!loading && !error && users.length > 0 && (
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Total users</p>
               <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{stats.totalUsers}</p>
@@ -102,6 +121,16 @@ export default function AdminUsersPage() {
                 </span>
               </p>
             </div>
+            <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wider text-amber-800">Incomplete required profile</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-amber-950">
+                {stats.incompleteProfiles}
+                <span className="text-base font-normal text-amber-800/80">
+                  {' '}
+                  / {stats.totalUsers}
+                </span>
+              </p>
+            </div>
           </div>
         )}
         {!loading && !error && (
@@ -112,6 +141,8 @@ export default function AdminUsersPage() {
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Email</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">User ID</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Created</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-700">Required profile</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-700">Profile reminder</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Resumes generated</th>
                   <th className="text-right px-4 py-3 font-medium text-slate-700">% of all resumes</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Last used</th>
@@ -120,11 +151,28 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b last:border-b-0 border-slate-100">
+                {displayedUsers.map((u) => (
+                  <tr
+                    key={u.id}
+                    className={`border-b last:border-b-0 border-slate-100 ${u.profile_incomplete ? 'bg-amber-50/60' : ''}`}
+                  >
                     <td className="px-4 py-3 text-slate-900">{u.email}</td>
                     <td className="px-4 py-3 text-slate-500 font-mono text-xs">{u.id}</td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(u.created_at, { includeTime: true })}</td>
+                    <td className="px-4 py-3">
+                      {u.profile_incomplete ? (
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                          {u.profile_required_empty_count ?? '—'} empty
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium text-green-700">Complete</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 text-xs">
+                      {u.profile_incomplete_reminder_sent_at
+                        ? formatDate(u.profile_incomplete_reminder_sent_at, { includeTime: true })
+                        : '—'}
+                    </td>
                     <td className="px-4 py-3 text-slate-900 font-mono text-xs">{u.cv_generations_count}</td>
                     <td className="px-4 py-3 text-right text-slate-600 tabular-nums">
                       {stats.totalResumes > 0
@@ -156,9 +204,11 @@ export default function AdminUsersPage() {
                     </td>
                   </tr>
                 ))}
-                {users.length === 0 && (
+                {displayedUsers.length === 0 && (
                   <tr>
-                    <td className="px-4 py-4 text-slate-500" colSpan={8}>No users found.</td>
+                    <td className="px-4 py-4 text-slate-500" colSpan={10}>
+                      {users.length === 0 ? 'No users found.' : 'No users match this filter.'}
+                    </td>
                   </tr>
                 )}
               </tbody>

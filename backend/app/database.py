@@ -110,6 +110,11 @@ def init_db() -> None:
         except sqlite3.OperationalError as e:
             if "duplicate column" not in str(e).lower():
                 raise
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN profile_incomplete_reminder_sent_at TEXT DEFAULT NULL")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
         for col, default in [("application_date", "NULL"), ("job_url", "NULL")]:
             try:
                 conn.execute(f"ALTER TABLE job_applications ADD COLUMN {col} TEXT DEFAULT {default}")
@@ -177,12 +182,23 @@ def mark_welcome_email_sent(user_id: str) -> None:
         conn.commit()
 
 
+def mark_profile_incomplete_reminder_sent(user_id: str) -> None:
+    """Set profile_incomplete_reminder_sent_at after the one-time incomplete-profile reminder is sent."""
+    init_db()
+    import time
+
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    with _get_conn() as conn:
+        conn.execute("UPDATE users SET profile_incomplete_reminder_sent_at = ? WHERE id = ?", (ts, user_id))
+        conn.commit()
+
+
 def get_user_by_id(user_id: str) -> Optional[dict]:
-    """Return user row (id, email, created_at, welcome_email_sent_at) or None."""
+    """Return user row (id, email, created_at, welcome_email_sent_at, profile_incomplete_reminder_sent_at) or None."""
     init_db()
     with _get_conn() as conn:
         row = conn.execute(
-            "SELECT id, email, created_at, welcome_email_sent_at FROM users WHERE id = ?",
+            "SELECT id, email, created_at, welcome_email_sent_at, profile_incomplete_reminder_sent_at FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
     if not row:
@@ -192,6 +208,7 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
         "email": row["email"],
         "created_at": row["created_at"],
         "welcome_email_sent_at": row["welcome_email_sent_at"],
+        "profile_incomplete_reminder_sent_at": row["profile_incomplete_reminder_sent_at"],
     }
 
 
@@ -566,10 +583,11 @@ def get_admin_stats() -> dict:
 def get_all_users_for_admin() -> list[dict]:
     """Return all users for admin view.
 
-    Includes per-user CV generation stats:
-    - cv_generations_count: number of rows in cv_generations
-    - last_used_at: most recent cv_generations.created_at (or None)
+    Includes per-user CV generation stats and required-profile completeness
+    (same rules as the dashboard / Edit profile).
     """
+    from app.profile_completeness import count_required_empty_fields
+
     init_db()
     with _get_conn() as conn:
         rows = conn.execute(
@@ -578,6 +596,9 @@ def get_all_users_for_admin() -> list[dict]:
                 u.id,
                 u.email,
                 u.created_at,
+                u.welcome_email_sent_at,
+                u.profile_incomplete_reminder_sent_at,
+                p.profile_json,
                 COUNT(g.session_id) AS cv_generations_count,
                 MAX(g.created_at) AS last_used_at,
                 (
@@ -588,22 +609,52 @@ def get_all_users_for_admin() -> list[dict]:
                     LIMIT 1
                 ) AS last_cv_session_id
             FROM users u
+            LEFT JOIN profiles p ON p.user_id = u.id
             LEFT JOIN cv_generations g ON g.user_id = u.id
-            GROUP BY u.id, u.email, u.created_at, u.welcome_email_sent_at
+            GROUP BY u.id, u.email, u.created_at, u.welcome_email_sent_at,
+                     u.profile_incomplete_reminder_sent_at, p.profile_json
             ORDER BY u.created_at DESC
             """
         ).fetchall()
-    return [
-        {
-            "id": r["id"],
-            "email": r["email"],
-            "created_at": r["created_at"],
-            "cv_generations_count": r["cv_generations_count"],
-            "last_used_at": r["last_used_at"],
-            "last_cv_session_id": r["last_cv_session_id"],
-        }
-        for r in rows
-    ]
+    out: list[dict] = []
+    for r in rows:
+        pj = r["profile_json"]
+        try:
+            profile = Profile(**json.loads(pj)) if pj else Profile()
+        except Exception:
+            profile = Profile()
+        empty_req = count_required_empty_fields(profile)
+        out.append(
+            {
+                "id": r["id"],
+                "email": r["email"],
+                "created_at": r["created_at"],
+                "welcome_email_sent_at": r["welcome_email_sent_at"],
+                "profile_incomplete_reminder_sent_at": r["profile_incomplete_reminder_sent_at"],
+                "cv_generations_count": r["cv_generations_count"],
+                "last_used_at": r["last_used_at"],
+                "last_cv_session_id": r["last_cv_session_id"],
+                "profile_required_empty_count": empty_req,
+                "profile_incomplete": empty_req > 0,
+            }
+        )
+    return out
+
+
+def list_users_eligible_for_profile_incomplete_reminder() -> list[dict]:
+    """Users who have not been sent the one-time incomplete-profile reminder (may still be complete)."""
+    init_db()
+    with _get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT u.id, u.email, u.created_at, p.profile_json
+            FROM users u
+            LEFT JOIN profiles p ON p.user_id = u.id
+            WHERE u.profile_incomplete_reminder_sent_at IS NULL
+               OR TRIM(COALESCE(u.profile_incomplete_reminder_sent_at, '')) = ''
+            """
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def insert_job_application(

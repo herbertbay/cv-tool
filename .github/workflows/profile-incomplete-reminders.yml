@@ -1,0 +1,38 @@
+# Daily POST to the backend cron endpoint (same ADMIN_SECRET as /api/admin/stats).
+# Repo → Settings → Secrets and variables → Actions:
+#   PROFILE_REMINDER_BACKEND_URL = https://your-backend.railway.app  (no trailing slash)
+#   ADMIN_SECRET                  = same value as on the Railway backend service
+name: Profile incomplete reminders
+
+on:
+  schedule:
+    # 12:00 UTC daily (~adjust for your timezone)
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /api/admin/cron/send-profile-incomplete-reminders
+        env:
+          BACKEND_URL: ${{ secrets.PROFILE_REMINDER_BACKEND_URL }}
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BACKEND_URL:-}" ] || [ -z "${ADMIN_SECRET:-}" ]; then
+            echo "::error::Add GitHub Actions secrets PROFILE_REMINDER_BACKEND_URL and ADMIN_SECRET (same ADMIN_SECRET as backend)."
+            exit 1
+          fi
+          base="${BACKEND_URL%/}"
+          code=$(curl -sS -o /tmp/cron_body.json -w '%{http_code}' -X POST \
+            "${base}/api/admin/cron/send-profile-incomplete-reminders" \
+            -H "X-Admin-Secret: ${ADMIN_SECRET}" \
+            -H "Accept: application/json")
+          cat /tmp/cron_body.json
+          echo
+          if [ "$code" != "200" ]; then
+            echo "::error::HTTP $code"
+            exit 1
+          fi
+          echo "OK HTTP $code"

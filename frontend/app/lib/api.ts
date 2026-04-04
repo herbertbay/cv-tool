@@ -168,6 +168,10 @@ export type AdminUser = {
   cv_generations_count: number;
   last_used_at: string | null;
   last_cv_session_id?: string | null;
+  welcome_email_sent_at?: string | null;
+  profile_incomplete_reminder_sent_at?: string | null;
+  profile_required_empty_count?: number;
+  profile_incomplete?: boolean;
 };
 
 export function getAdminDownloadLastCvUrl(userId: string): string {

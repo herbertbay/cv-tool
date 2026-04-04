@@ -88,6 +88,72 @@ def send_welcome_email(to_address: str) -> bool:
         return False
 
 
+def send_profile_incomplete_reminder_email(to_address: str) -> bool:
+    """
+    One-time nudge to complete required profile fields. Returns True if Resend accepted.
+    """
+    key = (settings.resend_api_key or "").strip()
+    from_addr = (settings.resend_from_email or "").strip()
+    if not key:
+        logger.warning("Profile reminder skipped: RESEND_API_KEY not set")
+        return False
+    if not from_addr:
+        logger.warning("Profile reminder skipped: RESEND_FROM_EMAIL not set")
+        return False
+
+    origin = _site_origin()
+    profile_url = f"{origin}/profile?utm_source=email&utm_medium=email&utm_campaign=profile_incomplete_v1"
+
+    subject = "Complete your Optimal CV profile"
+    text = (
+        "You signed up for Optimal CV a little while ago, but some required profile fields are still empty.\n\n"
+        "Complete your base resume in Edit profile so you can generate tailored resumes and motivation letters.\n\n"
+        f"Edit profile: {profile_url}\n\n"
+        "— Optimal CV\n"
+    )
+    html = f"""\
+<!DOCTYPE html>
+<html>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1e293b;">
+  <p>You signed up for <strong>Optimal CV</strong> a little while ago, but some <strong>required</strong> profile fields are still empty.</p>
+  <p>Complete your base resume in <strong>Edit profile</strong> so you can generate tailored resumes and motivation letters.</p>
+  <p>
+    <a href="{profile_url}" style="display: inline-block; margin: 8px 0; padding: 10px 16px; background: #1e40af; color: #fff; text-decoration: none; border-radius: 8px;">Complete profile</a>
+  </p>
+  <p style="margin-top: 24px; font-size: 14px; color: #64748b;">— Optimal CV</p>
+</body>
+</html>"""
+
+    try:
+        with httpx.Client(timeout=20.0) as client:
+            r = client.post(
+                RESEND_API,
+                headers={
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": from_addr,
+                    "to": [to_address],
+                    "subject": subject,
+                    "text": text,
+                    "html": html,
+                },
+            )
+        if r.is_success:
+            logger.info("Resend profile reminder OK status=%s", r.status_code)
+            return True
+        logger.error(
+            "Resend profile reminder failed: %s %s",
+            r.status_code,
+            r.text[:500] if r.text else "",
+        )
+        return False
+    except Exception as e:
+        logger.exception("Resend profile reminder error: %s", e)
+        return False
+
+
 def send_welcome_email_if_needed(user_id: str, email: str) -> None:
     """Send welcome once per user (idempotent). Called from a daemon thread after signup."""
     from app.database import get_user_by_id, mark_welcome_email_sent
