@@ -77,8 +77,11 @@ function DashboardContent() {
   }, [user, router]);
 
   useEffect(() => {
-    if (searchParams.get('create') === '1') setCreateModalOpen(true);
-  }, [searchParams]);
+    if (searchParams.get('create') !== '1' || !userData) return;
+    if (countProfileEmptyFields(userData.profile ?? emptyProfile) === 0) {
+      setCreateModalOpen(true);
+    }
+  }, [searchParams, userData]);
 
   const handleOpenCreate = useCallback(() => {
     setCreateModalOpen(true);
@@ -106,7 +109,7 @@ function DashboardContent() {
     const missingFields = countProfileEmptyFields(profile);
     if (missingFields > 0) {
       setGenerateError(
-        `Your base resume has ${missingFields} empty field${missingFields === 1 ? '' : 's'}. Open Edit profile and fill every field before generating.`
+        `Your base resume has ${missingFields} empty required field${missingFields === 1 ? '' : 's'}. Open Edit profile to complete them before generating.`
       );
       return;
     }
@@ -187,7 +190,13 @@ function DashboardContent() {
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="inline-flex items-center rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900"
+            disabled={profileEmptyCount > 0}
+            title={
+              profileEmptyCount > 0
+                ? `Complete ${profileEmptyCount} required profile field${profileEmptyCount === 1 ? '' : 's'} before creating a tailored resume.`
+                : undefined
+            }
+            className="inline-flex items-center rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create tailored resume &amp; motivation letter
           </button>
@@ -199,7 +208,7 @@ function DashboardContent() {
             {profileEmptyCount > 0 && (
               <span
                 className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-none text-white"
-                aria-label={`${profileEmptyCount} empty profile fields`}
+                aria-label={`${profileEmptyCount} empty required profile fields`}
               >
                 {profileEmptyCount > 99 ? '99+' : profileEmptyCount}
               </span>

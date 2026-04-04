@@ -25,6 +25,22 @@ const emptyProfile: Profile = {
   languages: [],
 };
 
+function Req() {
+  return (
+    <>
+      <span className="text-red-600" aria-hidden>
+        {' '}
+        *
+      </span>
+      <span className="sr-only"> (required)</span>
+    </>
+  );
+}
+
+function OptSuffix() {
+  return <span className="font-normal text-slate-500"> (optional)</span>;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -245,72 +261,120 @@ export default function ProfilePage() {
           <h2 className="text-lg font-semibold text-slate-800">Basic info</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Full name</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor="profile-full-name">
+                Full name
+                <Req />
+              </label>
               <input
+                id="profile-full-name"
                 type="text"
                 value={profile.full_name}
                 onChange={(e) => update({ full_name: e.target.value })}
+                required
+                aria-required="true"
                 className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.full_name')}`}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Headline</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor="profile-headline">
+                Headline
+                <OptSuffix />
+              </label>
               <input
+                id="profile-headline"
                 type="text"
                 value={profile.headline ?? ''}
                 onChange={(e) => update({ headline: e.target.value || null })}
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.headline')}`}
+                aria-required="false"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Summary</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor="profile-summary">
+                Summary
+                <Req />
+              </label>
               <textarea
+                id="profile-summary"
                 value={profile.summary}
                 onChange={(e) => update({ summary: e.target.value })}
                 rows={4}
+                required
+                aria-required="true"
                 className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.summary')}`}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor="profile-email">
+                Email
+                <Req />
+              </label>
               <input
+                id="profile-email"
                 type="email"
                 value={profile.email ?? ''}
                 onChange={(e) => update({ email: e.target.value || null })}
+                required
+                aria-required="true"
                 className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.email')}`}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor="profile-phone">
+                Phone
+                <OptSuffix />
+              </label>
               <input
+                id="profile-phone"
                 type="text"
                 value={profile.phone ?? ''}
                 onChange={(e) => update({ phone: e.target.value || null })}
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.phone')}`}
+                aria-required="false"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor="profile-address">
+                Address
+                <OptSuffix />
+              </label>
               <input
+                id="profile-address"
                 type="text"
                 value={profile.address ?? ''}
                 onChange={(e) => update({ address: e.target.value || null })}
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.address')}`}
+                aria-required="false"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">LinkedIn URL</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor="profile-linkedin">
+                LinkedIn URL
+                <OptSuffix />
+              </label>
               <input
+                id="profile-linkedin"
                 type="url"
                 value={profile.linkedin_url ?? ''}
                 onChange={(e) => update({ linkedin_url: e.target.value || null })}
-                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.linkedin_url')}`}
+                aria-required="false"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Profile photo</label>
-              <div className={`rounded-lg ${paths.has('basic.photo') ? 'p-2 ring-2 ring-red-500' : ''}`}>
-                <input type="file" accept="image/*" onChange={handlePhoto} className="block w-full text-sm text-slate-600" />
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor="profile-photo">
+                Profile photo
+                <OptSuffix />
+              </label>
+              <div className="rounded-lg">
+                <input
+                  id="profile-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhoto}
+                  aria-required="false"
+                  className="block w-full text-sm text-slate-600"
+                />
               </div>
               {profile.photo_base64 && (
                 <img src={profile.photo_base64} alt="Profile" className="mt-2 h-20 w-20 object-cover rounded" />
@@ -325,7 +389,10 @@ export default function ProfilePage() {
           }`}
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">Experience</h2>
+            <h2 className="text-lg font-semibold text-slate-800">
+              Experience
+              <Req />
+            </h2>
             <button
               type="button"
               onClick={addExperience}
@@ -341,36 +408,41 @@ export default function ProfilePage() {
             <div key={i} className="rounded-lg border border-slate-200 p-4 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <input
-                  placeholder="Title"
+                  placeholder="Title *"
                   value={exp.title}
                   onChange={(e) => updateExperience(i, 'title', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.title`)}`}
                 />
                 <input
-                  placeholder="Company"
+                  placeholder="Company *"
                   value={exp.company}
                   onChange={(e) => updateExperience(i, 'company', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.company`)}`}
                 />
                 <input
-                  placeholder="Start date (e.g. 2020-01)"
+                  placeholder="Start date * (e.g. 2020-01)"
                   value={exp.start_date ?? ''}
                   onChange={(e) => updateExperience(i, 'start_date', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.start_date`)}`}
                 />
                 <input
-                  placeholder="End date or Present"
+                  placeholder="End date * (or Present)"
                   value={exp.end_date ?? ''}
                   onChange={(e) => updateExperience(i, 'end_date', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.end_date`)}`}
                 />
               </div>
               <textarea
-                placeholder="Description"
+                placeholder="Description (optional)"
                 value={exp.description ?? ''}
                 onChange={(e) => updateExperience(i, 'description', e.target.value)}
                 rows={2}
-                className={`w-full rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.description`)}`}
+                aria-required="false"
+                className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
               />
               <button
                 type="button"
@@ -389,7 +461,10 @@ export default function ProfilePage() {
           }`}
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">Education</h2>
+            <h2 className="text-lg font-semibold text-slate-800">
+              Education
+              <Req />
+            </h2>
             <button
               type="button"
               onClick={addEducation}
@@ -405,42 +480,48 @@ export default function ProfilePage() {
             <div key={i} className="rounded-lg border border-slate-200 p-4 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <input
-                  placeholder="School"
+                  placeholder="School *"
                   value={edu.school}
                   onChange={(e) => updateEducation(i, 'school', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.school`)}`}
                 />
                 <input
-                  placeholder="Degree"
+                  placeholder="Degree *"
                   value={edu.degree ?? ''}
                   onChange={(e) => updateEducation(i, 'degree', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.degree`)}`}
                 />
                 <input
-                  placeholder="Field"
+                  placeholder="Field *"
                   value={edu.field ?? ''}
                   onChange={(e) => updateEducation(i, 'field', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.field`)}`}
                 />
                 <input
-                  placeholder="Start date (e.g. 2018)"
+                  placeholder="Start date * (e.g. 2018)"
                   value={edu.start_date ?? ''}
                   onChange={(e) => updateEducation(i, 'start_date', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.start_date`)}`}
                 />
                 <input
-                  placeholder="End date or Present"
+                  placeholder="End date * (or Present)"
                   value={edu.end_date ?? ''}
                   onChange={(e) => updateEducation(i, 'end_date', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.end_date`)}`}
                 />
               </div>
               <textarea
-                placeholder="Description"
+                placeholder="Description (optional)"
                 value={edu.description ?? ''}
                 onChange={(e) => updateEducation(i, 'description', e.target.value)}
                 rows={2}
-                className={`w-full rounded border px-2 py-1.5 text-sm ${b(`education.${i}.description`)}`}
+                aria-required="false"
+                className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
               />
               <button
                 type="button"
@@ -454,23 +535,36 @@ export default function ProfilePage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold text-slate-800">Skills (comma- or semicolon-separated)</h2>
+          <h2 className="text-lg font-semibold text-slate-800">
+            Skills
+            <Req />
+          </h2>
+          <p className="text-sm text-slate-600">Comma- or semicolon-separated</p>
           <textarea
+            id="profile-skills"
             value={profile.skills.join(', ')}
             onChange={(e) => setSkills(e.target.value)}
             rows={3}
             placeholder="e.g. Python, JavaScript, Project Management"
+            required
+            aria-required="true"
             className={`w-full rounded-lg border px-3 py-2 text-sm ${b('skills')}`}
           />
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">Certifications</h2>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-800">
+                Certifications
+                <OptSuffix />
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">If you add an entry, the name is required.</p>
+            </div>
             <button
               type="button"
               onClick={addCertification}
-              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+              className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
             >
               Add
             </button>
@@ -479,28 +573,32 @@ export default function ProfilePage() {
             <div key={i} className="rounded-lg border border-slate-200 p-4 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <input
-                  placeholder="Name"
+                  placeholder="Name *"
                   value={c.name}
                   onChange={(e) => updateCertification(i, 'name', e.target.value)}
+                  aria-required="true"
                   className={`rounded border px-2 py-1.5 text-sm ${b(`cert.${i}.name`)}`}
                 />
                 <input
-                  placeholder="Authority"
+                  placeholder="Authority (optional)"
                   value={c.authority ?? ''}
                   onChange={(e) => updateCertification(i, 'authority', e.target.value || null)}
-                  className={`rounded border px-2 py-1.5 text-sm ${b(`cert.${i}.authority`)}`}
+                  aria-required="false"
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
                 />
                 <input
-                  placeholder="Date"
+                  placeholder="Date (optional)"
                   value={c.date ?? ''}
                   onChange={(e) => updateCertification(i, 'date', e.target.value || null)}
-                  className={`rounded border px-2 py-1.5 text-sm ${b(`cert.${i}.date`)}`}
+                  aria-required="false"
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
                 />
                 <input
-                  placeholder="URL"
+                  placeholder="URL (optional)"
                   value={c.url ?? ''}
                   onChange={(e) => updateCertification(i, 'url', e.target.value || null)}
-                  className={`rounded border px-2 py-1.5 text-sm ${b(`cert.${i}.url`)}`}
+                  aria-required="false"
+                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
                 />
               </div>
               <button
@@ -520,7 +618,10 @@ export default function ProfilePage() {
           }`}
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">Languages</h2>
+            <h2 className="text-lg font-semibold text-slate-800">
+              Languages
+              <Req />
+            </h2>
             <button
               type="button"
               onClick={addLanguage}
@@ -535,9 +636,10 @@ export default function ProfilePage() {
           {(profile.languages || []).map((lang, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
-                placeholder="e.g. English (Fluent)"
+                placeholder="e.g. English (Fluent) *"
                 value={lang}
                 onChange={(e) => updateLanguage(i, e.target.value)}
+                aria-required="true"
                 className={`flex-1 rounded border px-2 py-1.5 text-sm ${b(`languages.${i}`)}`}
               />
               <button

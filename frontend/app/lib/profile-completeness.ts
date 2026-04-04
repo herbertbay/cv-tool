@@ -5,8 +5,14 @@ function isEmpty(v: string | null | undefined): boolean {
 }
 
 /**
- * Counts empty inputs required for a complete base resume (matches Edit profile form).
- * Used for dashboard badge and blocking tailored CV generation.
+ * Counts empty *required* profile fields (badge, block generation, red highlights).
+ *
+ * Required: full name, summary, email; ≥1 experience (title, company, start/end dates);
+ * ≥1 education (school, degree, field, start/end dates); ≥1 skill; ≥1 language;
+ * per certification row: name only.
+ *
+ * Optional (not counted): headline, phone, address, LinkedIn, photo; experience &
+ * education descriptions; certification authority, date, URL.
  */
 export function getProfileCompleteness(profile: Profile): {
   emptyCount: number;
@@ -23,13 +29,8 @@ export function getProfileCompleteness(profile: Profile): {
   };
 
   mark('basic.full_name', isEmpty(profile.full_name));
-  mark('basic.headline', isEmpty(profile.headline));
   mark('basic.summary', isEmpty(profile.summary));
   mark('basic.email', isEmpty(profile.email));
-  mark('basic.phone', isEmpty(profile.phone));
-  mark('basic.address', isEmpty(profile.address));
-  mark('basic.linkedin_url', isEmpty(profile.linkedin_url));
-  mark('basic.photo', !String(profile.photo_base64 ?? '').trim());
 
   const exps = profile.experience || [];
   if (exps.length === 0) {
@@ -41,7 +42,6 @@ export function getProfileCompleteness(profile: Profile): {
       mark(`experience.${i}.company`, isEmpty(exp.company));
       mark(`experience.${i}.start_date`, isEmpty(exp.start_date));
       mark(`experience.${i}.end_date`, isEmpty(exp.end_date));
-      mark(`experience.${i}.description`, isEmpty(exp.description));
     });
   }
 
@@ -56,7 +56,6 @@ export function getProfileCompleteness(profile: Profile): {
       mark(`education.${i}.field`, isEmpty(edu.field));
       mark(`education.${i}.start_date`, isEmpty(edu.start_date));
       mark(`education.${i}.end_date`, isEmpty(edu.end_date));
-      mark(`education.${i}.description`, isEmpty(edu.description));
     });
   }
 
@@ -67,9 +66,6 @@ export function getProfileCompleteness(profile: Profile): {
   const certs = profile.certifications || [];
   certs.forEach((c, i) => {
     mark(`cert.${i}.name`, isEmpty(c.name));
-    mark(`cert.${i}.authority`, isEmpty(c.authority));
-    mark(`cert.${i}.date`, isEmpty(c.date));
-    mark(`cert.${i}.url`, isEmpty(c.url));
   });
 
   const langs = profile.languages || [];
@@ -85,6 +81,7 @@ export function getProfileCompleteness(profile: Profile): {
   return { emptyCount, paths };
 }
 
+/** Number of empty required profile fields (dashboard badge, validation). */
 export function countProfileEmptyFields(profile: Profile): number {
   return getProfileCompleteness(profile).emptyCount;
 }
