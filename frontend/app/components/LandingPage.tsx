@@ -71,13 +71,7 @@ export function LandingPage() {
                   href="/register"
                   className="inline-flex items-center justify-center rounded-xl bg-indigo-700 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-700/25 hover:bg-indigo-800 transition-colors"
                 >
-                  Get started free
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center justify-center rounded-xl border-2 border-slate-300 bg-white/80 px-6 py-3.5 text-base font-semibold text-slate-800 hover:border-indigo-300 hover:bg-white transition-colors"
-                >
-                  Sign in
+                  Get started
                 </Link>
                 <Link
                   href="/cv-checker"
@@ -109,6 +103,33 @@ export function LandingPage() {
             <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden />
             Motivation letters included
           </span>
+        </div>
+      </section>
+
+      {/* LinkedIn → resume */}
+      <section
+        className="border-b border-slate-200/80 bg-gradient-to-r from-sky-50/90 via-indigo-50/50 to-violet-50/80 py-14 sm:py-16"
+        aria-labelledby="linkedin-heading"
+      >
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+            <div className="max-w-2xl">
+              <h2 id="linkedin-heading" className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                Convert your LinkedIn page into a professional resume
+              </h2>
+              <p className="mt-3 text-slate-600 leading-relaxed">
+                Export your LinkedIn profile as JSON (or upload a PDF resume) after you sign up—we parse it into an
+                editable profile so you can refine details and generate tailored resumes and motivation letters for each
+                job.
+              </p>
+            </div>
+            <Link
+              href="/register"
+              className="shrink-0 inline-flex items-center justify-center rounded-xl bg-indigo-700 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-700/25 hover:bg-indigo-800 transition-colors"
+            >
+              Get started
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -330,13 +351,7 @@ export function LandingPage() {
               href="/register"
               className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-base font-semibold text-indigo-900 shadow-lg hover:bg-teal-50 transition-colors"
             >
-              Get started free
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center rounded-xl border-2 border-white/40 text-white px-6 py-3.5 text-base font-semibold hover:bg-white/10 transition-colors"
-            >
-              Sign in
+              Get started
             </Link>
           </div>
         </div>
@@ -360,12 +375,7 @@ export function LandingPage() {
               <ul className="mt-4 space-y-2 text-sm">
                 <li>
                   <Link href="/register" className="hover:text-white transition-colors">
-                    Get started free
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/login" className="hover:text-white transition-colors">
-                    Sign in
+                    Get started
                   </Link>
                 </li>
                 <li>
@@ -415,7 +425,7 @@ export function LandingPage() {
                 Resume checker
               </Link>
               <Link href="/register" className="hover:text-slate-300 transition-colors">
-                Sign up
+                Get started
               </Link>
             </nav>
           </div>

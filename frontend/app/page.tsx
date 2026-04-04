@@ -162,7 +162,12 @@ function HomePageContent() {
             ) : (
               <>
                 <Link href="/login" className="text-slate-600 hover:text-blue-700 transition-colors">Sign in</Link>
-                <Link href="/register" className="text-slate-600 hover:text-blue-700 transition-colors">Sign up</Link>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-700/20 hover:bg-indigo-800 transition-colors"
+                >
+                  Get started
+                </Link>
               </>
             )}
           </nav>
