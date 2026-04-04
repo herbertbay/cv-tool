@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../lib/auth-context';
+import { AccountModal } from './AccountModal';
 
 export function UserEmailMenu({ email }: { email: string }) {
   const { logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -20,14 +22,9 @@ export function UserEmailMenu({ email }: { email: string }) {
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
 
-  const openAccountWindow = () => {
+  const openAccountModal = () => {
     setOpen(false);
-    const w = window.open(
-      `${window.location.origin}/profile/account`,
-      'optimalcv-account',
-      'width=520,height=680,scrollbars=yes,noopener,noreferrer'
-    );
-    w?.focus();
+    setAccountModalOpen(true);
   };
 
   const doLogout = async () => {
@@ -58,7 +55,7 @@ export function UserEmailMenu({ email }: { email: string }) {
             <button
               type="button"
               role="menuitem"
-              onClick={openAccountWindow}
+              onClick={openAccountModal}
               className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
             >
               Account
@@ -77,6 +74,8 @@ export function UserEmailMenu({ email }: { email: string }) {
           </div>
         )}
       </div>
+
+      {accountModalOpen && <AccountModal onClose={() => setAccountModalOpen(false)} />}
 
       {confirmLogout && (
         <div
