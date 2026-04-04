@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getProfile, putProfile, deleteAccount, type Profile } from '../lib/api';
+import { getProfileCompleteness } from '../lib/profile-completeness';
 import { useAuth } from '../lib/auth-context';
 
 const DRAFT_KEY = 'cv-tool-profile-draft';
@@ -211,6 +212,9 @@ export default function ProfilePage() {
     }
   }, [logout, router]);
 
+  const { paths } = useMemo(() => getProfileCompleteness(profile), [profile]);
+  const b = (path: string) => (paths.has(path) ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300');
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -246,7 +250,7 @@ export default function ProfilePage() {
                 type="text"
                 value={profile.full_name}
                 onChange={(e) => update({ full_name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.full_name')}`}
               />
             </div>
             <div>
@@ -255,7 +259,7 @@ export default function ProfilePage() {
                 type="text"
                 value={profile.headline ?? ''}
                 onChange={(e) => update({ headline: e.target.value || null })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.headline')}`}
               />
             </div>
             <div className="md:col-span-2">
@@ -264,7 +268,7 @@ export default function ProfilePage() {
                 value={profile.summary}
                 onChange={(e) => update({ summary: e.target.value })}
                 rows={4}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.summary')}`}
               />
             </div>
             <div>
@@ -273,7 +277,7 @@ export default function ProfilePage() {
                 type="email"
                 value={profile.email ?? ''}
                 onChange={(e) => update({ email: e.target.value || null })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.email')}`}
               />
             </div>
             <div>
@@ -282,7 +286,7 @@ export default function ProfilePage() {
                 type="text"
                 value={profile.phone ?? ''}
                 onChange={(e) => update({ phone: e.target.value || null })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.phone')}`}
               />
             </div>
             <div className="md:col-span-2">
@@ -291,7 +295,7 @@ export default function ProfilePage() {
                 type="text"
                 value={profile.address ?? ''}
                 onChange={(e) => update({ address: e.target.value || null })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.address')}`}
               />
             </div>
             <div className="md:col-span-2">
@@ -300,12 +304,14 @@ export default function ProfilePage() {
                 type="url"
                 value={profile.linkedin_url ?? ''}
                 onChange={(e) => update({ linkedin_url: e.target.value || null })}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className={`w-full rounded-lg border px-3 py-2 text-sm ${b('basic.linkedin_url')}`}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Profile photo</label>
-              <input type="file" accept="image/*" onChange={handlePhoto} className="block w-full text-sm text-slate-600" />
+              <div className={`rounded-lg ${paths.has('basic.photo') ? 'p-2 ring-2 ring-red-500' : ''}`}>
+                <input type="file" accept="image/*" onChange={handlePhoto} className="block w-full text-sm text-slate-600" />
+              </div>
               {profile.photo_base64 && (
                 <img src={profile.photo_base64} alt="Profile" className="mt-2 h-20 w-20 object-cover rounded" />
               )}
@@ -313,7 +319,11 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div
+          className={`rounded-xl border bg-white p-6 shadow-sm space-y-4 ${
+            paths.has('experience.section') ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-800">Experience</h2>
             <button
@@ -324,6 +334,9 @@ export default function ProfilePage() {
               Add
             </button>
           </div>
+          {paths.has('experience.section') && (
+            <p className="text-sm text-red-600">Add at least one work experience entry.</p>
+          )}
           {profile.experience.map((exp, i) => (
             <div key={i} className="rounded-lg border border-slate-200 p-4 space-y-2">
               <div className="grid grid-cols-2 gap-2">
@@ -331,25 +344,25 @@ export default function ProfilePage() {
                   placeholder="Title"
                   value={exp.title}
                   onChange={(e) => updateExperience(i, 'title', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.title`)}`}
                 />
                 <input
                   placeholder="Company"
                   value={exp.company}
                   onChange={(e) => updateExperience(i, 'company', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.company`)}`}
                 />
                 <input
                   placeholder="Start date (e.g. 2020-01)"
                   value={exp.start_date ?? ''}
                   onChange={(e) => updateExperience(i, 'start_date', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.start_date`)}`}
                 />
                 <input
                   placeholder="End date or Present"
                   value={exp.end_date ?? ''}
                   onChange={(e) => updateExperience(i, 'end_date', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.end_date`)}`}
                 />
               </div>
               <textarea
@@ -357,7 +370,7 @@ export default function ProfilePage() {
                 value={exp.description ?? ''}
                 onChange={(e) => updateExperience(i, 'description', e.target.value)}
                 rows={2}
-                className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
+                className={`w-full rounded border px-2 py-1.5 text-sm ${b(`experience.${i}.description`)}`}
               />
               <button
                 type="button"
@@ -370,7 +383,11 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div
+          className={`rounded-xl border bg-white p-6 shadow-sm space-y-4 ${
+            paths.has('education.section') ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-800">Education</h2>
             <button
@@ -381,6 +398,9 @@ export default function ProfilePage() {
               Add
             </button>
           </div>
+          {paths.has('education.section') && (
+            <p className="text-sm text-red-600">Add at least one education entry.</p>
+          )}
           {profile.education.map((edu, i) => (
             <div key={i} className="rounded-lg border border-slate-200 p-4 space-y-2">
               <div className="grid grid-cols-2 gap-2">
@@ -388,31 +408,31 @@ export default function ProfilePage() {
                   placeholder="School"
                   value={edu.school}
                   onChange={(e) => updateEducation(i, 'school', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.school`)}`}
                 />
                 <input
                   placeholder="Degree"
                   value={edu.degree ?? ''}
                   onChange={(e) => updateEducation(i, 'degree', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.degree`)}`}
                 />
                 <input
                   placeholder="Field"
                   value={edu.field ?? ''}
                   onChange={(e) => updateEducation(i, 'field', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.field`)}`}
                 />
                 <input
                   placeholder="Start date (e.g. 2018)"
                   value={edu.start_date ?? ''}
                   onChange={(e) => updateEducation(i, 'start_date', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.start_date`)}`}
                 />
                 <input
                   placeholder="End date or Present"
                   value={edu.end_date ?? ''}
                   onChange={(e) => updateEducation(i, 'end_date', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`education.${i}.end_date`)}`}
                 />
               </div>
               <textarea
@@ -420,7 +440,7 @@ export default function ProfilePage() {
                 value={edu.description ?? ''}
                 onChange={(e) => updateEducation(i, 'description', e.target.value)}
                 rows={2}
-                className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
+                className={`w-full rounded border px-2 py-1.5 text-sm ${b(`education.${i}.description`)}`}
               />
               <button
                 type="button"
@@ -440,7 +460,7 @@ export default function ProfilePage() {
             onChange={(e) => setSkills(e.target.value)}
             rows={3}
             placeholder="e.g. Python, JavaScript, Project Management"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className={`w-full rounded-lg border px-3 py-2 text-sm ${b('skills')}`}
           />
         </div>
 
@@ -462,25 +482,25 @@ export default function ProfilePage() {
                   placeholder="Name"
                   value={c.name}
                   onChange={(e) => updateCertification(i, 'name', e.target.value)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`cert.${i}.name`)}`}
                 />
                 <input
                   placeholder="Authority"
                   value={c.authority ?? ''}
                   onChange={(e) => updateCertification(i, 'authority', e.target.value || null)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`cert.${i}.authority`)}`}
                 />
                 <input
                   placeholder="Date"
                   value={c.date ?? ''}
                   onChange={(e) => updateCertification(i, 'date', e.target.value || null)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`cert.${i}.date`)}`}
                 />
                 <input
                   placeholder="URL"
                   value={c.url ?? ''}
                   onChange={(e) => updateCertification(i, 'url', e.target.value || null)}
-                  className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  className={`rounded border px-2 py-1.5 text-sm ${b(`cert.${i}.url`)}`}
                 />
               </div>
               <button
@@ -494,7 +514,11 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div
+          className={`rounded-xl border bg-white p-6 shadow-sm space-y-4 ${
+            paths.has('languages.section') ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-800">Languages</h2>
             <button
@@ -505,13 +529,16 @@ export default function ProfilePage() {
               Add
             </button>
           </div>
+          {paths.has('languages.section') && (
+            <p className="text-sm text-red-600">Add at least one language.</p>
+          )}
           {(profile.languages || []).map((lang, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
                 placeholder="e.g. English (Fluent)"
                 value={lang}
                 onChange={(e) => updateLanguage(i, e.target.value)}
-                className="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                className={`flex-1 rounded border px-2 py-1.5 text-sm ${b(`languages.${i}`)}`}
               />
               <button
                 type="button"

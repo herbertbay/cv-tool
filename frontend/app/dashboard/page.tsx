@@ -18,6 +18,7 @@ import { useAuth } from '../lib/auth-context';
 import { JobApplicationsHistory } from '../components/JobApplicationsHistory';
 import { CreateCVModal } from '../components/CreateCVModal';
 import { UserEmailMenu } from '../components/UserEmailMenu';
+import { countProfileEmptyFields } from '../lib/profile-completeness';
 
 const emptyProfile: Profile = {
   full_name: '',
@@ -102,6 +103,13 @@ function DashboardContent() {
 
   const handleGenerate = useCallback(async () => {
     const profile = userData?.profile ?? emptyProfile;
+    const missingFields = countProfileEmptyFields(profile);
+    if (missingFields > 0) {
+      setGenerateError(
+        `Your base resume has ${missingFields} empty field${missingFields === 1 ? '' : 's'}. Open Edit profile and fill every field before generating.`
+      );
+      return;
+    }
     if (!hasProfileData(profile)) {
       setGenerateError('Profile is missing. Edit your information first.');
       return;
@@ -154,6 +162,8 @@ function DashboardContent() {
     return null;
   }
 
+  const profileEmptyCount = countProfileEmptyFields(userData?.profile ?? emptyProfile);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white shadow-sm">
@@ -181,8 +191,19 @@ function DashboardContent() {
           >
             Create tailored resume &amp; motivation letter
           </button>
-          <Link href="/profile" className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <Link
+            href="/profile"
+            className="relative inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 pr-5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
             Edit profile
+            {profileEmptyCount > 0 && (
+              <span
+                className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold leading-none text-white"
+                aria-label={`${profileEmptyCount} empty profile fields`}
+              >
+                {profileEmptyCount > 99 ? '99+' : profileEmptyCount}
+              </span>
+            )}
           </Link>
         </div>
 
