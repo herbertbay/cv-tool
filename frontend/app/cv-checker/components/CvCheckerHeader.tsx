@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
+import { UserEmailMenu } from '../../components/UserEmailMenu';
 
 export function CvCheckerHeader() {
   const { user } = useAuth();
@@ -16,7 +17,7 @@ export function CvCheckerHeader() {
           <Link href="/" className="text-slate-600 hover:text-blue-700 text-sm">Home</Link>
           <Link href="/resources" className="text-slate-600 hover:text-blue-700 text-sm">Resources</Link>
           {user ? (
-            <Link href="/dashboard" className="text-sm text-slate-500">{user.email}</Link>
+            <UserEmailMenu email={user.email} />
           ) : (
             <>
               <Link href="/login" className="text-slate-600 hover:text-blue-700 text-sm">Sign in</Link>

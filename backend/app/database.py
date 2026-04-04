@@ -208,6 +208,26 @@ def get_user_by_email(email: str) -> Optional[dict]:
     return dict(row)
 
 
+def get_user_with_password_hash(user_id: str) -> Optional[dict]:
+    """Return id, email, password_hash for session user (password change)."""
+    init_db()
+    with _get_conn() as conn:
+        row = conn.execute(
+            "SELECT id, email, password_hash FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    if not row:
+        return None
+    return dict(row)
+
+
+def update_user_password_hash(user_id: str, password_hash: str) -> None:
+    init_db()
+    with _get_conn() as conn:
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
+        conn.commit()
+
+
 def get_profile(user_id: str) -> Optional[Profile]:
     """Load profile for user_id. Returns None if not found."""
     data = get_user_data(user_id)

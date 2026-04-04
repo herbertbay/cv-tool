@@ -26,6 +26,8 @@ from app.database import (
     create_user as db_create_user,
     get_user_by_id as db_get_user_by_id,
     get_user_by_email as db_get_user_by_email,
+    get_user_with_password_hash as db_get_user_with_password_hash,
+    update_user_password_hash as db_update_user_password_hash,
     delete_user as db_delete_user,
     get_admin_stats as db_get_admin_stats,
     get_all_users_for_admin as db_get_all_users_for_admin,
@@ -401,6 +403,23 @@ async def auth_me(request: Request):
 async def logout(request: Request, response: Response):
     """Clear session cookie."""
     response.delete_cookie(key=SESSION_COOKIE, **_session_cookie_delete_kwargs(request))
+    return {"ok": True}
+
+
+@app.post("/api/auth/change-password")
+async def change_password(request: Request, body: dict = Body(...)):
+    """Change password for the current user. Requires current password."""
+    user_id = require_user(request)
+    current = body.get("current_password") or ""
+    new_pw = body.get("new_password") or ""
+    if not new_pw or len(new_pw) < 8:
+        raise HTTPException(400, "New password must be at least 8 characters")
+    row = db_get_user_with_password_hash(user_id)
+    if not row:
+        raise HTTPException(401, "Not authenticated")
+    if not verify_password(current, row["password_hash"]):
+        raise HTTPException(400, "Current password is incorrect")
+    db_update_user_password_hash(user_id, hash_password(new_pw))
     return {"ok": True}
 
 

@@ -141,6 +141,25 @@ export async function logout(): Promise<void> {
   await fetch(`${API_BASE}/auth/logout`, { method: 'POST', ...fetchOptions });
 }
 
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/auth/change-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+    ...fetchOptions,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Failed to change password');
+  }
+}
+
 // --- Admin ---
 export type AdminUser = {
   id: string;

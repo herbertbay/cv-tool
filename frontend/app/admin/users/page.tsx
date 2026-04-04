@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { adminDeleteUser, getAdminDownloadLastCvUrl, getAdminUsers, type AdminUser } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { formatDate } from '../../lib/date';
@@ -27,6 +27,21 @@ export default function AdminUsersPage() {
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load users'))
       .finally(() => setLoading(false));
   }, [user]);
+
+  const stats = useMemo(() => {
+    const totalUsers = users.length;
+    const totalResumes = users.reduce((sum, u) => sum + (u.cv_generations_count ?? 0), 0);
+    const usersWithResume = users.filter((u) => (u.cv_generations_count ?? 0) > 0).length;
+    const avgPerUser = totalUsers > 0 ? totalResumes / totalUsers : 0;
+    const pctUsersWithResume = totalUsers > 0 ? (100 * usersWithResume) / totalUsers : 0;
+    return {
+      totalUsers,
+      totalResumes,
+      usersWithResume,
+      avgPerUser,
+      pctUsersWithResume,
+    };
+  }, [users]);
 
   const handleDeleteUser = async (u: AdminUser) => {
     const confirmed = window.confirm(
@@ -62,6 +77,33 @@ export default function AdminUsersPage() {
         <p className="text-slate-600 mb-6">Admin view of registered user emails.</p>
         {loading && <p className="text-slate-500">Loading…</p>}
         {error && <p className="text-red-600">{error}</p>}
+        {!loading && !error && users.length > 0 && (
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Total users</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{stats.totalUsers}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Resumes generated (all)</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{stats.totalResumes}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Avg resumes / user</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
+                {stats.totalUsers > 0 ? stats.avgPerUser.toFixed(2) : '0'}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Users with ≥1 resume</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
+                {stats.usersWithResume}{' '}
+                <span className="text-base font-normal text-slate-500">
+                  ({stats.pctUsersWithResume.toFixed(1)}%)
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
         {!loading && !error && (
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <table className="min-w-full text-sm">
@@ -71,6 +113,7 @@ export default function AdminUsersPage() {
                   <th className="text-left px-4 py-3 font-medium text-slate-700">User ID</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Created</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Resumes generated</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-700">% of all resumes</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Last used</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Download</th>
                   <th className="text-left px-4 py-3 font-medium text-slate-700">Delete</th>
@@ -83,6 +126,11 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-slate-500 font-mono text-xs">{u.id}</td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(u.created_at, { includeTime: true })}</td>
                     <td className="px-4 py-3 text-slate-900 font-mono text-xs">{u.cv_generations_count}</td>
+                    <td className="px-4 py-3 text-right text-slate-600 tabular-nums">
+                      {stats.totalResumes > 0
+                        ? `${((100 * (u.cv_generations_count ?? 0)) / stats.totalResumes).toFixed(1)}%`
+                        : '—'}
+                    </td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(u.last_used_at, { includeTime: true })}</td>
                     <td className="px-4 py-3">
                       {u.last_used_at ? (
@@ -110,7 +158,7 @@ export default function AdminUsersPage() {
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td className="px-4 py-4 text-slate-500" colSpan={7}>No users found.</td>
+                    <td className="px-4 py-4 text-slate-500" colSpan={8}>No users found.</td>
                   </tr>
                 )}
               </tbody>

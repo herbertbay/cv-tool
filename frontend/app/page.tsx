@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { parseCV, getProfile, putUserData, type Profile, type UserData } from './lib/api';
 import { useAuth } from './lib/auth-context';
 import { LandingPage } from './components/LandingPage';
+import { UserEmailMenu } from './components/UserEmailMenu';
 
 const emptyProfile: Profile = {
   full_name: '',
@@ -36,7 +37,7 @@ function hasProfileData(p: Profile): boolean {
 function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3>(1);
@@ -157,12 +158,7 @@ function HomePageContent() {
           </Link>
           <nav className="flex items-center gap-4">
             {user ? (
-              <>
-                <span className="text-sm text-slate-500">{user.email}</span>
-                <button type="button" onClick={() => logout()} className="text-sm text-slate-600 hover:text-slate-900">
-                  Sign out
-                </button>
-              </>
+              <UserEmailMenu email={user.email} />
             ) : (
               <>
                 <Link href="/login" className="text-slate-600 hover:text-blue-700 transition-colors">Sign in</Link>

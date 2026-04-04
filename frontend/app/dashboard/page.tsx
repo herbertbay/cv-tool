@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../lib/auth-context';
 import { JobApplicationsHistory } from '../components/JobApplicationsHistory';
 import { CreateCVModal } from '../components/CreateCVModal';
+import { UserEmailMenu } from '../components/UserEmailMenu';
 
 const emptyProfile: Profile = {
   full_name: '',
@@ -49,7 +50,7 @@ function hasProfileData(p: UserData['profile']): boolean {
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -165,10 +166,7 @@ function DashboardContent() {
             {isAdmin && (
               <Link href="/admin/users" className="text-slate-600 hover:text-blue-700 transition-colors">Users</Link>
             )}
-            <span className="text-sm text-slate-500">{user.email}</span>
-            <button type="button" onClick={() => logout()} className="text-sm text-slate-600 hover:text-slate-900">
-              Sign out
-            </button>
+            <UserEmailMenu email={user.email} />
           </nav>
         </div>
       </header>

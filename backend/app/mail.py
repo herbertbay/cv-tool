@@ -31,15 +31,13 @@ def send_welcome_email(to_address: str) -> bool:
 
     origin = _site_origin()
     dashboard = f"{origin}/dashboard?utm_source=email&utm_medium=email&utm_campaign=welcome_v1"
-    checker = f"{origin}/cv-checker?utm_source=email&utm_medium=email&utm_campaign=welcome_v1"
 
     subject = "Welcome to Optimal CV"
     text = (
         "Thanks for creating your Optimal CV account.\n\n"
         "Next step: open your dashboard and add your profile (or upload a resume), "
         "then paste a job description to generate a tailored resume and motivation letter.\n\n"
-        f"Dashboard: {dashboard}\n"
-        f"Free resume checker: {checker}\n\n"
+        f"Dashboard: {dashboard}\n\n"
         "— Optimal CV\n"
     )
     html = f"""\
@@ -51,7 +49,6 @@ def send_welcome_email(to_address: str) -> bool:
   <p>
     <a href="{dashboard}" style="display: inline-block; margin: 8px 0; padding: 10px 16px; background: #1e40af; color: #fff; text-decoration: none; border-radius: 8px;">Go to dashboard</a>
   </p>
-  <p>Or try the <a href="{checker}">free resume checker</a> to see how you match a job before you apply.</p>
   <p style="margin-top: 24px; font-size: 14px; color: #64748b;">— Optimal CV</p>
 </body>
 </html>"""

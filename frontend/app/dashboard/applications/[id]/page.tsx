@@ -22,6 +22,7 @@ import {
 } from '../../../lib/api';
 import { defaultCvIncludes, toApiPayload, type CvSectionIncludesState } from '../../../lib/cv-section-includes';
 import { useAuth } from '../../../lib/auth-context';
+import { UserEmailMenu } from '../../../components/UserEmailMenu';
 
 const APPLICATION_STATUSES: ApplicationStatus[] = ['Interested', 'Applied', 'Interview', 'Rejected', 'Offer'];
 
@@ -499,7 +500,7 @@ export default function ApplicationDetailPage() {
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/dashboard" className="text-slate-600 hover:text-blue-700">Dashboard</Link>
-            <span className="text-sm text-slate-500">{user.email}</span>
+            <UserEmailMenu email={user.email} />
           </nav>
         </div>
       </header>
