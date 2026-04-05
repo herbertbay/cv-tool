@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 import type { GenerateCVResponse } from '../lib/api';
+import {
+  CV_TEMPLATE_BASELINE,
+  CV_TEMPLATE_THEMES,
+  DEFAULT_CV_ACCENT,
+  normalizeClientAccentHex,
+} from '../lib/cv-templates';
 
 function ShareOptimalCV() {
   const [copied, setCopied] = useState(false);
@@ -30,6 +36,8 @@ export function CreateCVModal({
   setJobIsUrl,
   template,
   setTemplate,
+  templateAccent,
+  setTemplateAccent,
   progress,
   error,
   result,
@@ -45,6 +53,8 @@ export function CreateCVModal({
   setJobIsUrl: (v: boolean) => void;
   template: string;
   setTemplate: (v: string) => void;
+  templateAccent: string;
+  setTemplateAccent: (v: string) => void;
   progress: string;
   error: string | null;
   result: GenerateCVResponse | null;
@@ -56,7 +66,7 @@ export function CreateCVModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-slate-800">Create tailored resume &amp; motivation letter</h3>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
@@ -89,12 +99,47 @@ export function CreateCVModal({
 
           {/* Language dropdown hidden for now; default language is English ('en'). */}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Resume template</label>
-            <select value={template} onChange={(e) => setTemplate(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-              <option value="cv_base.html">Modern</option>
-              <option value="cv_executive.html">Executive</option>
-            </select>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Resume template</label>
+              <select
+                value={template}
+                onChange={(e) => setTemplate(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                <optgroup label="Baseline">
+                  {CV_TEMPLATE_BASELINE.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Creative themes">
+                  {CV_TEMPLATE_THEMES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Accent color</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="color"
+                  aria-label="Resume accent color"
+                  value={normalizeClientAccentHex(templateAccent || DEFAULT_CV_ACCENT)}
+                  onChange={(e) => setTemplateAccent(e.target.value)}
+                  className="h-10 w-16 cursor-pointer rounded border border-slate-300 bg-white p-1"
+                />
+                <input
+                  type="text"
+                  value={templateAccent}
+                  onChange={(e) => setTemplateAccent(e.target.value)}
+                  spellCheck={false}
+                  className="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-2 text-sm font-mono"
+                  placeholder="#2563eb"
+                />
+              </div>
+              <p className="mt-1 text-xs text-slate-500">Used for headings, links, and highlights in the PDF.</p>
+            </div>
           </div>
 
           {progress && <p className="text-sm text-blue-600">{progress}</p>}

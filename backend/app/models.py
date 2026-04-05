@@ -56,7 +56,8 @@ class GenerateCVRequest(BaseModel):
     additional_urls: list[str] = Field(default_factory=list, max_length=5)
     additional_urls_content: Optional[dict[str, str]] = None  # Optional: pre-fetched content
     language: str = "en"  # en, de, fr
-    template: str = "cv_base.html"  # modern (cv_base), executive, creative
+    template: str = "cv_base.html"  # see cv_templates.CV_TEMPLATE_FILES
+    template_accent: Optional[str] = None  # optional #RRGGBB for PDF theme color
     # Optional: pre-computed from ATS optimize (skips tailor_cv_and_letter)
     pre_tailored_summary: Optional[str] = None
     pre_tailored_experience: Optional[list[dict]] = None

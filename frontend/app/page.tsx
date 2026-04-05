@@ -77,7 +77,7 @@ function HomePageContent() {
     router.replace(create === '1' ? '/dashboard?create=1' : '/dashboard');
   }, [user, loading, userData, router, searchParams]);
 
-  // —— Onboarding: Step 1 — Upload resume
+  // Onboarding: Step 1: Upload resume
   const handleCVUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -102,7 +102,7 @@ function HomePageContent() {
     [user]
   );
 
-  // —— Onboarding: Step 2 — Next (save URLs, go to step 3)
+  // Onboarding: Step 2: Next (save URLs, go to step 3)
   const handleOnboardingNextFromUrls = useCallback(async () => {
     if (!user) return;
     setOnboardingSaving(true);
@@ -119,7 +119,7 @@ function HomePageContent() {
     }
   }, [user, additionalUrls]);
 
-  // —— Onboarding: Step 3 — Photo change
+  // Onboarding: Step 3: Photo change
   const handlePhotoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -129,7 +129,7 @@ function HomePageContent() {
     reader.readAsDataURL(file);
   }, [userData?.profile]);
 
-  // —— Onboarding: Save and continue (step 3 → default page)
+  // Onboarding: Save and continue (step 3 → default page)
   const handleOnboardingComplete = useCallback(async () => {
     if (!user) return;
     setOnboardingSaving(true);
@@ -213,7 +213,7 @@ function HomePageContent() {
   );
 }
 
-// ——— Onboarding (steps 1–3) ———
+// Onboarding (steps 1–3)
 function OnboardingUI({
   step,
   userData,

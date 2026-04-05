@@ -1,4 +1,4 @@
-# Business model & retention — Optimal CV
+# Business model & retention: Optimal CV
 
 CV creation is typically used for a short, intense window (weeks to a few months). This doc suggests a profitable business model that fits that pattern and ways to maximize retention even after the user lands a job.
 
@@ -8,12 +8,12 @@ CV creation is typically used for a short, intense window (weeks to a few months
 
 Because usage is concentrated in a couple of months, revenue per user should be front-loaded and tied to value delivered in that period. Avoid relying on long annual contracts unless you add reasons to stay (see retention below).
 
-### Option A: Pay-per-CV (or per “batch”) — recommended core
+### Option A: Pay-per-CV (or per “batch”): recommended core
 
 - **Model:** Charge per tailored CV/letter generated (e.g. $3–7 per generation), or per “batch” (e.g. $15 for 5 generations in 30 days).
 - **Why it’s profitable:** Users pay when they get value (each application). No need to justify a monthly fee when they might only apply for 2–4 weeks. High willingness to pay at the moment of need.
 - **Free tier:** 1 free CV to prove value; then pay per use. Converts job seekers at peak intent.
-- **Upsell:** “You have 2 applications left this week — add 5 more for $X” when they hit the limit.
+- **Upsell:** “You have 2 applications left this week: add 5 more for $X” when they hit the limit.
 
 ### Option B: Short, fixed “job hunt” subscription
 
@@ -30,15 +30,15 @@ Because usage is concentrated in a couple of months, revenue per user should be 
 ### What to avoid if usage is short
 
 - **Heavy reliance on annual plans** unless you add clear post-hire value (see retention).
-- **Pure monthly subscription with no usage-based component** — many will churn after month 1 when activity drops.
-- **Too generous free tier** — e.g. 10 free CVs/month leaves little reason to pay in a 2-month hunt.
+- **Pure monthly subscription with no usage-based component**: many will churn after month 1 when activity drops.
+- **Too generous free tier**: e.g. 10 free CVs/month leaves little reason to pay in a 2-month hunt.
 
 ### Premium add-ons (increase ARPU in the same window)
 
-- **Remove “Created with Optimal CV” from PDF** — one-time or included in paid.
-- **Premium templates** — 2–3 paid-only designs ($5 one-time or part of pass).
-- **Priority / “express” generation** — faster or guaranteed turnaround for a fee (if you have queue/load).
-- **LinkedIn / profile optimization tip sheet** — small paid add-on or bundled with pass.
+- **Remove “Created with Optimal CV” from PDF**: one-time or included in paid.
+- **Premium templates**: 2–3 paid-only designs ($5 one-time or part of pass).
+- **Priority / “express” generation**: faster or guaranteed turnaround for a fee (if you have queue/load).
+- **LinkedIn / profile optimization tip sheet**: small paid add-on or bundled with pass.
 
 ---
 
@@ -48,9 +48,9 @@ Once they’re hired, immediate CV need drops. Retention comes from (a) staying 
 
 ### Make the “next job” natural
 
-- **“Update your CV when you’re ready for the next step.”** In onboarding or post-hire email: “When you’re ready to look again — promotion, new role, or side project — we’ll be here. Your profile is saved.”
+- **“Update your CV when you’re ready for the next step.”** In onboarding or post-hire email: “When you’re ready to look again: promotion, new role, or side project: we’ll be here. Your profile is saved.”
 - **Light-touch check-ins:** 3–6 months after signup or last use: “Hope the new role is going well. When you’re ready to explore your next move, we’ll tailor your CV again.” One email, no pressure.
-- **“Promotion pack.”** When they return: “Update your profile with your new title and wins — we’ll tailor your CV for the next level.” Positions Optimal CV for in-career moves, not only first job.
+- **“Promotion pack.”** When they return: “Update your profile with your new title and wins: we’ll tailor your CV for the next level.” Positions Optimal CV for in-career moves, not only first job.
 
 ### Expand the use case beyond “first job”
 
@@ -66,7 +66,7 @@ Once they’re hired, immediate CV need drops. Retention comes from (a) staying 
 
 ### Community and content (soft retention)
 
-- **Career tips / salary / negotiation** (email or blog). Not CV-only. When they think “career,” they think of your brand — so when they need a CV again, they return.
+- **Career tips / salary / negotiation** (email or blog). Not CV-only. When they think “career,” they think of your brand: so when they need a CV again, they return.
 - **Alumni / success stories.** “People who used Optimal CV got roles at [X].” Option to submit story; builds loyalty and referral.
 
 ### Metrics to watch

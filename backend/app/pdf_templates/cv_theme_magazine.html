@@ -1,0 +1,26 @@
+{% extends "cv_layout_base.html" %}
+{% block theme_styles %}
+    @page { size: A4; margin: 1.6cm; }
+    * { box-sizing: border-box; }
+    body { font-family: Georgia, 'Times New Roman', serif; font-size: 10pt; line-height: 1.42; color: #1e293b; max-width: 21cm; margin: 0 auto; }
+    .header { margin-bottom: 1rem; border-bottom: 1px solid #0f172a; padding-bottom: 0.65rem; }
+    .header-inner { display: flex; align-items: flex-start; }
+    .photo { width: 80px; height: 80px; object-fit: cover; margin-right: 1.5rem; flex-shrink: 0; filter: grayscale(20%); }
+    .header-text { flex: 1; min-width: 0; }
+    .name { font-size: 22pt; font-weight: 400; font-style: italic; margin: 0 0 0.15em 0; color: #0f172a; }
+    .headline { font-size: 10pt; color: var(--accent); font-style: italic; }
+    .contact { font-size: 9pt; color: #64748b; }
+    .contact a { color: var(--accent-dark); }
+    .link-icon { width: 10px; height: 10px; vertical-align: middle; margin-right: 0.25em; display: inline-block; }
+    .links-list { font-size: 9pt; margin-top: 0.35em; }
+    .links-list a { color: var(--accent); }
+    h2 { font-size: 11pt; font-weight: 400; font-style: italic; color: #0f172a; margin: 0.75em 0 0.35em 0; text-transform: none; letter-spacing: 0; border-bottom: 1px solid var(--accent); display: inline-block; padding-right: 2rem; }
+    .job, .edu-item { margin-bottom: 0.6em; }
+    .job-title, .edu-degree { font-weight: 700; }
+    .job-meta, .edu-meta { font-size: 9pt; color: #94a3b8; font-style: italic; }
+    .skills-list { column-count: 2; column-gap: 1.5rem; }
+    .skill-tag { display: inline-block; margin: 0 0.35em 0.25em 0; font-size: 9pt; color: #475569; background: transparent; padding: 0; }
+    .skill-tag.highlight { color: var(--accent-dark); font-weight: 700; text-decoration: underline; text-decoration-color: var(--accent); }
+    .summary-text { text-align: justify; column-count: 1; }
+    .powered-by { font-size: 8pt; color: #cbd5e1; margin-top: 1.3em; font-style: italic; }
+{% endblock %}

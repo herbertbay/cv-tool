@@ -1,4 +1,4 @@
-# Step 3 — Add payment: detailed checklist
+# Step 3: Add payment: detailed checklist
 
 Use this list when you’re ready to monetize Optimal CV. Do these on **your side** (accounts, legal, product decisions); implementation can follow.
 

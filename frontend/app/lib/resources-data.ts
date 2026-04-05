@@ -23,10 +23,10 @@ export const CV_FOR_ROLES: CvForRole[] = [
     metaDescription:
       'How to tailor your resume for software engineer roles: keywords, structure, and ATS tips. Build a job-specific resume with Optimal CV.',
     intro:
-      'Software engineering roles compete on technical depth, impact, and keyword alignment with the job description. Recruiters and ATS systems look for stacks, ownership, and measurable outcomes—not a generic “passionate developer” line.',
+      'Software engineering roles compete on technical depth, impact, and keyword alignment with the job description. Recruiters and ATS systems look for stacks, ownership, and measurable outcomes, not a generic “passionate developer” line.',
     tips: [
       'Mirror the job’s stack and tools (languages, frameworks, cloud, data) in your skills and bullet points where truthful.',
-      'Lead with impact: shipped features, latency wins, reliability, scale, or revenue—not only responsibilities.',
+      'Lead with impact: shipped features, latency wins, reliability, scale, or revenue, not only responsibilities.',
       'Use one tight technical skills block aligned to the posting; drop unrelated buzzwords that dilute relevance.',
       'For each role, echo the job’s vocabulary (e.g. “CI/CD”, “microservices”, “observability”) when it matches your experience.',
       'Keep a master profile, then generate a separate resume per application so keywords stay job-specific.',
@@ -38,7 +38,7 @@ export const CV_FOR_ROLES: CvForRole[] = [
     metaDescription:
       'Resume tips for marketing manager applications: metrics, channels, and tailoring to the job ad. Try Optimal CV for job-specific resumes.',
     intro:
-      'Marketing manager resumes win on measurable outcomes—pipeline, CAC, ROAS, retention—and channel fit with the role (B2B vs B2C, product vs growth).',
+      'Marketing manager resumes win on measurable outcomes, pipeline, CAC, ROAS, retention, and channel fit with the role (B2B vs B2C, product vs growth).',
     tips: [
       'Quantify: campaigns, budgets, conversion lifts, audience growth, and revenue influenced where you can.',
       'Align channel language with the job (content, performance, lifecycle, brand, product marketing).',
@@ -57,7 +57,7 @@ export const CV_FOR_ROLES: CvForRole[] = [
     tips: [
       'Highlight modeling approaches and domains (forecasting, NLP, causal inference) that match the posting.',
       'Name stacks honestly: Python/R, SQL, Spark, cloud ML, notebooks, and experiment platforms.',
-      'Tie work to decisions: “informed pricing”, “reduced churn”, “improved ranking”—not only model accuracy.',
+      'Tie work to decisions: “informed pricing”, “reduced churn”, “improved ranking”, not only model accuracy.',
       'If the role is ML-engineering heavy, foreground deployment, monitoring, and production constraints.',
       'Regenerate role-specific bullets from one profile so each application stays focused.',
     ],
@@ -68,9 +68,9 @@ export const CV_FOR_ROLES: CvForRole[] = [
     metaDescription:
       'Product manager resume advice: outcomes, discovery, and roadmap language aligned to the job. Use Optimal CV to tailor.',
     intro:
-      'PM resumes should read like a narrative of problems solved, users served, and metrics moved—using the hiring company’s product vocabulary.',
+      'PM resumes should read like a narrative of problems solved, users served, and metrics moved, using the hiring company’s product vocabulary.',
     tips: [
-      'Lead with outcomes: launches, adoption, retention, revenue, or time-to-value—not only “owned roadmap”.',
+      'Lead with outcomes: launches, adoption, retention, revenue, or time-to-value, not only “owned roadmap”.',
       'Mirror the domain: B2B SaaS, marketplace, consumer, hardware, or internal tools as appropriate.',
       'Show discovery habits: research, experiments, data partnerships, and stakeholder alignment.',
       'Use the job’s keywords for methodologies (OKRs, agile, discovery, GTM) when they fit your work.',
@@ -130,7 +130,7 @@ export const CV_FOR_ROLES: CvForRole[] = [
     intro:
       'PM roles differ by methodology, domain, and scale. Your resume should echo the posting’s delivery model and constraints.',
     tips: [
-      'Highlight methodology fit: Agile, Scrum, Kanban, waterfall, hybrid—use their terms when accurate.',
+      'Highlight methodology fit: Agile, Scrum, Kanban, waterfall, hybrid, use their terms when accurate.',
       'Show budget, timeline, and risk outcomes; name program scale (teams, geographies, vendors).',
       'Include tools (Jira, MS Project, Smartsheet) the employer lists.',
       'Tailor industry context: construction, IT, healthcare, consulting, etc.',
@@ -145,10 +145,10 @@ export const CV_FOR_ROLES: CvForRole[] = [
     intro:
       'Design hiring pairs visual portfolio review with resume scannability: tools, brand work, and campaign types that match the brief.',
     tips: [
-      'Mirror the job’s medium: digital, print, brand, motion, UI—where your work applies.',
+      'Mirror the job’s medium: digital, print, brand, motion, UI, where your work applies.',
       'List tools (Figma, Adobe CC, After Effects) exactly as the posting does.',
       'Reference industries and deliverables they care about: social, packaging, B2B decks.',
-      'Keep the resume concise; let the portfolio carry visuals—the resume carries keywords and scope.',
+      'Keep the resume concise; let the portfolio carry visuals, the resume carries keywords and scope.',
       'Tailor language per agency vs in-house vs startup needs.',
     ],
   },
@@ -158,7 +158,7 @@ export const CV_FOR_ROLES: CvForRole[] = [
     metaDescription:
       'Accountant and finance resume guidance: GAAP, systems, and closing cycles. Tailor with Optimal CV.',
     intro:
-      'Accounting roles hinge on standards, systems, close cadence, and industry exposure—your resume should speak that language.',
+      'Accounting roles hinge on standards, systems, close cadence, and industry exposure, your resume should speak that language.',
     tips: [
       'Specify GAAP/IFRS, audit vs industry, and entity type (public, nonprofit, SMB).',
       'Name ERPs and tools (NetSuite, SAP, QuickBooks) the job lists.',
@@ -176,7 +176,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     metaDescription:
       'Step-by-step: read the job description, extract keywords, mirror truthful experience, and generate a tailored resume. Use Optimal CV to automate tailoring.',
     intro:
-      'Tailoring means aligning your resume’s language and emphasis with a specific posting—without inventing facts. It improves both human scanability and ATS relevance.',
+      'Tailoring means aligning your resume’s language and emphasis with a specific posting, without inventing facts. It improves both human scanability and ATS relevance.',
     sections: [
       {
         heading: '1. Read for requirements, not titles',
@@ -201,7 +201,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       {
         heading: '5. Match skills and certifications',
         body:
-          'Align your skills block with the posting’s stack and compliance needs. Keep it truthful—keyword stuffing that misrepresents you will fail interviews.',
+          'Align your skills block with the posting’s stack and compliance needs. Keep it truthful, keyword stuffing that misrepresents you will fail interviews.',
       },
       {
         heading: '6. Use a tool for repeat applications',
@@ -214,9 +214,9 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     slug: 'how-to-pass-ats-screening',
     title: 'How to pass ATS screening',
     metaDescription:
-      'What applicant tracking systems look for: structure, keywords, and clarity—plus how to test your resume. Free ATS checker from Optimal CV.',
+      'What applicant tracking systems look for: structure, keywords, and clarity, plus how to test your resume. Free ATS checker from Optimal CV.',
     intro:
-      'ATS tools parse and rank resumes against job descriptions. You pass screening by being relevant, parseable, and specific—not by tricks that harm readability.',
+      'ATS tools parse and rank resumes against job descriptions. You pass screening by being relevant, parseable, and specific, not by tricks that harm readability.',
     sections: [
       {
         heading: '1. Use a clear structure',
@@ -251,7 +251,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     metaDescription:
       'Modern resume format for 2026: length, sections, file type, and what recruiters and ATS expect. Build tailored PDFs with Optimal CV.',
     intro:
-      'The “best” format is the one that is easy to read, honest, and aligned to the role. In 2026, that still means clarity first—plus job-specific wording when you apply.',
+      'The “best” format is the one that is easy to read, honest, and aligned to the role. In 2026, that still means clarity first, plus job-specific wording when you apply.',
     sections: [
       {
         heading: 'Length and layout',
@@ -276,7 +276,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       {
         heading: 'Use Optimal CV for PDFs and letters',
         body:
-          'Generate a tailored resume and motivation letter per job from one profile—professional layout, job-specific text, and downloadable PDFs.',
+          'Generate a tailored resume and motivation letter per job from one profile, professional layout, job-specific text, and downloadable PDFs.',
       },
     ],
   },

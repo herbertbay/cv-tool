@@ -12,6 +12,13 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from weasyprint import HTML
 from weasyprint.text.fonts import FontConfiguration
 
+from app.cv_templates import (
+    accent_palette,
+    coerce_template,
+    icon_link_src,
+    icon_linkedin_src,
+    normalize_accent_color,
+)
 from app.models import Profile
 
 
@@ -100,6 +107,7 @@ def _prepare_template_context(
     keywords_to_highlight: list[str],
     additional_urls: list[str] | None = None,
     show_powered_by: bool = True,
+    accent_color: str | None = None,
 ) -> dict:
     """Build context for the CV HTML template."""
     # Photo: support data URL or base64
@@ -124,7 +132,9 @@ def _prepare_template_context(
     urls_list = list(additional_urls) if additional_urls else []
     urls_list = [u.strip() for u in urls_list if (u and str(u).strip().startswith(("http://", "https://")))]
 
-    return {
+    ahex = normalize_accent_color(accent_color)
+    pal = accent_palette(ahex)
+    ctx = {
         "profile": profile.model_dump(),
         "photo_data_url": photo_data_url,
         "tailored_summary": _format_cv_text_block(tailored_summary or "", keywords_to_highlight),
@@ -133,7 +143,11 @@ def _prepare_template_context(
         "additional_urls": urls_list,
         "language": "en",
         "show_powered_by": show_powered_by,
+        "icon_linkedin": icon_linkedin_src(ahex),
+        "icon_link": icon_link_src(ahex),
+        **pal,
     }
+    return ctx
 
 
 def render_cv_html(
@@ -144,14 +158,16 @@ def render_cv_html(
     template_name: str = "cv_base.html",
     additional_urls: list[str] | None = None,
     show_powered_by: bool = True,
+    accent_color: str | None = None,
 ) -> str:
     """Render CV template to HTML string (for preview or PDF input)."""
+    name = coerce_template(template_name)
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES_DIR)),
         autoescape=select_autoescape(["html", "xml"]),
     )
     env.filters["keyword_match"] = _keyword_match
-    template = env.get_template(template_name)
+    template = env.get_template(name)
     ctx = _prepare_template_context(
         profile=profile,
         tailored_summary=tailored_summary,
@@ -160,6 +176,7 @@ def render_cv_html(
         keywords_to_highlight=keywords_to_highlight,
         additional_urls=additional_urls,
         show_powered_by=show_powered_by,
+        accent_color=accent_color,
     )
     return template.render(**ctx)
 
@@ -172,6 +189,7 @@ def generate_cv_pdf(
     template_name: str = "cv_base.html",
     additional_urls: list[str] | None = None,
     show_powered_by: bool = True,
+    accent_color: str | None = None,
 ) -> bytes:
     """
     Render CV only (no motivation letter) to PDF bytes.
@@ -185,6 +203,7 @@ def generate_cv_pdf(
         template_name=template_name,
         additional_urls=additional_urls,
         show_powered_by=show_powered_by,
+        accent_color=accent_color,
     )
     pdf_buffer = BytesIO()
     HTML(string=html_str).write_pdf(pdf_buffer, font_config=font_config)

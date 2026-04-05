@@ -1,4 +1,4 @@
-# CV-Tool — files to exclude from git
+# CV-Tool: files to exclude from git
 
 # --- Run scripts (start.sh / stop.sh) ---
 .cv-tool-pids

@@ -95,7 +95,7 @@ def tailor_cv_and_letter(
         "Output all content in " + lang_name + ". Return valid JSON only, no markdown code blocks."
     )
 
-    user_content = f"""## Candidate profile (facts — do not change titles, companies, or dates)
+    user_content = f"""## Candidate profile (facts: do not change titles, companies, or dates)
 {profile_ctx}
 
 ## Additional context about the candidate (from URLs or other sources)

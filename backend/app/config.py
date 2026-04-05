@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     generated_pdfs_dir: str = ""
     # Optional: if set, GET /api/admin/stats?secret=... returns user counts (same DB as running app; use when railway run has no volume).
     admin_secret: str = ""
-    # Resend (https://resend.com): welcome email — env vars RESEND_API_KEY, RESEND_FROM_EMAIL
+    # Resend (https://resend.com): welcome email: env vars RESEND_API_KEY, RESEND_FROM_EMAIL
     resend_api_key: str = ""
     # e.g. Optimal CV <hello@optimal.cv> (verified domain in Resend)
     resend_from_email: str = ""

@@ -21,15 +21,17 @@ import {
   type Profile,
 } from '../../../lib/api';
 import { defaultCvIncludes, toApiPayload, type CvSectionIncludesState } from '../../../lib/cv-section-includes';
+import {
+  CV_TEMPLATE_BASELINE,
+  CV_TEMPLATE_THEMES,
+  DEFAULT_CV_ACCENT,
+  normalizeClientAccentHex,
+} from '../../../lib/cv-templates';
 import { useAuth } from '../../../lib/auth-context';
 import { UserEmailMenu } from '../../../components/UserEmailMenu';
 
 const APPLICATION_STATUSES: ApplicationStatus[] = ['Interested', 'Applied', 'Interview', 'Rejected', 'Offer'];
 
-const CV_TEMPLATES = [
-  { value: 'cv_base.html', label: 'Modern' },
-  { value: 'cv_executive.html', label: 'Executive' },
-];
 
 function toDateOnly(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -144,7 +146,7 @@ function AtsScoreExpandedBody({
           </div>
           {typeof breakdown.education === 'number' && breakdown.education < 60 && (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 max-w-xl">
-              <p className="text-sm font-medium text-amber-900">Education score is often lower — this is common</p>
+              <p className="text-sm font-medium text-amber-900">Education score is often lower: this is common</p>
               <p className="mt-1 text-xs text-amber-900/90 leading-relaxed">
                 Many job posts barely mention degrees. Keyword-style checkers score overlap per section; some products list education as its own checklist instead of folding it into one headline number. Here, your education block is compared semantically to the whole job text like other sections, so a posting that omits schooling can yield a low education bar even when the resume is appropriate.
               </p>
@@ -232,7 +234,12 @@ export default function ApplicationDetailPage() {
     if (!app?.session_id) return;
     setTailoredLoading(true);
     getTailoredContent(app.session_id)
-      .then(setTailored)
+      .then((data) =>
+        setTailored({
+          ...data,
+          template_accent: normalizeClientAccentHex(data.template_accent ?? DEFAULT_CV_ACCENT),
+        })
+      )
       .catch(() => setTailored(null))
       .finally(() => setTailoredLoading(false));
   }, [app?.session_id]);
@@ -319,6 +326,7 @@ export default function ApplicationDetailPage() {
         tailored_summary: tailored.tailored_summary,
         tailored_experience: tailored.tailored_experience,
         template: tailored.template,
+        template_accent: normalizeClientAccentHex(tailored.template_accent ?? DEFAULT_CV_ACCENT),
         tailored_headline: edit.tailored_headline,
         keywords_to_highlight: tailored.keywords_to_highlight,
         cv_section_includes: toApiPayload(cvIncludes),
@@ -340,7 +348,7 @@ export default function ApplicationDetailPage() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [app?.session_id, tailored, edit.tailored_headline, cvIncludes]);
+  }, [app?.session_id, tailored, edit.tailored_headline, cvIncludes, tailored?.template, tailored?.template_accent]);
 
   const handleSave = useCallback(async () => {
     if (!id || !app) return;
@@ -395,13 +403,19 @@ export default function ApplicationDetailPage() {
         tailored_summary: tailored.tailored_summary,
         tailored_experience: tailored.tailored_experience,
       });
-      await regenerateCv(app.session_id, tailored.template, edit.tailored_headline, toApiPayload(cvIncludes));
+      await regenerateCv(
+        app.session_id,
+        tailored.template,
+        edit.tailored_headline,
+        toApiPayload(cvIncludes),
+        normalizeClientAccentHex(tailored.template_accent ?? DEFAULT_CV_ACCENT)
+      );
     } catch (e) {
       setRegenerateError(e instanceof Error ? e.message : 'Failed to update PDF files');
     } finally {
       setSavingPdfs(false);
     }
-  }, [app?.session_id, tailored, edit.tailored_headline, cvIncludes]);
+  }, [app?.session_id, tailored, edit.tailored_headline, cvIncludes, tailored?.template, tailored?.template_accent]);
 
   const handleGenerateMotivationLetter = useCallback(async () => {
     if (!id || !app?.session_id) return;
@@ -717,7 +731,7 @@ export default function ApplicationDetailPage() {
                       </td>
                       <td className="px-3 py-2 font-medium text-slate-800">Summary</td>
                       <td className="px-3 py-2 text-slate-600">
-                        {app.session_id ? 'Tailored session' : '— (generate a resume for this application)'}
+                        {app.session_id ? 'Tailored session' : 'None yet (generate a resume for this application)'}
                       </td>
                     </tr>
                     <tr>
@@ -737,7 +751,7 @@ export default function ApplicationDetailPage() {
                             {tailored.tailored_experience.map((exp, i) => {
                               const base = baseProfile.experience[i];
                               const baseLabel = base
-                                ? `${base.title ?? '—'} · ${base.company ?? '—'}`
+                                ? `${base.title ?? 'N/A'} · ${base.company ?? 'N/A'}`
                                 : 'No matching base role (same order as profile)';
                               return (
                                 <li key={i} className="flex flex-col gap-1 border-t border-slate-100 pt-2 first:border-t-0 first:pt-0">
@@ -755,7 +769,7 @@ export default function ApplicationDetailPage() {
                                     />
                                     <span>
                                       <span className="font-medium text-slate-800">
-                                        {exp.title ?? '—'} at {exp.company ?? '—'}
+                                        {exp.title ?? 'N/A'} at {exp.company ?? 'N/A'}
                                       </span>
                                       <span className="block text-xs text-slate-500 mt-0.5">Profile source: {baseLabel}</span>
                                     </span>
@@ -767,7 +781,7 @@ export default function ApplicationDetailPage() {
                         ) : app.session_id ? (
                           <span className="text-slate-500">No roles in session</span>
                         ) : (
-                          '— (generate a resume)'
+                          'None yet (generate a resume)'
                         )}
                       </td>
                     </tr>
@@ -801,7 +815,7 @@ export default function ApplicationDetailPage() {
                             {edit.tailored_education.map((edu, i) => {
                               const base = baseProfile.education[i];
                               const baseLabel = base
-                                ? `${String(base.degree ?? '—')} · ${String(base.school ?? '—')}`
+                                ? `${String(base.degree ?? 'N/A')} · ${String(base.school ?? 'N/A')}`
                                 : 'No matching base entry (same order as profile)';
                               return (
                                 <li key={i} className="flex flex-col gap-1 border-t border-slate-100 pt-2 first:border-t-0 first:pt-0">
@@ -819,7 +833,7 @@ export default function ApplicationDetailPage() {
                                     />
                                     <span>
                                       <span className="font-medium text-slate-800">
-                                        {String(edu.degree ?? '—')} · {String(edu.school ?? '—')}
+                                        {String(edu.degree ?? 'N/A')} · {String(edu.school ?? 'N/A')}
                                       </span>
                                       <span className="block text-xs text-slate-500 mt-0.5">Profile source: {baseLabel}</span>
                                     </span>
@@ -998,7 +1012,7 @@ export default function ApplicationDetailPage() {
         {app.session_id ? (
           <CollapsibleSection
             title="Summary"
-            subtitle="Professional summary for this role — preview updates live; use Update PDF files to persist for downloads"
+            subtitle="Professional summary for this role: preview updates live; use Update PDF files to persist for downloads"
             defaultOpen
           >
             <div className="space-y-3 pt-2">
@@ -1057,7 +1071,7 @@ export default function ApplicationDetailPage() {
         {app.session_id ? (
           <CollapsibleSection
             title="Experience"
-            subtitle="Tailored bullets per role — preview updates live; use Update PDF files to persist for downloads"
+            subtitle="Tailored bullets per role: preview updates live; use Update PDF files to persist for downloads"
             defaultOpen
           >
             <div className="pt-2 space-y-3">
@@ -1070,7 +1084,7 @@ export default function ApplicationDetailPage() {
                   {tailored.tailored_experience.map((exp, i) => (
                     <div key={i} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50">
                       <p className="text-xs font-medium text-slate-600 mb-1">
-                        {exp.title ?? '—'} at {exp.company ?? '—'} {exp.start_date ?? ''} – {exp.end_date ?? ''}
+                        {exp.title ?? 'N/A'} at {exp.company ?? 'N/A'} {exp.start_date ?? ''} – {exp.end_date ?? ''}
                       </p>
                       <textarea
                         value={exp.description ?? ''}
@@ -1189,17 +1203,49 @@ export default function ApplicationDetailPage() {
                       {letterError && <p className="mt-2 text-sm text-red-600">{letterError}</p>}
                     </div>
                     <div className="flex flex-col gap-4 pt-4 border-t border-slate-100 sm:flex-row sm:flex-wrap sm:items-end">
-                      <div className="min-w-[180px] flex-1">
+                      <div className="min-w-[200px] flex-1 sm:max-w-xs">
                         <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Resume template</label>
                         <select
                           value={tailored.template}
                           onChange={(e) => setTailored((p) => p ? { ...p, template: e.target.value } : null)}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                         >
-                          {CV_TEMPLATES.map((t) => (
-                            <option key={t.value} value={t.value}>{t.label}</option>
-                          ))}
+                          <optgroup label="Baseline">
+                            {CV_TEMPLATE_BASELINE.map((t) => (
+                              <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Creative themes">
+                            {CV_TEMPLATE_THEMES.map((t) => (
+                              <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                          </optgroup>
                         </select>
+                      </div>
+                      <div className="flex flex-col gap-1 min-w-[160px]">
+                        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Accent color</label>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <input
+                            type="color"
+                            aria-label="Pick resume accent color"
+                            value={normalizeClientAccentHex(tailored.template_accent ?? DEFAULT_CV_ACCENT)}
+                            onChange={(e) =>
+                              setTailored((p) => (p ? { ...p, template_accent: e.target.value } : null))
+                            }
+                            className="h-9 w-14 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
+                          />
+                          <input
+                            type="text"
+                            value={tailored.template_accent ?? DEFAULT_CV_ACCENT}
+                            onChange={(e) =>
+                              setTailored((p) => (p ? { ...p, template_accent: e.target.value } : null))
+                            }
+                            spellCheck={false}
+                            className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-mono"
+                            placeholder="#2563eb"
+                          />
+                        </div>
+                        <span className="text-[11px] text-slate-400">Headers, links, and highlights follow this color.</span>
                       </div>
                       <button
                         type="button"

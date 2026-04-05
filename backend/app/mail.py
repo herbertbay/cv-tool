@@ -38,7 +38,7 @@ def send_welcome_email(to_address: str) -> bool:
         "Next step: open your dashboard and add your profile (or upload a resume), "
         "then paste a job description to generate a tailored resume and motivation letter.\n\n"
         f"Dashboard: {dashboard}\n\n"
-        "— Optimal CV\n"
+        "Optimal CV\n"
     )
     html = f"""\
 <!DOCTYPE html>
@@ -49,7 +49,7 @@ def send_welcome_email(to_address: str) -> bool:
   <p>
     <a href="{dashboard}" style="display: inline-block; margin: 8px 0; padding: 10px 16px; background: #1e40af; color: #fff; text-decoration: none; border-radius: 8px;">Go to dashboard</a>
   </p>
-  <p style="margin-top: 24px; font-size: 14px; color: #64748b;">— Optimal CV</p>
+  <p style="margin-top: 24px; font-size: 14px; color: #64748b;">Optimal CV</p>
 </body>
 </html>"""
 
@@ -109,7 +109,7 @@ def send_profile_incomplete_reminder_email(to_address: str) -> bool:
         "You signed up for Optimal CV a little while ago, but some required profile fields are still empty.\n\n"
         "Complete your base resume in Edit profile so you can generate tailored resumes and motivation letters.\n\n"
         f"Edit profile: {profile_url}\n\n"
-        "— Optimal CV\n"
+        "Optimal CV\n"
     )
     html = f"""\
 <!DOCTYPE html>
@@ -120,7 +120,7 @@ def send_profile_incomplete_reminder_email(to_address: str) -> bool:
   <p>
     <a href="{profile_url}" style="display: inline-block; margin: 8px 0; padding: 10px 16px; background: #1e40af; color: #fff; text-decoration: none; border-radius: 8px;">Complete profile</a>
   </p>
-  <p style="margin-top: 24px; font-size: 14px; color: #64748b;">— Optimal CV</p>
+  <p style="margin-top: 24px; font-size: 14px; color: #64748b;">Optimal CV</p>
 </body>
 </html>"""
 

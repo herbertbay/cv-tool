@@ -32,7 +32,7 @@ export default function CompletePage() {
   return (
     <main className="mx-auto max-w-3xl px-6 pb-12 pt-8">
       <h1 className="text-2xl font-bold text-slate-900 mb-2">You're all set</h1>
-      <p className="text-slate-600 mb-6">Your tailored resume and motivation letter are ready. Your profile is saved—create more job-specific resumes anytime.</p>
+      <p className="text-slate-600 mb-6">Your tailored resume and motivation letter are ready. Your profile is saved, create more job-specific resumes anytime.</p>
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-lg font-medium text-slate-800">Your tailored resume and motivation letter are ready</p>
         <p className="mt-2 text-slate-600">Check your downloads.</p>

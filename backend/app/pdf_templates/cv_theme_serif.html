@@ -1,0 +1,27 @@
+{% extends "cv_layout_base.html" %}
+{% block theme_styles %}
+    @page { size: A4; margin: 1.75cm; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-size: 10.5pt; line-height: 1.42; color: #292524; max-width: 21cm; margin: 0 auto; }
+    .header { margin-bottom: 1.1rem; text-align: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--accent-border); }
+    .header-inner { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+    .photo { width: 72px; height: 72px; object-fit: cover; border-radius: 50%; margin: 0 0 0.5rem 0; border: 2px solid var(--accent); }
+    .header-text { flex: none; width: 100%; text-align: center; }
+    .name { font-size: 22pt; font-weight: 400; margin: 0 0 0.15em 0; color: #1c1917; letter-spacing: 0.02em; }
+    .headline { font-size: 10.5pt; color: var(--accent-dark); font-style: italic; margin: 0 0 0.4em 0; }
+    .contact { font-size: 9pt; color: #78716c; }
+    .contact span { margin: 0 0.5em; }
+    .contact a { color: var(--accent); }
+    .link-icon { width: 10px; height: 10px; vertical-align: middle; margin-right: 0.25em; display: inline-block; }
+    .links-list { font-size: 9pt; margin-top: 0.4em; text-align: center; }
+    .links-list a { color: var(--accent); }
+    h2 { font-size: 11pt; font-weight: 400; color: var(--accent-dark); margin: 0.9em 0 0.4em 0; text-align: center; text-transform: none; letter-spacing: 0.12em; font-variant: small-caps; border: none; }
+    .job, .edu-item { margin-bottom: 0.6em; }
+    .job-title, .edu-degree { font-weight: 600; }
+    .job-meta, .edu-meta { font-size: 9pt; color: #a8a29e; font-style: italic; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 0.35em; justify-content: center; }
+    .skill-tag { padding: 0.15em 0.45em; font-size: 9pt; color: #44403c; border-bottom: 1px solid var(--accent-muted); background: transparent; }
+    .skill-tag.highlight { color: var(--accent-dark); font-weight: 700; border-bottom-color: var(--accent); }
+    .summary-text { text-align: justify; }
+    .powered-by { font-size: 8pt; color: #d6d3d1; margin-top: 1.3em; text-align: center; }
+{% endblock %}

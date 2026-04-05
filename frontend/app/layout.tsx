@@ -12,7 +12,7 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Optimal CV — Resume Optimizer & Job Application Manager',
+    default: 'Optimal CV: Resume Optimizer & Job Application Manager',
     template: '%s | Optimal CV',
   },
   description:
@@ -24,13 +24,13 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: siteUrl,
     siteName: 'Optimal CV',
-    title: 'Optimal CV — Resume Optimizer & Job Application Manager',
+    title: 'Optimal CV: Resume Optimizer & Job Application Manager',
     description:
       'Tailor your resume and cover letter to every job. Track applications on your dashboard. ATS-friendly PDFs and a free resume checker.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Optimal CV — Resume Optimizer & Job Application Manager',
+    title: 'Optimal CV: Resume Optimizer & Job Application Manager',
     description: 'Optimize resumes per job, manage applications, and download tailored PDFs.',
   },
   icons: {

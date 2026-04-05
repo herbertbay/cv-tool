@@ -1,4 +1,4 @@
-# CV-Tool — Tailored CVs & Motivation Letters
+# CV-Tool: Tailored CVs & Motivation Letters
 
 Full-stack web app to generate **tailored CVs and motivation letters** for specific job postings. Uses a LinkedIn profile (URL scrape, PDF import, or JSON), job description (text or URL), optional extra URLs (e.g. Wikipedia), and an AI model to produce a professional PDF.
 

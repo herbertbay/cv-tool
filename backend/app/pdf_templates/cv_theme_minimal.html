@@ -1,0 +1,26 @@
+{% extends "cv_layout_base.html" %}
+{% block theme_styles %}
+    @page { size: A4; margin: 1.85cm; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 9.5pt; line-height: 1.45; color: #334155; max-width: 21cm; margin: 0 auto; }
+    .header { margin-bottom: 1.2rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+    .header-inner { display: flex; align-items: flex-start; }
+    .photo { width: 72px; height: 72px; object-fit: cover; border-radius: 2px; margin-right: 1.5rem; flex-shrink: 0; opacity: 0.95; }
+    .header-text { flex: 1; min-width: 0; }
+    .name { font-size: 15pt; font-weight: 300; letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 0.35em 0; color: #0f172a; }
+    .headline { font-size: 9pt; color: var(--accent); font-weight: 500; margin: 0 0 0.5em 0; }
+    .contact { font-size: 8.5pt; color: #94a3b8; }
+    .contact a { color: var(--accent-dark); text-decoration: none; }
+    .link-icon { width: 9px; height: 9px; vertical-align: middle; margin-right: 0.2em; display: inline-block; }
+    .links-list { font-size: 8.5pt; margin-top: 0.35em; }
+    .links-list a { color: var(--accent-dark); }
+    h2 { font-size: 8pt; font-weight: 600; color: #94a3b8; margin: 1.1em 0 0.45em 0; letter-spacing: 0.2em; text-transform: uppercase; border: none; }
+    .job, .edu-item { margin-bottom: 0.65em; }
+    .job-title, .edu-degree { font-weight: 600; color: #1e293b; font-size: 9.5pt; }
+    .job-meta, .edu-meta { font-size: 8.5pt; color: #94a3b8; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 0.5em 1.2em; }
+    .skill-tag { font-size: 8.5pt; color: #64748b; background: transparent; padding: 0; border: none; }
+    .skill-tag.highlight { color: var(--accent-dark); font-weight: 700; }
+    .summary-text { text-align: justify; }
+    .powered-by { font-size: 7.5pt; color: #cbd5e1; margin-top: 1.5em; }
+{% endblock %}

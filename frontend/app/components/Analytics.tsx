@@ -35,7 +35,7 @@ export function AnalyticsScripts() {
   );
 }
 
-/** GTM noscript fallback — first child inside `<body>`. */
+/** GTM noscript fallback: first child inside `<body>`. */
 export function GoogleTagManagerNoScript() {
   if (!isAnalyticsEnabled()) return null;
 

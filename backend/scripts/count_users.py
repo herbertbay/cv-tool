@@ -41,7 +41,7 @@ def main() -> int:
         print("  running service are often NOT mounted there, so /data/cv_tool.db", file=sys.stderr)
         print("  does not exist in that context.", file=sys.stderr)
         print("", file=sys.stderr)
-        print("Fix — use the admin stats endpoint (reads the live app's DB):", file=sys.stderr)
+        print("Fix: use the admin stats endpoint (reads the live app's DB):", file=sys.stderr)
         print("  1. Set ADMIN_SECRET on the backend service (e.g. openssl rand -hex 24)", file=sys.stderr)
         print("  2. Redeploy, then:", file=sys.stderr)
         print("     curl \"https://YOUR-BACKEND-URL/api/admin/stats?secret=YOUR_SECRET\"", file=sys.stderr)

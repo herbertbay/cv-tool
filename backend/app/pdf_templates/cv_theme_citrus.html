@@ -1,0 +1,26 @@
+{% extends "cv_layout_base.html" %}
+{% block theme_styles %}
+    @page { size: A4; margin: 1.45cm; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; font-size: 10pt; line-height: 1.38; color: #1e293b; max-width: 21cm; margin: 0 auto; }
+    .header { margin-bottom: 0.9rem; }
+    .header-inner { display: flex; align-items: flex-start; }
+    .photo { width: 90px; height: 90px; object-fit: cover; border-radius: 22px; margin-right: 1.2rem; border: 3px dashed var(--accent); flex-shrink: 0; }
+    .header-text { flex: 1; min-width: 0; }
+    .name { font-size: 18pt; font-weight: 800; margin: 0 0 0.1em 0; color: var(--accent-dark); }
+    .headline { font-size: 10pt; color: var(--accent); font-weight: 700; }
+    .contact { font-size: 9pt; color: #64748b; }
+    .contact a { color: var(--accent); font-weight: 700; }
+    .link-icon { width: 10px; height: 10px; vertical-align: middle; margin-right: 0.25em; display: inline-block; }
+    .links-list { font-size: 9pt; margin-top: 0.35em; }
+    .links-list a { color: var(--accent); font-weight: 600; }
+    h2 { font-size: 11pt; font-weight: 800; color: #fff; background: var(--accent); margin: 0.75em 0 0.4em 0; padding: 0.2em 0.65em; border-radius: 8px 8px 2px 8px; text-transform: none; letter-spacing: 0; display: inline-block; }
+    .job, .edu-item { margin-bottom: 0.55em; padding-left: 0.5rem; border-left: 4px solid var(--accent-soft); }
+    .job-title, .edu-degree { font-weight: 800; color: #0f172a; }
+    .job-meta, .edu-meta { font-size: 9pt; color: #94a3b8; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 0.4em; }
+    .skill-tag { padding: 0.28em 0.65em; background: var(--accent); color: #fff; font-size: 8.5pt; font-weight: 800; border-radius: 999px; }
+    .skill-tag.highlight { background: var(--accent-dark); }
+    .summary-text { text-align: justify; }
+    .powered-by { font-size: 8pt; color: #cbd5e1; margin-top: 1.2em; }
+{% endblock %}

@@ -1,4 +1,4 @@
-# SEO, LLM discovery & ASO — technical + content checklist
+# SEO, LLM discovery & ASO: technical + content checklist
 
 Ordered todos to rank well in search engines (web) and app stores (ASO), including sitemaps, `robots.txt`, and LLM-oriented files.
 
@@ -6,17 +6,17 @@ Ordered todos to rank well in search engines (web) and app stores (ASO), includi
 
 ---
 
-## Phase 1 — Crawling & indexation
+## Phase 1: Crawling & indexation
 
 1. **Decide primary domain** (www vs apex, one canonical host); **301** redirect all variants to canonical.
 2. **`robots.txt`**: allow public marketing pages; block admin, auth, drafts, and low-value query-param URLs; reference sitemap URL(s).
 3. **XML sitemap(s)**: include all indexable URLs, `lastmod` where accurate; split if approaching 50k URLs; submit in **Google Search Console** and **Bing Webmaster Tools**.
-4. **Canonical tags** on every page template; resolve duplicates (trailing slash, tracking params—use GSC URL parameter tool or consistent canonicals).
+4. **Canonical tags** on every page template; resolve duplicates (trailing slash, tracking params, use GSC URL parameter tool or consistent canonicals).
 5. **`noindex`** on thin or utility pages (login, internal tools, thank-you pages) where they should not compete in search.
 
 ---
 
-## Phase 2 — Technical SEO & performance
+## Phase 2: Technical SEO & performance
 
 6. **Core Web Vitals** (LCP, INP, CLS) on key templates, **mobile first**; optimize images (dimensions, `fetchpriority`, modern formats), fonts, and JS budget.
 7. **HTTPS** everywhere; **HSTS** when configuration is stable.
@@ -26,7 +26,7 @@ Ordered todos to rank well in search engines (web) and app stores (ASO), includi
 
 ---
 
-## Phase 3 — Content & on-page
+## Phase 3: Content & on-page
 
 11. **Keyword / intent map**: one primary intent per URL; avoid cannibalization (merge or differentiate overlapping pages).
 12. **Title tags + meta descriptions** per page type; unique, within reasonable pixel limits; aligned with search intent.
@@ -36,7 +36,7 @@ Ordered todos to rank well in search engines (web) and app stores (ASO), includi
 
 ---
 
-## Phase 4 — LLM & AI-oriented discovery
+## Phase 4: LLM & AI-oriented discovery
 
 16. **`/llms.txt`** (site root): short explanation of the site, links to key public URLs and docs; optional high-level policy on crawling/training (align with legal/comms).
 17. **Clear product/about page**: factual, quotable copy (what it is, for whom, how it’s offered) that models and crawlers can summarize accurately.
@@ -45,7 +45,7 @@ Ordered todos to rank well in search engines (web) and app stores (ASO), includi
 
 ---
 
-## Phase 5 — Off-site & authority
+## Phase 5: Off-site & authority
 
 20. **Brand presence**: accurate listings on reputable directories where it makes sense (quality over quantity).
 21. **Backlinks**: integrations, partners, original research or free tools worth citing.
@@ -53,7 +53,7 @@ Ordered todos to rank well in search engines (web) and app stores (ASO), includi
 
 ---
 
-## Phase 6 — Measurement & iteration
+## Phase 6: Measurement & iteration
 
 23. **Google Search Console + analytics**: monitor organic landings, queries, and CTR after title/meta experiments.
 24. **Monitor** crawl errors, coverage issues, and manual actions.
@@ -67,7 +67,7 @@ Ordered todos to rank well in search engines (web) and app stores (ASO), includi
 27. **Creative**: screenshots and optional preview video; run store listing experiments where platforms allow.
 28. **Ratings & reviews**: well-timed in-app prompts; respond to reviews.
 29. **Deep links / universal links**; consistent naming and messaging vs web.
-30. **Paid discovery (optional)**: Apple Search Ads, Google UAC—aligned with organic keyword themes.
+30. **Paid discovery (optional)**: Apple Search Ads, Google UAC, aligned with organic keyword themes.
 
 ---
 

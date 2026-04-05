@@ -62,7 +62,7 @@ export default function ResourcesIndexPage() {
         <Link href="/cv-checker" className="text-blue-800 font-medium hover:underline">
           Free ATS resume checker
         </Link>
-        {' — '}upload your resume and a job description to see how well you match before you apply.
+        {': '}upload your resume and a job description to see how well you match before you apply.
       </p>
     </article>
   );

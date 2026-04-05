@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3">
                       {u.profile_incomplete ? (
                         <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                          {u.profile_required_empty_count ?? '—'} empty
+                          {u.profile_required_empty_count ?? 0} empty
                         </span>
                       ) : (
                         <span className="text-xs font-medium text-green-700">Complete</span>
@@ -171,13 +171,13 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-slate-600 text-xs">
                       {u.profile_incomplete_reminder_sent_at
                         ? formatDate(u.profile_incomplete_reminder_sent_at, { includeTime: true })
-                        : '—'}
+                        : 'Never'}
                     </td>
                     <td className="px-4 py-3 text-slate-900 font-mono text-xs">{u.cv_generations_count}</td>
                     <td className="px-4 py-3 text-right text-slate-600 tabular-nums">
                       {stats.totalResumes > 0
                         ? `${((100 * (u.cv_generations_count ?? 0)) / stats.totalResumes).toFixed(1)}%`
-                        : '—'}
+                        : 'n/a'}
                     </td>
                     <td className="px-4 py-3 text-slate-600">{formatDate(u.last_used_at, { includeTime: true })}</td>
                     <td className="px-4 py-3">
@@ -189,7 +189,7 @@ export default function AdminUsersPage() {
                           Download last resume
                         </a>
                       ) : (
-                        <span className="text-slate-400 text-xs">—</span>
+                        <span className="text-slate-400 text-xs">None</span>
                       )}
                     </td>
                     <td className="px-4 py-3">

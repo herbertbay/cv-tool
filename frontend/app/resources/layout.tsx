@@ -3,11 +3,11 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Resources — Resume tips, job titles & guides',
+  title: 'Resources: Resume tips, job titles & guides',
   description:
     'Free guides: tailor your resume to a job description, pass ATS screening, and role-specific tips for software engineers, marketers, nurses, and more. Optimal CV.',
   openGraph: {
-    title: 'Resources — Resume tips & guides | Optimal CV',
+    title: 'Resources: Resume tips & guides | Optimal CV',
     description:
       'How-to articles and resume tips by job title. Build job-specific resumes and motivation letters with Optimal CV.',
   },

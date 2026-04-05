@@ -60,7 +60,7 @@ Set the **backend** env var `FRONTEND_URL` to your frontend’s full URL (e.g. `
 
 ## 5. Why accounts disappear (SQLite is not persisted)
 
-The backend uses **SQLite** and stores the database file (`cv_tool.db`) inside the container. On Railway, the container filesystem is **ephemeral**: every **deploy** or **restart** can start a new container with an empty filesystem, so the database (and all user accounts and profiles) is **lost**. You are not being “logged out and account deleted” by the app — the whole DB is reset.
+The backend uses **SQLite** and stores the database file (`cv_tool.db`) inside the container. On Railway, the container filesystem is **ephemeral**: every **deploy** or **restart** can start a new container with an empty filesystem, so the database (and all user accounts and profiles) is **lost**. You are not being “logged out and account deleted” by the app: the whole DB is reset.
 
 - **Symptom:** You had an account, then after a while (or after a redeploy) you are logged out and “Sign in” says the email is not recognized (account no longer exists).
 - **Fix (choose one):**

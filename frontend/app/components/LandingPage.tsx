@@ -3,7 +3,7 @@ import Link from 'next/link';
 const MOCK_REVIEWS = [
   {
     quote:
-      'I stopped sending the same PDF to every listing. Each application gets a resume and letter that actually match the posting—my reply rate went up.',
+      'I stopped sending the same PDF to every listing. Each application gets a resume and letter that actually match the posting, my reply rate went up.',
     name: 'Alex M.',
     role: 'Product manager',
     accent: 'from-violet-500 to-indigo-600',
@@ -17,7 +17,7 @@ const MOCK_REVIEWS = [
   },
   {
     quote:
-      'Feels like a resume optimizer, not a generic template site. The tailored content still sounds like me—just sharper for each role.',
+      'Feels like a resume optimizer, not a generic template site. The tailored content still sounds like me, just sharper for each role.',
     name: 'Sam R.',
     role: 'Marketing lead',
     accent: 'from-amber-500 to-orange-600',
@@ -52,7 +52,7 @@ export function LandingPage() {
                 </span>
               </div>
               <p className="text-sm font-semibold text-indigo-800 mb-2">
-                Tired of being ghosted? Get documents that match each role—not one static resume for every job.
+                Tired of being ghosted? Get documents that match each role, not one static resume for every job.
               </p>
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-[2.65rem] lg:leading-tight">
                 Optimize your resume and{' '}
@@ -63,7 +63,7 @@ export function LandingPage() {
               </h1>
               <p className="mt-4 text-lg text-slate-600 max-w-xl leading-relaxed">
                 Optimal CV tailors your experience and skills to each job description, generates motivation letters, and
-                keeps your applications organized on a dashboard—so you stay on top of where you applied and what you
+                keeps your applications organized on a dashboard, so you stay on top of where you applied and what you
                 sent.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -118,7 +118,7 @@ export function LandingPage() {
                 Convert your LinkedIn page into a professional resume
               </h2>
               <p className="mt-3 text-slate-600 leading-relaxed">
-                Export your LinkedIn profile as JSON (or upload a PDF resume) after you sign up—we parse it into an
+                Export your LinkedIn profile as JSON (or upload a PDF resume) after you sign up, we parse it into an
                 editable profile so you can refine details and generate tailored resumes and motivation letters for each
                 job.
               </p>
@@ -195,7 +195,7 @@ export function LandingPage() {
               <h3 className="mt-4 text-xl font-bold text-slate-900">Tailor content to every job description</h3>
               <p className="mt-3 text-slate-600 leading-relaxed">
                 Each listing gets a fresh pass: your summary, bullets, and skills are tuned to the posting so you read as
-                a strong match for ATS and recruiters—not a one-size-fits-all PDF.
+                a strong match for ATS and recruiters, not a one-size-fits-all PDF.
               </p>
               <ul className="mt-5 space-y-2 text-sm text-slate-700">
                 <li className="flex gap-2">
@@ -216,7 +216,7 @@ export function LandingPage() {
               <h3 className="mt-4 text-xl font-bold text-slate-900">Your applications, one dashboard</h3>
               <p className="mt-3 text-slate-600 leading-relaxed">
                 See each role, company, and status in one place. Know which tailored resume you generated for which
-                application—so follow-ups and interviews stay under control.
+                application, so follow-ups and interviews stay under control.
               </p>
               <ul className="mt-5 space-y-2 text-sm text-slate-700">
                 <li className="flex gap-2">
@@ -264,7 +264,7 @@ export function LandingPage() {
             />
             <FeatureBlock
               title="Letters included"
-              description="A coherent motivation letter for each application—same voice, role-specific content."
+              description="A coherent motivation letter for each application, same voice, role-specific content."
               icon={<LetterIcon />}
               color="text-violet-600 bg-violet-50 border-violet-100"
             />
@@ -315,7 +315,7 @@ export function LandingPage() {
               <p className="mt-2 text-slate-600 leading-relaxed">
                 Most builders help you create one static document. Optimal CV is for applying to many jobs: you keep one
                 profile, optimize your resume and motivation letter for each role, and track applications on your
-                dashboard. Your experience is rewritten and emphasized to match what each job asks for—relevant for hiring
+                dashboard. Your experience is rewritten and emphasized to match what each job asks for, relevant for hiring
                 managers and applicant tracking systems.
               </p>
             </li>
@@ -342,9 +342,9 @@ export function LandingPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.06\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40" aria-hidden />
         <div className="relative mx-auto max-w-6xl px-6 text-center">
           <p className="text-teal-100/90 text-sm font-semibold uppercase tracking-wider">Ready to optimize your next application?</p>
-          <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Make your resume impossible to ignore—per job</h2>
+          <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Make your resume impossible to ignore, per job</h2>
           <p className="mt-3 text-indigo-100 max-w-lg mx-auto text-base">
-            Join job seekers who combine resume optimization with a clear view of every application—in one workspace.
+            Join job seekers who combine resume optimization with a clear view of every application, in one workspace.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
@@ -366,7 +366,7 @@ export function LandingPage() {
                 Optimal CV
               </Link>
               <p className="mt-3 text-sm leading-relaxed text-slate-400">
-                Resume optimizer and job application manager—tailor every resume and letter, then track applications from
+                Resume optimizer and job application manager, tailor every resume and letter, then track applications from
                 one dashboard.
               </p>
             </div>
@@ -390,12 +390,12 @@ export function LandingPage() {
               <ul className="mt-4 space-y-2 text-sm">
                 <li>
                   <Link href="/resources" className="hover:text-white transition-colors">
-                    Resources — guides &amp; tips by job title
+                    Resources: guides &amp; tips by job title
                   </Link>
                 </li>
                 <li>
                   <span className="text-slate-500 text-xs block mt-3 leading-relaxed">
-                    Practical guides to tailor your resume, pass ATS screening, and role-specific advice—then build your
+                    Practical guides to tailor your resume, pass ATS screening, and role-specific advice, then build your
                     tailored PDF in minutes with Optimal CV.
                   </span>
                 </li>

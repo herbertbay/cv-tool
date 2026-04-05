@@ -19,6 +19,7 @@ import { JobApplicationsHistory } from '../components/JobApplicationsHistory';
 import { CreateCVModal } from '../components/CreateCVModal';
 import { UserEmailMenu } from '../components/UserEmailMenu';
 import { countProfileEmptyFields } from '../lib/profile-completeness';
+import { DEFAULT_CV_ACCENT, normalizeClientAccentHex } from '../lib/cv-templates';
 
 const emptyProfile: Profile = {
   full_name: '',
@@ -58,6 +59,7 @@ function DashboardContent() {
   const [jobDescription, setJobDescription] = useState('');
   const [jobIsUrl, setJobIsUrl] = useState(false);
   const [template, setTemplate] = useState('cv_base.html');
+  const [templateAccent, setTemplateAccent] = useState(DEFAULT_CV_ACCENT);
   const [generateProgress, setGenerateProgress] = useState('');
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerateCVResponse | null>(null);
@@ -130,6 +132,7 @@ function DashboardContent() {
         additional_urls: urls,
         language: 'en',
         template,
+        template_accent: normalizeClientAccentHex(templateAccent),
       });
       setGenerateProgress('Creating job application…');
       const created = await createJobApplication({
@@ -150,7 +153,7 @@ function DashboardContent() {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed');
       setGenerateProgress('');
     }
-  }, [userData, jobDescription, template, router]);
+  }, [userData, jobDescription, template, templateAccent, router]);
 
   if (!user) return null;
   if (loading) {
@@ -227,6 +230,8 @@ function DashboardContent() {
           setJobIsUrl={setJobIsUrl}
           template={template}
           setTemplate={setTemplate}
+          templateAccent={templateAccent}
+          setTemplateAccent={setTemplateAccent}
           progress={generateProgress}
           error={generateError}
           result={result}

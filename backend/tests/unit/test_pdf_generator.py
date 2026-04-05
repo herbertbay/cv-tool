@@ -93,6 +93,8 @@ def test_prepare_template_context():
     assert ctx["profile"]["full_name"] == "Jane"
     assert "Tailored summary" in ctx["tailored_summary"]
     assert len(ctx["tailored_experience"]) == 1
+    assert ctx.get("accent_hex") == "#2563eb"
+    assert "icon_linkedin" in ctx and ctx["icon_linkedin"].startswith("data:image/svg+xml")
 
 
 def test_prepare_template_context_photo_data_url():
@@ -112,9 +114,12 @@ def test_prepare_template_context_photo_data_url():
 
 
 def test_templates_dir_exists():
-    """Templates directory exists and contains cv_base.html."""
+    """Templates directory exists and contains layout + themes."""
     assert TEMPLATES_DIR.exists()
     assert (TEMPLATES_DIR / "cv_base.html").exists()
+    assert (TEMPLATES_DIR / "cv_layout_base.html").exists()
+    assert (TEMPLATES_DIR / "_cv_body.html").exists()
+    assert (TEMPLATES_DIR / "cv_theme_split.html").exists()
 
 
 def test_generate_cv_pdf_returns_bytes():

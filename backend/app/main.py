@@ -67,6 +67,7 @@ from app.pdf_profile_parser import parse_pdf_to_profile
 from app.url_fetcher import fetch_job_description, fetch_additional_urls
 from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score, extract_job_application, generate_motivation_letter
 from app.ats_scorer import compute_ats_match
+from app.cv_templates import coerce_template, normalize_accent_color
 from app.pdf_generator import generate_cv_pdf, generate_letter_pdf, render_cv_html
 from app.cv_section_includes import merge_application_skills_education, apply_cv_section_includes
 from app.session_store import (
@@ -125,9 +126,9 @@ async def lifespan(app: FastAPI):
         if (settings.resend_from_email or "").strip():
             logger.info("Resend: welcome email enabled (RESEND_API_KEY + RESEND_FROM_EMAIL set)")
         else:
-            logger.warning("Resend: RESEND_API_KEY set but RESEND_FROM_EMAIL missing — welcome emails disabled")
+            logger.warning("Resend: RESEND_API_KEY set but RESEND_FROM_EMAIL missing: welcome emails disabled")
     else:
-        logger.warning("Resend: RESEND_API_KEY missing — welcome emails disabled")
+        logger.warning("Resend: RESEND_API_KEY missing: welcome emails disabled")
     yield
     cleanup_old_sessions(settings.session_ttl_seconds)
 
@@ -849,10 +850,8 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
         )
 
         # Generate CV PDF and letter PDF (separate files)
-        allowed_templates = {"cv_base.html", "cv_executive.html"}
-        template_name = getattr(req, "template", "cv_base.html") or "cv_base.html"
-        if template_name not in allowed_templates:
-            template_name = "cv_base.html"
+        template_name = coerce_template(getattr(req, "template", None) or "cv_base.html")
+        accent_hex = normalize_accent_color(getattr(req, "template_accent", None))
         extra_urls = [u for u in (req.additional_urls or []) if u and str(u).strip().startswith(("http://", "https://"))]
         show_powered_by = not _is_premium_user(user_id)
         cv_pdf_bytes = generate_cv_pdf(
@@ -863,6 +862,7 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
             template_name=template_name,
             additional_urls=extra_urls,
             show_powered_by=show_powered_by,
+            accent_color=accent_hex,
         )
         set_session_pdf(session_id, cv_pdf_bytes)
         letter_pdf_bytes = None
@@ -882,6 +882,7 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
             motivation_letter=motivation_letter,
             keywords_to_highlight=keywords,
             template=template_name,
+            template_accent=accent_hex,
         )
 
         return GenerateCVResponse(
@@ -1188,19 +1189,18 @@ async def compute_application_score(application_id: str, request: Request):
 
 
 @app.get("/api/preview-cv-html")
-async def preview_cv_html(request: Request, template: str = "cv_base.html"):
+async def preview_cv_html(request: Request, template: str = "cv_base.html", accent: str | None = None):
     """
     Return the CV as HTML for preview in the browser (same layout as PDF).
-    Requires auth. Query param: template=cv_base.html or cv_executive.html.
+    Requires auth. Query params: template (filename), accent (optional #RRGGBB).
     """
     user_id = require_user(request)
     data = db_get_user_data(user_id)
     if not data or not data.get("profile"):
         raise HTTPException(404, "No profile found. Upload a CV first.")
     profile = data["profile"]
-    allowed = {"cv_base.html", "cv_executive.html"}
-    if template not in allowed:
-        template = "cv_base.html"
+    template = coerce_template(template)
+    accent_hex = normalize_accent_color(accent)
     # Use profile experience as tailored content for preview
     tailored_experience = [
         e.model_dump() if hasattr(e, "model_dump") else dict(e)
@@ -1216,6 +1216,7 @@ async def preview_cv_html(request: Request, template: str = "cv_base.html"):
         template_name=template,
         additional_urls=additional_urls,
         show_powered_by=show_powered_by,
+        accent_color=accent_hex,
     )
     return HTMLResponse(html_str)
 
@@ -1256,7 +1257,7 @@ async def test_pdf():
     except Exception as e:
         logger.exception("test-pdf failed")
         msg = str(e).strip() or type(e).__name__
-        raise HTTPException(500, f"PDF render failed: {type(e).__name__} — {msg[:200]}") from e
+        raise HTTPException(500, f"PDF render failed: {type(e).__name__}: {msg[:200]}") from e
 
 
 @app.get("/api/download-pdf/{session_id}")
@@ -1329,6 +1330,7 @@ async def get_cv_generation_tailored(session_id: str, request: Request):
         "motivation_letter": gen.get("motivation_letter") or "",
         "keywords_to_highlight": gen.get("keywords_to_highlight") or [],
         "template": gen.get("template") or "cv_base.html",
+        "template_accent": gen.get("template_accent") or normalize_accent_color(None),
     }
 
 
@@ -1389,9 +1391,8 @@ async def preview_cv_generation_html(session_id: str, request: Request, body: di
     tailored_summary = gen.get("tailored_summary") or ""
     tailored_experience = gen.get("tailored_experience") or []
     keywords = gen.get("keywords_to_highlight") or []
-    template_name = (gen.get("template") or "cv_base.html").strip()
-    if template_name not in ("cv_base.html", "cv_executive.html"):
-        template_name = "cv_base.html"
+    template_name = coerce_template(gen.get("template") or "cv_base.html")
+    accent_hex = normalize_accent_color(gen.get("template_accent"))
 
     b = body if isinstance(body, dict) else {}
     if isinstance(b.get("tailored_summary"), str):
@@ -1401,9 +1402,9 @@ async def preview_cv_generation_html(session_id: str, request: Request, body: di
     if isinstance(b.get("keywords_to_highlight"), list):
         keywords = [str(k) for k in b["keywords_to_highlight"] if str(k).strip()]
     if isinstance(b.get("template"), str):
-        tn = b["template"].strip()
-        if tn in ("cv_base.html", "cv_executive.html"):
-            template_name = tn
+        template_name = coerce_template(b["template"])
+    if isinstance(b.get("template_accent"), str) and b["template_accent"].strip():
+        accent_hex = normalize_accent_color(b["template_accent"])
 
     if "tailored_headline" in b:
         th = str(b.get("tailored_headline") or "").strip()
@@ -1426,23 +1427,25 @@ async def preview_cv_generation_html(session_id: str, request: Request, body: di
         template_name=template_name,
         additional_urls=extra_urls,
         show_powered_by=show_powered_by,
+        accent_color=accent_hex,
     )
     return HTMLResponse(html_str)
 
 
 @app.post("/api/regenerate-cv")
 async def regenerate_cv(request: Request, body: dict = Body(...)):
-    """Re-generate CV and optional letter PDF for a session. Body: session_id, template? (cv_base.html | cv_executive.html), tailored_headline? (job-specific title). Uses persisted tailored content and user profile. Requires auth."""
+    """Re-generate CV and optional letter PDF for a session. Body: session_id, template?, template_accent? (#RRGGBB), tailored_headline?, cv_section_includes?. Requires auth."""
     user_id = require_user(request)
     session_id = (body.get("session_id") or "").strip()
     if not session_id:
         raise HTTPException(400, "session_id required")
-    template_name = (body.get("template") or "cv_base.html").strip()
-    if template_name not in ("cv_base.html", "cv_executive.html"):
-        template_name = "cv_base.html"
     gen = db_get_cv_generation(session_id, user_id)
     if not gen:
         raise HTTPException(404, "Session not found or access denied")
+    template_name = coerce_template(body.get("template") or gen.get("template") or "cv_base.html")
+    accent_hex = normalize_accent_color(
+        body.get("template_accent") if isinstance(body.get("template_accent"), str) else gen.get("template_accent")
+    )
     tailored_summary = gen.get("tailored_summary") or ""
     tailored_experience = gen.get("tailored_experience") or []
     motivation_letter = gen.get("motivation_letter") or ""
@@ -1473,6 +1476,7 @@ async def regenerate_cv(request: Request, body: dict = Body(...)):
         template_name=template_name,
         additional_urls=extra_urls,
         show_powered_by=show_powered_by,
+        accent_color=accent_hex,
     )
     letter_pdf_bytes = None
     if motivation_letter and motivation_letter.strip():
@@ -1490,7 +1494,7 @@ async def regenerate_cv(request: Request, body: dict = Body(...)):
     if letter_pdf_bytes:
         set_session_letter_pdf(session_id, letter_pdf_bytes)
     cv_path, letter_path = storage_save_cv_pdf(session_id, cv_pdf_bytes, letter_pdf_bytes)
-    db_update_cv_generation_template(session_id, user_id, template_name)
+    db_update_cv_generation_template(session_id, user_id, template_name, template_accent=accent_hex)
     return {"ok": True, "session_id": session_id}
 
 

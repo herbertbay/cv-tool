@@ -69,7 +69,7 @@ export default function CvForRolePage({ params }: Props) {
         <div className="mt-12 rounded-xl border border-blue-200 bg-blue-50/80 p-6">
           <p className="font-medium text-slate-900">Turn this into a tailored resume</p>
           <p className="mt-2 text-sm text-slate-600">
-            Paste your next job description—Optimal CV rewrites your summary and experience to match, and exports a
+            Paste your next job description, Optimal CV rewrites your summary and experience to match, and exports a
             professional PDF.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">

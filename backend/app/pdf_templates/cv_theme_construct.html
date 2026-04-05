@@ -1,0 +1,26 @@
+{% extends "cv_layout_base.html" %}
+{% block theme_styles %}
+    @page { size: A4; margin: 1.4cm; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Consolas', 'Courier New', monospace; font-size: 9.5pt; line-height: 1.34; color: #0f172a; max-width: 21cm; margin: 0 auto; }
+    .header { margin-bottom: 0.85rem; border: 2px solid #0f172a; padding: 0.65rem; }
+    .header-inner { display: flex; align-items: flex-start; }
+    .photo { width: 84px; height: 84px; object-fit: cover; margin-right: 1rem; flex-shrink: 0; border: 2px solid #0f172a; border-radius: 0; }
+    .header-text { flex: 1; min-width: 0; }
+    .name { font-size: 14pt; font-weight: 700; margin: 0 0 0.2em 0; text-transform: uppercase; letter-spacing: 0.08em; }
+    .headline { font-size: 9pt; color: var(--accent-dark); }
+    .contact { font-size: 8.5pt; color: #64748b; }
+    .contact a { color: var(--accent); }
+    .link-icon { width: 9px; height: 9px; vertical-align: middle; margin-right: 0.2em; display: inline-block; }
+    .links-list { font-size: 8.5pt; margin-top: 0.35em; }
+    .links-list a { color: var(--accent); }
+    h2 { font-size: 9pt; font-weight: 700; margin: 0.75em 0 0.35em 0; text-transform: uppercase; letter-spacing: 0.12em; background: #0f172a; color: #fff; padding: 0.2em 0.4em; display: inline-block; }
+    .job, .edu-item { margin-bottom: 0.5em; padding: 0.4rem; border: 1px solid #cbd5e1; }
+    .job-title, .edu-degree { font-weight: 700; }
+    .job-meta, .edu-meta { font-size: 8.5pt; color: #64748b; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 0.3em; }
+    .skill-tag { padding: 0.15em 0.4em; border: 1px solid var(--accent); font-size: 8pt; background: #fff; }
+    .skill-tag.highlight { background: var(--accent); color: #fff; font-weight: 700; }
+    .summary-text { text-align: justify; }
+    .powered-by { font-size: 7.5pt; color: #94a3b8; margin-top: 1rem; border-top: 2px solid #0f172a; padding-top: 0.35em; }
+{% endblock %}

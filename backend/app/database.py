@@ -77,6 +77,11 @@ def init_db() -> None:
             except sqlite3.OperationalError as e:
                 if "duplicate column" not in str(e).lower():
                     raise
+        try:
+            conn.execute("ALTER TABLE cv_generations ADD COLUMN template_accent TEXT")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
         conn.execute("""
             CREATE TABLE IF NOT EXISTS ats_match_results (
                 token TEXT PRIMARY KEY,
@@ -358,6 +363,7 @@ def insert_cv_generation(
     motivation_letter: Optional[str] = None,
     keywords_to_highlight: Optional[list] = None,
     template: Optional[str] = None,
+    template_accent: Optional[str] = None,
 ) -> None:
     """Record a generated CV/letter for the user (PDFs already written to paths). Persists tailored content for later edit/regenerate."""
     import time
@@ -368,12 +374,13 @@ def insert_cv_generation(
         conn.execute(
             """INSERT INTO cv_generations (
                 session_id, user_id, created_at, cv_path, letter_path, job_description, language,
-                tailored_summary, tailored_experience, motivation_letter, keywords_to_highlight, template
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                tailored_summary, tailored_experience, motivation_letter, keywords_to_highlight, template, template_accent
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 session_id, user_id, time.strftime("%Y-%m-%d %H:%M:%S"), cv_path, letter_path,
                 job_description or "", language or "",
                 tailored_summary or "", te_json, motivation_letter or "", kw_json, template or "cv_base.html",
+                template_accent,
             ),
         )
         conn.commit()
@@ -406,7 +413,7 @@ def get_cv_generation(session_id: str, user_id: str) -> Optional[dict]:
     with _get_conn() as conn:
         row = conn.execute(
             """SELECT session_id, created_at, cv_path, letter_path, job_description, language,
-                      tailored_summary, tailored_experience, motivation_letter, keywords_to_highlight, template
+                      tailored_summary, tailored_experience, motivation_letter, keywords_to_highlight, template, template_accent
                FROM cv_generations WHERE session_id = ? AND user_id = ?""",
             (session_id, user_id),
         ).fetchone()
@@ -426,6 +433,7 @@ def get_cv_generation(session_id: str, user_id: str) -> Optional[dict]:
         "motivation_letter": row["motivation_letter"] or "",
         "keywords_to_highlight": json.loads(kw) if isinstance(kw, str) and kw.strip() else (kw if isinstance(kw, list) else []),
         "template": row["template"] or "cv_base.html",
+        "template_accent": row["template_accent"] or None,
     }
 
 
@@ -479,13 +487,15 @@ def update_cv_generation_tailored(
         return cur.rowcount > 0
 
 
-def update_cv_generation_template(session_id: str, user_id: str, template: str) -> bool:
-    """Update template for a cv_generation. Returns True if a row was updated."""
+def update_cv_generation_template(
+    session_id: str, user_id: str, template: str, template_accent: Optional[str] = None
+) -> bool:
+    """Update template and accent hex for a cv_generation. Returns True if a row was updated."""
     init_db()
     with _get_conn() as conn:
         cur = conn.execute(
-            "UPDATE cv_generations SET template = ? WHERE session_id = ? AND user_id = ?",
-            (template, session_id, user_id),
+            "UPDATE cv_generations SET template = ?, template_accent = ? WHERE session_id = ? AND user_id = ?",
+            (template, template_accent, session_id, user_id),
         )
         conn.commit()
         return cur.rowcount > 0

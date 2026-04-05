@@ -3,7 +3,7 @@ import { CvCheckerHeader } from './components/CvCheckerHeader';
 import { getSiteUrl } from '../lib/site';
 
 export const metadata: Metadata = {
-  title: 'Resume Checker — See How Your Resume Matches the Job',
+  title: 'Resume Checker: See How Your Resume Matches the Job',
   description: 'Upload your resume and job description. Get a match score and see how much you can improve with a tailored resume. Free tool by Optimal CV.',
   alternates: { canonical: '/cv-checker' },
   openGraph: {

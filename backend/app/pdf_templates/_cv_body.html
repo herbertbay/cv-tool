@@ -1,0 +1,90 @@
+  <div class="header">
+    <div class="header-inner">
+    {% if photo_data_url %}
+    <img class="photo" src="{{ photo_data_url }}" alt="Photo" />
+    {% endif %}
+    <div class="header-text">
+      <h1 class="name">{{ profile.full_name }}</h1>
+      {% if profile.headline %}<p class="headline">{{ profile.headline }}</p>{% endif %}
+      <p class="contact">
+        {% if profile.email %}<span>{{ profile.email }}</span>{% endif %}
+        {% if profile.phone %}<span>{{ profile.phone }}</span>{% endif %}
+        {% if profile.address %}<span>{{ profile.address }}</span>{% endif %}
+        {% if profile.linkedin_url %}
+        <span>
+          <img class="link-icon" src="{{ icon_linkedin }}" alt="" />
+          <a href="{{ profile.linkedin_url }}">LinkedIn</a>
+        </span>
+        {% endif %}
+      </p>
+      {% if additional_urls %}
+      <div class="links-list">
+        {% for url in additional_urls %}
+        <div class="link-item">
+          <img class="link-icon" src="{{ icon_link }}" alt="" />
+          <a href="{{ url }}">{{ url }}</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    </div>
+  </div>
+
+  {% if tailored_summary %}
+  <h2>Summary</h2>
+  <div class="section summary-text">{{ tailored_summary|safe }}</div>
+  {% endif %}
+
+  {% if tailored_experience %}
+  <h2>Experience</h2>
+  {% for job in tailored_experience %}
+  <div class="job">
+    <div class="job-title">{{ job.title }} — {{ job.company }}</div>
+    <div class="job-meta">{{ job.start_date or '?' }} – {{ job.end_date or 'Present' }}{% if job.location %} · {{ job.location }}{% endif %}</div>
+    <div class="job-desc">{{ job.description|safe }}</div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if profile.skills %}
+  <h2>Skills</h2>
+  <div class="skills-list">
+    {% for skill in profile.skills %}
+    <span class="skill-tag {% if skill in keywords_to_highlight or (skill | keyword_match(keywords_to_highlight)) %}highlight{% endif %}">{{ skill }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if profile.education %}
+  <h2>Education</h2>
+  {% for e in profile.education %}
+  <div class="edu-item">
+    <div class="edu-degree">{{ e.degree or 'N/A' }}{% if e.field %} in {{ e.field }}{% endif %}, {{ e.school }}</div>
+    <div class="edu-meta">{{ e.start_date or '?' }} – {{ e.end_date or '?' }}</div>
+    {% if e.description %}<div class="edu-desc">{{ e.description }}</div>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if profile.certifications %}
+  <h2>Certifications</h2>
+  <div class="section">
+    {% for c in profile.certifications %}
+    <div class="job"><span class="job-title">{{ c.name }}</span>{% if c.authority and c.authority != 'null' and c.authority|trim %} — {{ c.authority }}{% endif %}{% if c.date and c.date != 'null' and c.date|trim %} ({{ c.date }}){% endif %}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if profile.languages %}
+  <h2>Languages</h2>
+  <div class="section">
+    {% for lang in profile.languages %}
+    <span class="skill-tag">{{ lang }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if show_powered_by %}
+  <p class="powered-by">Powered by Optimal.cv</p>
+  {% endif %}

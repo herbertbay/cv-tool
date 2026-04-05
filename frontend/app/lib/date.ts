@@ -43,7 +43,7 @@ export function formatDate(
   options: FormatDateOptions = {}
 ): string {
   const d = parseDisplayDate(dateStr);
-  if (!d) return dateStr ?? '—';
+  if (!d) return (dateStr && dateStr.trim()) || 'N/A';
 
   const { relative = false, includeTime = false } = options;
   const now = new Date();

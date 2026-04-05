@@ -119,7 +119,7 @@ function OptimizedContent() {
       <p className="text-slate-600 mb-6">
         {hasImprovement
           ? 'Your tailored resume would score higher. Create it now.'
-          : 'Your resume already matches this role well. We\'ve still tailored it for this role — create and download it below.'}
+          : 'Your resume already matches this role well. We\'ve still tailored it for this role: create and download it below.'}
       </p>
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">New score</p>
@@ -130,7 +130,7 @@ function OptimizedContent() {
             <p className="mt-2 text-slate-600">Your original score was {optimizeData.original_score}. Download your tailored resume and motivation letter.</p>
           </>
         ) : (
-          <p className="mt-4 text-slate-600">Your profile already fits this job. We&apos;ve tailored your resume to the role — download it below.</p>
+          <p className="mt-4 text-slate-600">Your profile already fits this job. We&apos;ve tailored your resume to the role: download it below.</p>
         )}
         <button
           type="button"

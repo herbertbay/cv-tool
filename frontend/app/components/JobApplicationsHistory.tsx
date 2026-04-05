@@ -99,10 +99,10 @@ export function JobApplicationsHistory({ refreshTrigger }: { refreshTrigger?: nu
                 style={{ gridTemplateColumns: 'minmax(120px, 1fr) minmax(140px, 1.2fr) 100px 100px 80px' }}
               >
                 <span className="text-slate-800 truncate" title={app.company_name ?? undefined}>
-                  {app.company_name || '—'}
+                  {app.company_name || 'N/A'}
                 </span>
                 <span className="text-slate-700 truncate" title={app.job_title ?? undefined}>
-                  {app.job_title || '—'}
+                  {app.job_title || 'N/A'}
                 </span>
                 <span className="text-slate-600 tabular-nums">{formatDate(app.application_date || app.created_at, { relative: true })}</span>
                 <select

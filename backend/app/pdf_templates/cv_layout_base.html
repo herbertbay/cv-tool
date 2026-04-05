@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="UTF-8" />
+  <title>CV - {{ profile.full_name }}</title>
+  <style>
+    :root {
+      --accent: {{ accent_hex }};
+      --accent-soft: {{ accent_soft }};
+      --accent-muted: {{ accent_muted }};
+      --accent-faint: {{ accent_faint }};
+      --accent-dark: {{ accent_dark }};
+      --accent-border: {{ accent_border }};
+    }
+    {% block theme_styles %}{% endblock %}
+  </style>
+</head>
+<body>
+{% include '_cv_body.html' %}
+</body>
+</html>

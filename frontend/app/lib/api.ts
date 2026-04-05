@@ -70,6 +70,8 @@ export type GenerateCVRequest = {
   additional_urls_content?: Record<string, string> | null;
   language: string;
   template?: string; // e.g. cv_base.html (modern)
+  /** PDF theme accent #RRGGBB */
+  template_accent?: string;
   /** Pre-computed from ATS optimize (skips AI tailoring) */
   pre_tailored_summary?: string | null;
   pre_tailored_experience?: Array<Record<string, unknown>> | null;
@@ -606,6 +608,7 @@ export type TailoredContent = {
   motivation_letter: string;
   keywords_to_highlight: string[];
   template: string;
+  template_accent?: string;
 };
 
 export async function getTailoredContent(sessionId: string): Promise<TailoredContent> {
@@ -636,6 +639,7 @@ export async function postCvGenerationPreviewHtml(
     tailored_summary?: string;
     tailored_experience?: TailoredContent['tailored_experience'];
     template?: string;
+    template_accent?: string;
     tailored_headline?: string;
     keywords_to_highlight?: string[];
     cv_section_includes?: Record<string, unknown>;
@@ -656,12 +660,16 @@ export async function regenerateCv(
   sessionId: string,
   template?: string,
   tailoredHeadline?: string,
-  cvSectionIncludes?: Record<string, unknown> | null
+  cvSectionIncludes?: Record<string, unknown> | null,
+  templateAccent?: string
 ): Promise<{ ok: boolean; session_id: string }> {
   const payload: Record<string, unknown> = {
     session_id: sessionId,
     template: template || 'cv_base.html',
   };
+  if (templateAccent !== undefined && templateAccent !== '') {
+    payload.template_accent = templateAccent;
+  }
   if (tailoredHeadline !== undefined) {
     payload.tailored_headline = tailoredHeadline;
   }
@@ -731,13 +739,15 @@ export function downloadLetterPdfUrl(sessionId: string): string {
 }
 
 /** URL for CV HTML preview endpoint */
-export function previewCvHtmlUrl(template: string = 'cv_base.html'): string {
-  return `${API_BASE}/preview-cv-html?template=${encodeURIComponent(template)}`;
+export function previewCvHtmlUrl(template: string = 'cv_base.html', accent?: string): string {
+  const q = new URLSearchParams({ template });
+  if (accent && accent.trim()) q.set('accent', accent.trim());
+  return `${API_BASE}/preview-cv-html?${q.toString()}`;
 }
 
 /** Fetch CV HTML with credentials and open in new window (works cross-origin). */
-export async function openPreviewCvHtml(template: string = 'cv_base.html'): Promise<void> {
-  const res = await fetch(previewCvHtmlUrl(template), fetchOptions);
+export async function openPreviewCvHtml(template: string = 'cv_base.html', accent?: string): Promise<void> {
+  const res = await fetch(previewCvHtmlUrl(template, accent), fetchOptions);
   if (!res.ok) throw new Error(res.status === 401 ? 'Sign in to preview' : 'Preview failed');
   const html = await res.text();
   const w = window.open('', '_blank');
