@@ -88,6 +88,71 @@ def send_welcome_email(to_address: str) -> bool:
         return False
 
 
+def send_password_reset_email(to_address: str, reset_url: str) -> bool:
+    """
+    Send password reset link. Returns True if Resend accepted the request.
+    No-op (returns False) if Resend is not configured.
+    """
+    key = (settings.resend_api_key or "").strip()
+    from_addr = (settings.resend_from_email or "").strip()
+    if not key:
+        logger.warning("Password reset email skipped: RESEND_API_KEY not set")
+        return False
+    if not from_addr:
+        logger.warning("Password reset email skipped: RESEND_FROM_EMAIL not set")
+        return False
+
+    subject = "Reset your Optimal CV password"
+    text = (
+        "We received a request to reset the password for your Optimal CV account.\n\n"
+        "Open this link to choose a new password (valid for one hour):\n\n"
+        f"{reset_url}\n\n"
+        "If you did not ask for this, you can ignore this email.\n\n"
+        "Optimal CV\n"
+    )
+    html = f"""\
+<!DOCTYPE html>
+<html>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1e293b;">
+  <p>We received a request to reset the password for your <strong>Optimal CV</strong> account.</p>
+  <p>
+    <a href="{reset_url}" style="display: inline-block; margin: 8px 0; padding: 10px 16px; background: #1e40af; color: #fff; text-decoration: none; border-radius: 8px;">Choose a new password</a>
+  </p>
+  <p style="font-size: 14px; color: #64748b;">This link expires in one hour. If you did not ask for a reset, you can ignore this email.</p>
+  <p style="margin-top: 24px; font-size: 14px; color: #64748b;">Optimal CV</p>
+</body>
+</html>"""
+
+    try:
+        with httpx.Client(timeout=20.0) as client:
+            r = client.post(
+                RESEND_API,
+                headers={
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": from_addr,
+                    "to": [to_address],
+                    "subject": subject,
+                    "text": text,
+                    "html": html,
+                },
+            )
+        if r.is_success:
+            logger.info("Resend password reset OK status=%s", r.status_code)
+            return True
+        logger.error(
+            "Resend password reset failed: %s %s",
+            r.status_code,
+            r.text[:500] if r.text else "",
+        )
+        return False
+    except Exception as e:
+        logger.exception("Resend password reset error: %s", e)
+        return False
+
+
 def send_profile_incomplete_reminder_email(to_address: str) -> bool:
     """
     One-time nudge to complete required profile fields. Returns True if Resend accepted.

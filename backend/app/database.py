@@ -3,8 +3,11 @@ SQLite store for user profiles. User identified by cookie (user_id).
 Only the source profile from CV upload is stored here; tailored content
 is never persisted. Each job gets a fresh, optimized CV from this source.
 """
+import hashlib
 import json
+import secrets
 import sqlite3
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Optional
@@ -82,6 +85,14 @@ def init_db() -> None:
         except sqlite3.OperationalError as e:
             if "duplicate column" not in str(e).lower():
                 raise
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                token_hash TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                expires_at INTEGER NOT NULL,
+                created_at INTEGER NOT NULL
+            )
+        """)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS ats_match_results (
                 token TEXT PRIMARY KEY,
@@ -248,6 +259,53 @@ def update_user_password_hash(user_id: str, password_hash: str) -> None:
     with _get_conn() as conn:
         conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
         conn.commit()
+
+
+PASSWORD_RESET_TTL_SECONDS = 3600
+
+
+def _password_reset_token_hash(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.strip().encode("utf-8")).hexdigest()
+
+
+def create_password_reset_token_for_user(user_id: str) -> str:
+    """Remove prior tokens for this user, store a new one, return the raw token (email only)."""
+    init_db()
+    raw = secrets.token_urlsafe(32)
+    th = _password_reset_token_hash(raw)
+    now = int(time.time())
+    expires = now + PASSWORD_RESET_TTL_SECONDS
+    with _get_conn() as conn:
+        conn.execute("DELETE FROM password_reset_tokens WHERE user_id = ?", (user_id,))
+        conn.execute(
+            "INSERT INTO password_reset_tokens (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)",
+            (th, user_id, expires, now),
+        )
+        conn.commit()
+    return raw
+
+
+def consume_password_reset_token(raw_token: str) -> Optional[str]:
+    """If token exists and is not expired, delete it and return user_id. Otherwise None."""
+    if not raw_token or not raw_token.strip():
+        return None
+    init_db()
+    th = _password_reset_token_hash(raw_token)
+    now = int(time.time())
+    with _get_conn() as conn:
+        row = conn.execute(
+            "SELECT user_id, expires_at FROM password_reset_tokens WHERE token_hash = ?",
+            (th,),
+        ).fetchone()
+        if not row:
+            return None
+        if now > int(row["expires_at"]):
+            conn.execute("DELETE FROM password_reset_tokens WHERE token_hash = ?", (th,))
+            conn.commit()
+            return None
+        conn.execute("DELETE FROM password_reset_tokens WHERE token_hash = ?", (th,))
+        conn.commit()
+        return str(row["user_id"])
 
 
 def get_profile(user_id: str) -> Optional[Profile]:
@@ -1068,6 +1126,7 @@ def delete_user(user_id: str) -> None:
         conn.execute("DELETE FROM profiles WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM cv_generations WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM job_applications WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM password_reset_tokens WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
         conn.commit()
 

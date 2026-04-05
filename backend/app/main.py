@@ -7,6 +7,7 @@ import logging
 import secrets
 import threading
 import time
+from urllib.parse import quote
 from contextlib import asynccontextmanager
 from io import BytesIO
 
@@ -15,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response as HttpResponse, HTMLResponse
 
 from app.config import settings
-from app.mail import send_welcome_email_if_needed
+from app.mail import send_password_reset_email, send_welcome_email_if_needed
 from app.profile_reminders import run_profile_incomplete_reminders
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,8 @@ from app.database import (
     delete_user as db_delete_user,
     get_admin_stats as db_get_admin_stats,
     get_all_users_for_admin as db_get_all_users_for_admin,
+    consume_password_reset_token as db_consume_password_reset_token,
+    create_password_reset_token_for_user as db_create_password_reset_token_for_user,
     insert_cv_generation as db_insert_cv_generation,
     get_cv_generations_by_user as db_get_cv_generations_by_user,
     get_cv_generation as db_get_cv_generation,
@@ -396,6 +399,61 @@ async def login(request: Request, response: Response, body: dict = Body(...)):
     except Exception as e:
         logger.exception("login failed: %s", e)
         raise HTTPException(500, "Login failed") from e
+
+
+_FORGOT_PASSWORD_MESSAGE = (
+    "If an account exists for that email, you will receive a link to reset your password shortly. Please check your spam folder if you don't see it in your inbox."
+)
+
+
+def _public_site_origin() -> str:
+    base = (settings.public_site_url or settings.frontend_url or "https://optimal.cv").strip().rstrip("/")
+    return base or "https://optimal.cv"
+
+
+def _password_reset_email_thread(email_addr: str, user_id: str) -> None:
+    try:
+        raw = db_create_password_reset_token_for_user(user_id)
+        reset_url = f"{_public_site_origin()}/reset-password?token={quote(raw, safe='')}"
+        send_password_reset_email(email_addr, reset_url)
+    except Exception:
+        logger.exception("password reset email failed user_id=%s", user_id)
+
+
+@app.post("/api/auth/forgot-password")
+async def forgot_password(body: dict = Body(...)):
+    """Request a password reset email. Always returns the same message (no email enumeration)."""
+    email = (body.get("email") or "").strip()
+    if not email:
+        raise HTTPException(400, "Email is required")
+    user = db_get_user_by_email(email)
+    if user:
+        threading.Thread(
+            target=_password_reset_email_thread,
+            args=(user["email"], user["id"]),
+            name="password-reset-email",
+            daemon=True,
+        ).start()
+    return {"ok": True, "message": _FORGOT_PASSWORD_MESSAGE}
+
+
+@app.post("/api/auth/reset-password")
+async def reset_password(body: dict = Body(...)):
+    """Set a new password using a one-time token from the reset email."""
+    raw_token = (body.get("token") or "").strip()
+    new_pw = body.get("new_password") or ""
+    if not raw_token:
+        raise HTTPException(400, "Reset token is required")
+    if len(new_pw) < 8:
+        raise HTTPException(400, "Password must be at least 8 characters")
+    user_id = db_consume_password_reset_token(raw_token)
+    if not user_id:
+        raise HTTPException(
+            400,
+            "This reset link is invalid or has expired. Please request a new one from the sign-in page.",
+        )
+    db_update_user_password_hash(user_id, hash_password(new_pw))
+    return {"ok": True}
 
 
 @app.get("/api/auth/me")

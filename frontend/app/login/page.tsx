@@ -11,6 +11,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
+  const passwordResetOk = searchParams.get('reset') === '1';
   const { setUserFromAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,6 +38,11 @@ function LoginForm() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-bold text-slate-800 mb-4">Sign in</h1>
+        {passwordResetOk && (
+          <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-900">
+            Your password was updated. Sign in with your new password.
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
@@ -79,6 +85,14 @@ function LoginForm() {
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        <p className="mt-3 text-center text-sm">
+          <Link
+            href="/forgot-password"
+            className="text-slate-600 hover:text-blue-700 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </p>
         <p className="mt-4 text-center text-sm text-slate-600">
           No account?{' '}
           <Link href={redirectTo !== '/' ? `/register?redirect=${encodeURIComponent(redirectTo)}` : '/register'} className="text-blue-700 hover:underline font-medium">

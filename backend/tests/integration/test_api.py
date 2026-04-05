@@ -4,10 +4,14 @@ Mocks OpenAI and optional PDF generation so tests don't require API key or Weasy
 """
 import io
 import json
+import uuid
 from unittest.mock import patch, MagicMock, AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
+
+from app.auth import hash_password
+from app.database import create_password_reset_token_for_user, create_user
 
 
 @pytest.fixture
@@ -273,3 +277,43 @@ def test_fetch_job_description_with_url_calls_fetcher(client: TestClient):
     assert r.status_code == 200
     assert r.json()["content"] == "Fetched job text"
     mock_fetch.assert_called_once()
+
+
+def test_forgot_password_uniform_response(client: TestClient):
+    """POST /api/auth/forgot-password returns ok for unknown email (no enumeration)."""
+    r = client.post("/api/auth/forgot-password", json={"email": "nonexistent-reset@test.invalid"})
+    assert r.status_code == 200
+    data = r.json()
+    assert data.get("ok") is True
+    assert "message" in data
+
+
+def test_reset_password_then_login(client: TestClient):
+    """Valid one-time token updates password; old password fails, new works."""
+    email = f"pwreset_{uuid.uuid4().hex[:12]}@example.com"
+    user_id = create_user(email, hash_password("Firstpass1"))
+    raw = create_password_reset_token_for_user(user_id)
+    r = client.post(
+        "/api/auth/reset-password",
+        json={"token": raw, "new_password": "Secondpass2"},
+    )
+    assert r.status_code == 200, r.text
+    assert client.post("/api/auth/login", json={"email": email, "password": "Firstpass1"}).status_code == 401
+    r_new = client.post("/api/auth/login", json={"email": email, "password": "Secondpass2"})
+    assert r_new.status_code == 200, r_new.text
+
+
+def test_reset_password_single_use(client: TestClient):
+    """Second submit with same token fails."""
+    email = f"pwreuse_{uuid.uuid4().hex[:12]}@example.com"
+    user_id = create_user(email, hash_password("Oldoldold1"))
+    raw = create_password_reset_token_for_user(user_id)
+    assert client.post(
+        "/api/auth/reset-password",
+        json={"token": raw, "new_password": "Newnewnew1"},
+    ).status_code == 200
+    r2 = client.post(
+        "/api/auth/reset-password",
+        json={"token": raw, "new_password": "Otherother1"},
+    )
+    assert r2.status_code == 400
