@@ -118,9 +118,9 @@ export function LandingPage() {
                 Convert your LinkedIn page into a professional resume
               </h2>
               <p className="mt-3 text-slate-600 leading-relaxed">
-                Export your LinkedIn profile as JSON (or upload a PDF resume). You can upload and preview before creating
-                an account; we parse it into an editable profile so you can refine details and generate tailored resumes
-                and motivation letters for each job.
+                Save your LinkedIn profile as a PDF (profile → More → Save to PDF) and upload it here. You can upload and
+                preview before creating an account; we parse it into an editable profile so you can refine details and
+                generate tailored resumes and motivation letters for each job.
               </p>
             </div>
             <Link

@@ -326,12 +326,12 @@ export default function GetStartedPage() {
             <>
               <h1 className="text-xl font-semibold text-slate-800">Add your resume</h1>
               <p className="text-sm text-slate-600">
-                Try the tool before creating an account. Upload a PDF or LinkedIn JSON export, or start from scratch.
+                Try the tool before creating an account. Upload a resume PDF, or start from scratch.
               </p>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Upload PDF or JSON</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Upload your resume</label>
                   <input
                     type="file"
                     accept=".pdf,.json"
@@ -360,17 +360,11 @@ export default function GetStartedPage() {
                 </button>
 
                 <details className="rounded-lg border border-slate-200 bg-slate-50/80 p-4 text-sm">
-                  <summary className="cursor-pointer font-medium text-slate-800">Import from LinkedIn (JSON)</summary>
-                  <ol className="mt-3 list-decimal space-y-2 pl-5 text-slate-600">
-                    <li>
-                      On LinkedIn: <strong>Settings &amp; Privacy</strong> → <strong>Data privacy</strong> →{' '}
-                      <strong>Get a copy of your data</strong>.
-                    </li>
-                    <li>Request the larger archive (includes profile JSON).</li>
-                    <li>Download the ZIP, unzip, and upload the profile JSON file here (same as PDF upload).</li>
-                  </ol>
-                  <p className="mt-2 text-slate-500">
-                    You can also export a PDF resume from LinkedIn and upload the PDF instead.
+                  <summary className="cursor-pointer font-medium text-slate-800">Import from LinkedIn</summary>
+                  <p className="mt-3 text-slate-600 leading-relaxed">
+                    To save your profile as a PDF, go to your profile, click <strong>More</strong>, and select{' '}
+                    <strong>Save to PDF</strong>. Then upload that file using the button above—we’ll pull your details into
+                    an editable profile.
                   </p>
                 </details>
               </div>

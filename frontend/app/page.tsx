@@ -329,7 +329,7 @@ function OnboardingUI({
       {step === 1 && (
         <>
           <p className="text-sm text-slate-600">
-            Upload your resume as a PDF or LinkedIn JSON export. We’ll extract your information.
+            Upload your resume as a PDF (for example from LinkedIn via More → Save to PDF). We’ll extract your information.
           </p>
           <input
             type="file"
