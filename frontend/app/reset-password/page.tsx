@@ -9,6 +9,7 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token')?.trim() ?? '';
+  const accountEmail = searchParams.get('email')?.trim() ?? '';
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -33,7 +34,9 @@ function ResetPasswordForm() {
     setLoading(true);
     try {
       await resetPasswordWithToken(token, password);
-      router.push('/login?reset=1');
+      const loginQs = new URLSearchParams({ reset: '1' });
+      if (accountEmail) loginQs.set('email', accountEmail);
+      router.push(`/login?${loginQs.toString()}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Reset failed');
@@ -101,7 +104,14 @@ function ResetPasswordForm() {
             Request a new link
           </Link>
           {' · '}
-          <Link href="/login" className="text-blue-700 hover:underline font-medium">
+          <Link
+            href={
+              accountEmail
+                ? `/login?email=${encodeURIComponent(accountEmail)}`
+                : '/login'
+            }
+            className="text-blue-700 hover:underline font-medium"
+          >
             Sign in
           </Link>
         </p>

@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { login } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 
@@ -12,9 +12,19 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
   const passwordResetOk = searchParams.get('reset') === '1';
+  const emailFromQuery = searchParams.get('email');
   const { setUserFromAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    if (!emailFromQuery?.trim()) return;
+    try {
+      setEmail(decodeURIComponent(emailFromQuery.trim()));
+    } catch {
+      setEmail(emailFromQuery.trim());
+    }
+  }, [emailFromQuery]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

@@ -414,7 +414,10 @@ def _public_site_origin() -> str:
 def _password_reset_email_thread(email_addr: str, user_id: str) -> None:
     try:
         raw = db_create_password_reset_token_for_user(user_id)
-        reset_url = f"{_public_site_origin()}/reset-password?token={quote(raw, safe='')}"
+        reset_url = (
+            f"{_public_site_origin()}/reset-password?token={quote(raw, safe='')}"
+            f"&email={quote(email_addr, safe='')}"
+        )
         send_password_reset_email(email_addr, reset_url)
     except Exception:
         logger.exception("password reset email failed user_id=%s", user_id)

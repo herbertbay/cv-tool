@@ -66,7 +66,14 @@ export default function ForgotPasswordPage() {
           </form>
         )}
         <p className="mt-4 text-center text-sm text-slate-600">
-          <Link href="/login" className="text-blue-700 hover:underline font-medium">
+          <Link
+            href={
+              email.trim()
+                ? `/login?email=${encodeURIComponent(email.trim())}`
+                : '/login'
+            }
+            className="text-blue-700 hover:underline font-medium"
+          >
             Back to sign in
           </Link>
         </p>
