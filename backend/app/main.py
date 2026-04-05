@@ -64,13 +64,14 @@ from app.models import (
     GenerateCVRequest,
     GenerateCVResponse,
     ProfileUpdateRequest,
+    GuestCvPreviewRequest,
 )
 from app.linkedin_parser import parse_linkedin_json
 from app.pdf_profile_parser import parse_pdf_to_profile
 from app.url_fetcher import fetch_job_description, fetch_additional_urls
 from app.ai_service import tailor_cv_and_letter, calculate_ats_match_score, extract_job_application, generate_motivation_letter
 from app.ats_scorer import compute_ats_match
-from app.cv_templates import coerce_template, normalize_accent_color
+from app.cv_templates import coerce_template, normalize_accent_color, clamp_accent_for_white_background
 from app.pdf_generator import generate_cv_pdf, generate_letter_pdf, render_cv_html
 from app.cv_section_includes import merge_application_skills_education, apply_cv_section_includes
 from app.session_store import (
@@ -535,6 +536,60 @@ async def parse_cv(request: Request, file: UploadFile = File(...)):
         raise HTTPException(400, f"Failed to parse file: {str(e)}")
 
 
+@app.post("/api/parse-cv-preview")
+async def parse_cv_preview(file: UploadFile = File(...)):
+    """
+    Parse uploaded CV (PDF or JSON) without auth or DB write.
+    Used during onboarding before account creation.
+    """
+    if not file.filename:
+        raise HTTPException(400, "Expected a file")
+    raw = await file.read()
+    ext = file.filename.lower().split(".")[-1]
+    try:
+        if ext == "json":
+            profile = parse_linkedin_json(raw)
+        elif ext == "pdf":
+            profile = parse_pdf_to_profile(raw)
+        else:
+            raise HTTPException(400, "Expected a PDF or JSON file")
+        return profile.model_dump()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Failed to parse file: {str(e)}")
+
+
+@app.post("/api/preview-cv-guest")
+async def preview_cv_guest(body: GuestCvPreviewRequest):
+    """
+    Render CV HTML from a profile JSON (no auth). For live preview during onboarding.
+    """
+    try:
+        profile = Profile(**body.profile)
+    except Exception as e:
+        raise HTTPException(400, f"Invalid profile: {e}")
+    template_name = coerce_template(body.template)
+    accent_hex = clamp_accent_for_white_background(normalize_accent_color(body.template_accent))
+    urls = [
+        u
+        for u in (body.additional_urls or [])
+        if u and str(u).strip().startswith(("http://", "https://"))
+    ]
+    tailored_experience = [e.model_dump() for e in (profile.experience or [])]
+    html_str = render_cv_html(
+        profile=profile,
+        tailored_summary=profile.summary or "",
+        tailored_experience=tailored_experience,
+        keywords_to_highlight=[],
+        template_name=template_name,
+        additional_urls=urls,
+        show_powered_by=True,
+        accent_color=accent_hex,
+    )
+    return HTMLResponse(html_str)
+
+
 @app.get("/api/profile")
 async def api_get_profile(request: Request):
     """Return profile, additional_urls, and personal_summary for the authenticated user."""
@@ -546,12 +601,16 @@ async def api_get_profile(request: Request):
             "additional_urls": [],
             "personal_summary": "",
             "onboarding_complete": False,
+            "default_cv_template": "cv_base.html",
+            "default_cv_accent": "#2563eb",
         }
     return {
         "profile": data["profile"].model_dump(),
         "additional_urls": data["additional_urls"],
         "personal_summary": data["personal_summary"],
         "onboarding_complete": data.get("onboarding_complete", False),
+        "default_cv_template": data.get("default_cv_template") or "cv_base.html",
+        "default_cv_accent": data.get("default_cv_accent") or "#2563eb",
     }
 
 
@@ -566,14 +625,22 @@ async def api_put_profile(request: Request, body: dict = Body(...)):
     additional_urls = body.get("additional_urls")
     personal_summary = body.get("personal_summary")
     onboarding_complete = body.get("onboarding_complete")
+    default_cv_template = body.get("default_cv_template")
+    default_cv_accent = body.get("default_cv_accent")
     if profile is not None:
         profile = Profile(**profile)
+    if default_cv_template is not None and not isinstance(default_cv_template, str):
+        default_cv_template = str(default_cv_template)
+    if default_cv_accent is not None and not isinstance(default_cv_accent, str):
+        default_cv_accent = str(default_cv_accent)
     db_save_user_data(
         user_id,
         profile=profile,
         additional_urls=additional_urls,
         personal_summary=personal_summary,
         onboarding_complete=onboarding_complete,
+        default_cv_template=default_cv_template,
+        default_cv_accent=default_cv_accent,
     )
     data = db_get_user_data(user_id)
     return {
@@ -581,6 +648,8 @@ async def api_put_profile(request: Request, body: dict = Body(...)):
         "additional_urls": data["additional_urls"],
         "personal_summary": data["personal_summary"],
         "onboarding_complete": data.get("onboarding_complete", False),
+        "default_cv_template": data.get("default_cv_template") or "cv_base.html",
+        "default_cv_accent": data.get("default_cv_accent") or "#2563eb",
     }
 
 
@@ -793,6 +862,9 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
     Returns session_id and tailored content; PDF can be downloaded via /api/download-pdf/{session_id}.
     """
     user_id = require_user(request)
+    ud = db_get_user_data(user_id) or {}
+    def_tpl = ud.get("default_cv_template") or "cv_base.html"
+    def_acc = ud.get("default_cv_accent")
     try:
         job_text = req.job_description
         # If job looks like URL, fetch
@@ -911,8 +983,16 @@ async def generate_cv(request: Request, req: GenerateCVRequest):
         )
 
         # Generate CV PDF and letter PDF (separate files)
-        template_name = coerce_template(getattr(req, "template", None) or "cv_base.html")
-        accent_hex = normalize_accent_color(getattr(req, "template_accent", None))
+        req_t = getattr(req, "template", None)
+        if isinstance(req_t, str) and req_t.strip():
+            template_name = coerce_template(req_t)
+        else:
+            template_name = coerce_template(def_tpl)
+        req_a = getattr(req, "template_accent", None)
+        if isinstance(req_a, str) and req_a.strip():
+            accent_hex = normalize_accent_color(req_a)
+        else:
+            accent_hex = normalize_accent_color(def_acc)
         extra_urls = [u for u in (req.additional_urls or []) if u and str(u).strip().startswith(("http://", "https://"))]
         show_powered_by = not _is_premium_user(user_id)
         cv_pdf_bytes = generate_cv_pdf(

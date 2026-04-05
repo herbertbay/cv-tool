@@ -44,6 +44,12 @@ def init_db() -> None:
                 updated_at TEXT NOT NULL
             )
         """)
+        for col in ("default_cv_template", "default_cv_accent"):
+            try:
+                conn.execute(f"ALTER TABLE profiles ADD COLUMN {col} TEXT")
+            except sqlite3.OperationalError as e:
+                if "duplicate column" not in str(e).lower():
+                    raise
         for col, default in [
             ("additional_urls", "'[]'"),
             ("personal_summary", "''"),
@@ -319,7 +325,9 @@ def get_user_data(user_id: str) -> Optional[dict]:
     init_db()
     with _get_conn() as conn:
         row = conn.execute(
-            "SELECT profile_json, additional_urls, personal_summary, onboarding_complete FROM profiles WHERE user_id = ?",
+            """SELECT profile_json, additional_urls, personal_summary, onboarding_complete,
+                      default_cv_template, default_cv_accent
+               FROM profiles WHERE user_id = ?""",
             (user_id,),
         ).fetchone()
     if not row:
@@ -335,6 +343,8 @@ def get_user_data(user_id: str) -> Optional[dict]:
         "additional_urls": additional_urls,
         "personal_summary": personal_summary,
         "onboarding_complete": onboarding_complete,
+        "default_cv_template": row["default_cv_template"] or "cv_base.html",
+        "default_cv_accent": row["default_cv_accent"] or "#2563eb",
     }
 
 
@@ -362,8 +372,10 @@ def save_user_data(
     additional_urls: Optional[list] = None,
     personal_summary: Optional[str] = None,
     onboarding_complete: Optional[bool] = None,
+    default_cv_template: Optional[str] = None,
+    default_cv_accent: Optional[str] = None,
 ) -> None:
-    """Update one or more of profile, additional_urls, personal_summary, onboarding_complete."""
+    """Update one or more profile fields including optional base CV PDF theme defaults."""
     import time
     init_db()
     data = get_user_data(user_id)
@@ -375,6 +387,8 @@ def save_user_data(
             "additional_urls": additional_urls if additional_urls is not None else [],
             "personal_summary": personal_summary if personal_summary is not None else "",
             "onboarding_complete": onboarding_complete if onboarding_complete is not None else False,
+            "default_cv_template": default_cv_template if default_cv_template is not None else "cv_base.html",
+            "default_cv_accent": default_cv_accent if default_cv_accent is not None else "#2563eb",
         }
     else:
         if profile is not None:
@@ -385,16 +399,27 @@ def save_user_data(
             data["personal_summary"] = personal_summary
         if onboarding_complete is not None:
             data["onboarding_complete"] = onboarding_complete
+        if default_cv_template is not None:
+            data["default_cv_template"] = default_cv_template
+        if default_cv_accent is not None:
+            data["default_cv_accent"] = default_cv_accent
+        if "default_cv_template" not in data:
+            data["default_cv_template"] = "cv_base.html"
+        if "default_cv_accent" not in data:
+            data["default_cv_accent"] = "#2563eb"
     with _get_conn() as conn:
         conn.execute(
             """
-            INSERT INTO profiles (user_id, profile_json, additional_urls, personal_summary, onboarding_complete, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO profiles (user_id, profile_json, additional_urls, personal_summary, onboarding_complete,
+                default_cv_template, default_cv_accent, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 profile_json = excluded.profile_json,
                 additional_urls = excluded.additional_urls,
                 personal_summary = excluded.personal_summary,
                 onboarding_complete = excluded.onboarding_complete,
+                default_cv_template = excluded.default_cv_template,
+                default_cv_accent = excluded.default_cv_accent,
                 updated_at = excluded.updated_at
             """,
             (
@@ -403,6 +428,8 @@ def save_user_data(
                 json.dumps(data["additional_urls"]),
                 data["personal_summary"] or "",
                 1 if data["onboarding_complete"] else 0,
+                data.get("default_cv_template") or "cv_base.html",
+                data.get("default_cv_accent") or "#2563eb",
                 time.strftime("%Y-%m-%d %H:%M:%S"),
             ),
         )

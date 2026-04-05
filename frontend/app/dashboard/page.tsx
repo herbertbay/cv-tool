@@ -73,7 +73,11 @@ function DashboardContent() {
     }
     setLoading(true);
     getProfile()
-      .then((data) => setUserData(data))
+      .then((data) => {
+        setUserData(data);
+        setTemplate(data.default_cv_template || 'cv_base.html');
+        setTemplateAccent(data.default_cv_accent || DEFAULT_CV_ACCENT);
+      })
       .catch(() => setUserData(null))
       .finally(() => setLoading(false));
   }, [user, router]);
@@ -232,6 +236,8 @@ function DashboardContent() {
           setTemplate={setTemplate}
           templateAccent={templateAccent}
           setTemplateAccent={setTemplateAccent}
+          previewProfile={userData?.profile ?? null}
+          additionalUrls={userData?.additional_urls?.filter((u) => u?.trim().startsWith('http')) ?? []}
           progress={generateProgress}
           error={generateError}
           result={result}

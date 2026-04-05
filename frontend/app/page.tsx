@@ -7,6 +7,8 @@ import { parseCV, getProfile, putUserData, type Profile, type UserData } from '.
 import { useAuth } from './lib/auth-context';
 import { LandingPage } from './components/LandingPage';
 import { UserEmailMenu } from './components/UserEmailMenu';
+import { CvThemePicker } from './components/CvThemePicker';
+import { DEFAULT_CV_ACCENT } from './lib/cv-templates';
 
 const emptyProfile: Profile = {
   full_name: '',
@@ -40,8 +42,9 @@ function HomePageContent() {
   const { user } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3>(1);
-  // Onboarding state (for steps 2–3 before save)
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1);
+  const [cvTemplate, setCvTemplate] = useState('cv_base.html');
+  const [cvAccent, setCvAccent] = useState(DEFAULT_CV_ACCENT);
   const [additionalUrls, setAdditionalUrls] = useState<string[]>(['', '', '', '', '']);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [profileWithPhoto, setProfileWithPhoto] = useState<Profile | null>(null);
@@ -56,6 +59,8 @@ function HomePageContent() {
     getProfile()
       .then((data) => {
         setUserData(data);
+        setCvTemplate(data.default_cv_template || 'cv_base.html');
+        setCvAccent(data.default_cv_accent || DEFAULT_CV_ACCENT);
         if (hasProfileData(data.profile) && !data.onboarding_complete) {
           setOnboardingStep(2);
           setAdditionalUrls(Array.isArray(data.additional_urls) && data.additional_urls.length > 0 ? data.additional_urls : ['', '', '', '', '']);
@@ -91,6 +96,8 @@ function HomePageContent() {
           additional_urls: prev?.additional_urls ?? [],
           personal_summary: prev?.personal_summary ?? '',
           onboarding_complete: prev?.onboarding_complete ?? false,
+          default_cv_template: prev?.default_cv_template,
+          default_cv_accent: prev?.default_cv_accent,
         }));
         setParseProgress('');
         setOnboardingStep(2);
@@ -119,7 +126,30 @@ function HomePageContent() {
     }
   }, [user, additionalUrls]);
 
-  // Onboarding: Step 3: Photo change
+  const handleOnboardingNextFromTheme = useCallback(async () => {
+    if (!user) return;
+    setOnboardingSaving(true);
+    setOnboardingError(null);
+    try {
+      await putUserData({ default_cv_template: cvTemplate, default_cv_accent: cvAccent });
+      setUserData((prev) =>
+        prev
+          ? {
+              ...prev,
+              default_cv_template: cvTemplate,
+              default_cv_accent: cvAccent,
+            }
+          : null
+      );
+      setOnboardingStep(4);
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setOnboardingSaving(false);
+    }
+  }, [user, cvTemplate, cvAccent]);
+
+  // Onboarding: Step 4: Photo change
   const handlePhotoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -129,7 +159,7 @@ function HomePageContent() {
     reader.readAsDataURL(file);
   }, [userData?.profile]);
 
-  // Onboarding: Save and continue (step 3 → default page)
+  // Onboarding: Save and continue (step 4 → default page)
   const handleOnboardingComplete = useCallback(async () => {
     if (!user) return;
     setOnboardingSaving(true);
@@ -163,7 +193,7 @@ function HomePageContent() {
               <>
                 <Link href="/login" className="text-slate-600 hover:text-blue-700 transition-colors">Sign in</Link>
                 <Link
-                  href="/register"
+                  href="/get-started"
                   className="inline-flex items-center justify-center rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-700/20 hover:bg-indigo-800 transition-colors"
                 >
                   Get started
@@ -191,9 +221,14 @@ function HomePageContent() {
             additionalUrls={additionalUrls}
             setAdditionalUrls={setAdditionalUrls}
             profileWithPhoto={profileDisplay}
+            cvTemplate={cvTemplate}
+            cvAccent={cvAccent}
+            onCvTemplateChange={setCvTemplate}
+            onCvAccentChange={setCvAccent}
             onCVUpload={handleCVUpload}
             onPhotoChange={handlePhotoChange}
             onNextFromUrls={handleOnboardingNextFromUrls}
+            onNextFromTheme={handleOnboardingNextFromTheme}
             onComplete={handleOnboardingComplete}
             saving={onboardingSaving}
             parseProgress={parseProgress}
@@ -213,48 +248,88 @@ function HomePageContent() {
   );
 }
 
-// Onboarding (steps 1–3)
+function OnboardingStepper({ step }: { step: 1 | 2 | 3 | 4 }) {
+  const labels = ['Upload', 'Links', 'Look', 'Photo'];
+  return (
+    <nav aria-label="Onboarding progress" className="mb-6">
+      <ol className="flex flex-wrap gap-3 text-xs sm:text-sm">
+        {labels.map((label, i) => {
+          const n = (i + 1) as 1 | 2 | 3 | 4;
+          const active = step === n;
+          const done = step > n;
+          return (
+            <li key={label} className="flex items-center gap-2">
+              <span
+                className={`flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-semibold ${
+                  active ? 'border-blue-700 bg-blue-700 text-white' : done ? 'border-emerald-600 bg-emerald-50 text-emerald-800' : 'border-slate-200 text-slate-500'
+                }`}
+              >
+                {done ? '✓' : i + 1}
+              </span>
+              <span className={active ? 'font-semibold text-slate-900' : 'text-slate-600'}>{label}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+// Onboarding (steps 1–4)
 function OnboardingUI({
   step,
   userData,
   additionalUrls,
   setAdditionalUrls,
   profileWithPhoto,
+  cvTemplate,
+  cvAccent,
+  onCvTemplateChange,
+  onCvAccentChange,
   onCVUpload,
   onPhotoChange,
   onNextFromUrls,
+  onNextFromTheme,
   onComplete,
   saving,
   parseProgress,
   parseError,
   error,
 }: {
-  step: 1 | 2 | 3;
+  step: 1 | 2 | 3 | 4;
   userData: UserData | null;
   additionalUrls: string[];
   setAdditionalUrls: (urls: string[]) => void;
   profileWithPhoto: Profile;
+  cvTemplate: string;
+  cvAccent: string;
+  onCvTemplateChange: (v: string) => void;
+  onCvAccentChange: (v: string) => void;
   onCVUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onNextFromUrls: () => void;
+  onNextFromTheme: () => void;
   onComplete: () => void;
   saving: boolean;
   parseProgress: string;
   parseError: string | null;
   error: string | null;
 }) {
+  const httpUrls = additionalUrls.filter((u) => u.trim().startsWith('http'));
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm max-w-2xl mx-auto space-y-6">
+      <OnboardingStepper step={step} />
       <h2 className="text-xl font-semibold text-slate-800">
         {step === 1 && 'Step 1: Upload your resume'}
         {step === 2 && 'Step 2: Additional links (optional)'}
-        {step === 3 && 'Step 3: Profile photo (optional)'}
+        {step === 3 && 'Step 3: Look & theme'}
+        {step === 4 && 'Step 4: Profile photo (optional)'}
       </h2>
 
       {step === 1 && (
         <>
           <p className="text-sm text-slate-600">
-            Upload your resume as a PDF (e.g. exported from LinkedIn or other sources). We’ll extract your information.
+            Upload your resume as a PDF or LinkedIn JSON export. We’ll extract your information.
           </p>
           <input
             type="file"
@@ -293,12 +368,40 @@ function OnboardingUI({
             disabled={saving}
             className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
           >
+            {saving ? 'Saving…' : 'Next: Choose look'}
+          </button>
+        </>
+      )}
+
+      {step === 3 && userData && (
+        <>
+          <p className="text-sm text-slate-600">
+            Choose the default template and accent for your base CV and new tailored resumes. You can change this anytime
+            in Edit profile.
+          </p>
+          <CvThemePicker
+            template={cvTemplate}
+            onTemplateChange={onCvTemplateChange}
+            accent={cvAccent}
+            onAccentChange={onCvAccentChange}
+            previewProfile={userData.profile}
+            additionalUrls={httpUrls}
+            showPreview
+            previewHeight={480}
+          />
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <button
+            type="button"
+            onClick={onNextFromTheme}
+            disabled={saving}
+            className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
+          >
             {saving ? 'Saving…' : 'Next: Add photo'}
           </button>
         </>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <>
           <p className="text-sm text-slate-600">Add a profile photo if you like.</p>
           {profileWithPhoto.photo_base64 && (

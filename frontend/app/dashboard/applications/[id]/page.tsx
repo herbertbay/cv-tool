@@ -21,14 +21,10 @@ import {
   type Profile,
 } from '../../../lib/api';
 import { defaultCvIncludes, toApiPayload, type CvSectionIncludesState } from '../../../lib/cv-section-includes';
-import {
-  CV_TEMPLATE_BASELINE,
-  CV_TEMPLATE_THEMES,
-  DEFAULT_CV_ACCENT,
-  normalizeClientAccentHex,
-} from '../../../lib/cv-templates';
+import { DEFAULT_CV_ACCENT, normalizeClientAccentHex } from '../../../lib/cv-templates';
 import { useAuth } from '../../../lib/auth-context';
 import { UserEmailMenu } from '../../../components/UserEmailMenu';
+import { CvThemePicker } from '../../../components/CvThemePicker';
 
 const APPLICATION_STATUSES: ApplicationStatus[] = ['Interested', 'Applied', 'Interview', 'Rejected', 'Offer'];
 
@@ -1203,49 +1199,20 @@ export default function ApplicationDetailPage() {
                       {letterError && <p className="mt-2 text-sm text-red-600">{letterError}</p>}
                     </div>
                     <div className="flex flex-col gap-4 pt-4 border-t border-slate-100 sm:flex-row sm:flex-wrap sm:items-end">
-                      <div className="min-w-[200px] flex-1 sm:max-w-xs">
-                        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500 mb-1">Resume template</label>
-                        <select
-                          value={tailored.template}
-                          onChange={(e) => setTailored((p) => p ? { ...p, template: e.target.value } : null)}
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        >
-                          <optgroup label="Baseline">
-                            {CV_TEMPLATE_BASELINE.map((t) => (
-                              <option key={t.value} value={t.value}>{t.label}</option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Creative themes">
-                            {CV_TEMPLATE_THEMES.map((t) => (
-                              <option key={t.value} value={t.value}>{t.label}</option>
-                            ))}
-                          </optgroup>
-                        </select>
-                      </div>
-                      <div className="flex flex-col gap-1 min-w-[160px]">
-                        <label className="block text-xs font-medium uppercase tracking-wider text-slate-500">Accent color</label>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <input
-                            type="color"
-                            aria-label="Pick resume accent color"
-                            value={normalizeClientAccentHex(tailored.template_accent ?? DEFAULT_CV_ACCENT)}
-                            onChange={(e) =>
-                              setTailored((p) => (p ? { ...p, template_accent: e.target.value } : null))
-                            }
-                            className="h-9 w-14 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
+                      <div className="flex-1 min-w-[min(100%,280px)] sm:max-w-xl">
+                        {tailored && (
+                          <CvThemePicker
+                            compact
+                            template={tailored.template}
+                            onTemplateChange={(v) => setTailored((p) => (p ? { ...p, template: v } : null))}
+                            accent={tailored.template_accent ?? DEFAULT_CV_ACCENT}
+                            onAccentChange={(v) => setTailored((p) => (p ? { ...p, template_accent: v } : null))}
+                            showPreview={false}
                           />
-                          <input
-                            type="text"
-                            value={tailored.template_accent ?? DEFAULT_CV_ACCENT}
-                            onChange={(e) =>
-                              setTailored((p) => (p ? { ...p, template_accent: e.target.value } : null))
-                            }
-                            spellCheck={false}
-                            className="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-mono"
-                            placeholder="#2563eb"
-                          />
-                        </div>
-                        <span className="text-[11px] text-slate-400">Headers, links, and highlights follow this color.</span>
+                        )}
+                        <span className="mt-2 block text-[11px] text-slate-400">
+                          Headers, links, and highlights follow this color (this application only).
+                        </span>
                       </div>
                       <button
                         type="button"

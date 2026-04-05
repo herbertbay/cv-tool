@@ -75,6 +75,47 @@ def test_parse_cv_invalid_json(auth_client: TestClient):
     assert r.status_code == 400
 
 
+def test_parse_cv_preview_no_auth(client: TestClient, sample_linkedin_json: str):
+    """POST /api/parse-cv-preview works without login and does not require DB."""
+    r = client.post(
+        "/api/parse-cv-preview",
+        files={"file": ("profile.json", io.BytesIO(sample_linkedin_json.encode()), "application/json")},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["full_name"] == "Alice Smith"
+
+
+def test_preview_cv_guest_returns_html(client: TestClient, sample_profile_dict: dict):
+    """POST /api/preview-cv-guest returns HTML for onboarding live preview."""
+    sample_profile_dict = {
+        **sample_profile_dict,
+        "education": [
+            {
+                "school": "State U",
+                "degree": "BS",
+                "field": "CS",
+                "start_date": "2016",
+                "end_date": "2020",
+                "description": None,
+            }
+        ],
+        "languages": ["English"],
+    }
+    r = client.post(
+        "/api/preview-cv-guest",
+        json={
+            "profile": sample_profile_dict,
+            "template": "cv_base.html",
+            "template_accent": "#2563eb",
+            "additional_urls": [],
+        },
+    )
+    assert r.status_code == 200
+    assert "html" in (r.headers.get("content-type") or "").lower()
+    assert len(r.text) > 200
+
+
 def test_get_profile_returns_empty_or_profile(auth_client: TestClient):
     """GET /api/profile returns profile dict (empty if new user)."""
     r = auth_client.get("/api/profile")

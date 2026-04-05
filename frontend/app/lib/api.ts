@@ -310,6 +310,45 @@ export async function deleteAccount(): Promise<void> {
 
 // --- Profile (require auth) ---
 
+/** Parse CV without saving (onboarding before login). */
+export async function parseCVPreview(file: File): Promise<Profile> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/parse-cv-preview`, {
+    method: 'POST',
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Failed to parse file');
+  }
+  return res.json();
+}
+
+/** Render CV HTML for live preview (no auth). */
+export async function previewCvGuestHtml(body: {
+  profile: Profile;
+  template?: string;
+  template_accent?: string;
+  additional_urls?: string[];
+}): Promise<string> {
+  const res = await fetch(`${API_BASE}/preview-cv-guest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      profile: body.profile,
+      template: body.template,
+      template_accent: body.template_accent,
+      additional_urls: body.additional_urls ?? [],
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Preview failed');
+  }
+  return res.text();
+}
+
 /** Parse CV (PDF or JSON) via backend. Requires auth. */
 export async function parseCV(file: File): Promise<Profile> {
   const form = new FormData();
@@ -333,6 +372,10 @@ export type UserData = {
   additional_urls: string[];
   personal_summary: string;
   onboarding_complete?: boolean;
+  /** Default PDF template for base resume and new tailored CVs (e.g. cv_base.html). */
+  default_cv_template?: string;
+  /** Default accent #RRGGBB for base resume and new tailored CVs. */
+  default_cv_accent?: string;
 };
 
 /** Get profile, additional_urls, and personal_summary for current user. Requires auth. */
@@ -346,6 +389,8 @@ export async function getProfile(): Promise<UserData> {
     additional_urls: Array.isArray(data.additional_urls) ? data.additional_urls : [],
     personal_summary: typeof data.personal_summary === 'string' ? data.personal_summary : '',
     onboarding_complete: Boolean(data.onboarding_complete),
+    default_cv_template: typeof data.default_cv_template === 'string' ? data.default_cv_template : 'cv_base.html',
+    default_cv_accent: typeof data.default_cv_accent === 'string' ? data.default_cv_accent : '#2563eb',
   };
 }
 
@@ -373,12 +418,16 @@ export async function putUserData(updates: {
   additional_urls?: string[];
   personal_summary?: string;
   onboarding_complete?: boolean;
+  default_cv_template?: string;
+  default_cv_accent?: string;
 }): Promise<UserData> {
   const body: Record<string, unknown> = {};
   if (updates.profile !== undefined) body.profile = updates.profile;
   if (updates.additional_urls !== undefined) body.additional_urls = updates.additional_urls;
   if (updates.personal_summary !== undefined) body.personal_summary = updates.personal_summary;
   if (updates.onboarding_complete !== undefined) body.onboarding_complete = updates.onboarding_complete;
+  if (updates.default_cv_template !== undefined) body.default_cv_template = updates.default_cv_template;
+  if (updates.default_cv_accent !== undefined) body.default_cv_accent = updates.default_cv_accent;
   const res = await fetch(`${API_BASE}/profile`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -393,6 +442,8 @@ export async function putUserData(updates: {
     additional_urls: Array.isArray(data.additional_urls) ? data.additional_urls : [],
     personal_summary: typeof data.personal_summary === 'string' ? data.personal_summary : '',
     onboarding_complete: Boolean(data.onboarding_complete),
+    default_cv_template: typeof data.default_cv_template === 'string' ? data.default_cv_template : 'cv_base.html',
+    default_cv_accent: typeof data.default_cv_accent === 'string' ? data.default_cv_accent : '#2563eb',
   };
 }
 

@@ -68,7 +68,7 @@ export function LandingPage() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href="/register"
+                  href="/get-started"
                   className="inline-flex items-center justify-center rounded-xl bg-indigo-700 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-700/25 hover:bg-indigo-800 transition-colors"
                 >
                   Get started
@@ -118,13 +118,13 @@ export function LandingPage() {
                 Convert your LinkedIn page into a professional resume
               </h2>
               <p className="mt-3 text-slate-600 leading-relaxed">
-                Export your LinkedIn profile as JSON (or upload a PDF resume) after you sign up, we parse it into an
-                editable profile so you can refine details and generate tailored resumes and motivation letters for each
-                job.
+                Export your LinkedIn profile as JSON (or upload a PDF resume). You can upload and preview before creating
+                an account; we parse it into an editable profile so you can refine details and generate tailored resumes
+                and motivation letters for each job.
               </p>
             </div>
             <Link
-              href="/register"
+              href="/get-started"
               className="shrink-0 inline-flex items-center justify-center rounded-xl bg-indigo-700 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-700/25 hover:bg-indigo-800 transition-colors"
             >
               Get started
@@ -168,7 +168,7 @@ export function LandingPage() {
           </div>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link
-              href="/register"
+              href="/get-started"
               className="inline-flex items-center rounded-xl bg-indigo-700 px-6 py-3 text-base font-semibold text-white hover:bg-indigo-800 transition-colors shadow-md shadow-indigo-700/20"
             >
               Create your first tailored resume
@@ -348,7 +348,7 @@ export function LandingPage() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
-              href="/register"
+              href="/get-started"
               className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-base font-semibold text-indigo-900 shadow-lg hover:bg-teal-50 transition-colors"
             >
               Get started
@@ -374,7 +374,7 @@ export function LandingPage() {
               <h3 className="text-xs font-bold uppercase tracking-wider text-teal-400/90">Product</h3>
               <ul className="mt-4 space-y-2 text-sm">
                 <li>
-                  <Link href="/register" className="hover:text-white transition-colors">
+                  <Link href="/get-started" className="hover:text-white transition-colors">
                     Get started
                   </Link>
                 </li>
@@ -408,7 +408,7 @@ export function LandingPage() {
                 account.
               </p>
               <Link
-                href="/register"
+                href="/get-started"
                 className="mt-4 inline-flex rounded-lg bg-gradient-to-r from-teal-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-teal-500 hover:to-indigo-500 transition-colors"
               >
                 Build your tailored resume
@@ -424,7 +424,7 @@ export function LandingPage() {
               <Link href="/cv-checker" className="hover:text-slate-300 transition-colors">
                 Resume checker
               </Link>
-              <Link href="/register" className="hover:text-slate-300 transition-colors">
+              <Link href="/get-started" className="hover:text-slate-300 transition-colors">
                 Get started
               </Link>
             </nav>

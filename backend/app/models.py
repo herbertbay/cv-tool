@@ -1,5 +1,5 @@
 """Pydantic models for API request/response and internal data structures."""
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -56,8 +56,8 @@ class GenerateCVRequest(BaseModel):
     additional_urls: list[str] = Field(default_factory=list, max_length=5)
     additional_urls_content: Optional[dict[str, str]] = None  # Optional: pre-fetched content
     language: str = "en"  # en, de, fr
-    template: str = "cv_base.html"  # see cv_templates.CV_TEMPLATE_FILES
-    template_accent: Optional[str] = None  # optional #RRGGBB for PDF theme color
+    template: Optional[str] = None  # falls back to profile default_cv_template
+    template_accent: Optional[str] = None  # falls back to profile default_cv_accent; #RRGGBB
     # Optional: pre-computed from ATS optimize (skips tailor_cv_and_letter)
     pre_tailored_summary: Optional[str] = None
     pre_tailored_experience: Optional[list[dict]] = None
@@ -91,3 +91,12 @@ class SessionInfo(BaseModel):
     session_id: str
     created_at: str
     has_pdf: bool
+
+
+class GuestCvPreviewRequest(BaseModel):
+    """Live CV HTML preview before login (onboarding)."""
+
+    profile: dict[str, Any]
+    template: Optional[str] = None
+    template_accent: Optional[str] = None
+    additional_urls: Optional[list[str]] = None

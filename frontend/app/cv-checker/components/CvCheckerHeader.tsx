@@ -21,7 +21,7 @@ export function CvCheckerHeader() {
           ) : (
             <>
               <Link href="/login" className="text-slate-600 hover:text-blue-700 text-sm">Sign in</Link>
-              <Link href="/register" className="text-slate-600 hover:text-blue-700 text-sm">Sign up</Link>
+              <Link href="/get-started" className="text-slate-600 hover:text-blue-700 text-sm">Sign up</Link>
             </>
           )}
         </nav>

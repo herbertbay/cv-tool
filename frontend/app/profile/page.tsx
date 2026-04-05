@@ -3,9 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getProfile, putProfile, deleteAccount, type Profile } from '../lib/api';
+import { getProfile, putUserData, deleteAccount, type Profile } from '../lib/api';
 import { getProfileCompleteness } from '../lib/profile-completeness';
 import { useAuth } from '../lib/auth-context';
+import { CvThemePicker } from '../components/CvThemePicker';
+import { DEFAULT_CV_ACCENT } from '../lib/cv-templates';
 
 const DRAFT_KEY = 'cv-tool-profile-draft';
 
@@ -51,6 +53,8 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [defaultCvTemplate, setDefaultCvTemplate] = useState('cv_base.html');
+  const [defaultCvAccent, setDefaultCvAccent] = useState(DEFAULT_CV_ACCENT);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -73,7 +77,11 @@ export default function ProfilePage() {
       return;
     }
     getProfile()
-      .then((data) => setProfile({ ...emptyProfile, ...data.profile }))
+      .then((data) => {
+        setProfile({ ...emptyProfile, ...data.profile });
+        setDefaultCvTemplate(data.default_cv_template || 'cv_base.html');
+        setDefaultCvAccent(data.default_cv_accent || DEFAULT_CV_ACCENT);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user]);
@@ -205,13 +213,17 @@ export default function ProfilePage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(profile));
       }
-      await putProfile(profile);
+      await putUserData({
+        profile,
+        default_cv_template: defaultCvTemplate,
+        default_cv_accent: defaultCvAccent,
+      });
       setSaved(true);
     } catch (err) {
       setSaved(false);
       setSaveError(user ? 'Failed to save.' : 'Please sign in to save your profile to your account.');
     }
-  }, [profile, user]);
+  }, [profile, user, defaultCvTemplate, defaultCvAccent]);
 
   const handleDeleteAccount = useCallback(async () => {
     setDeleteError(null);
@@ -651,6 +663,25 @@ export default function ProfilePage() {
               </button>
             </div>
           ))}
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">Base resume appearance</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Default template and accent for your base CV PDF and for every new tailored resume. You can override the
+              look per job on each application.
+            </p>
+          </div>
+          <CvThemePicker
+            template={defaultCvTemplate}
+            onTemplateChange={setDefaultCvTemplate}
+            accent={defaultCvAccent}
+            onAccentChange={setDefaultCvAccent}
+            previewProfile={profile}
+            showPreview={Boolean(profile.full_name?.trim() || profile.summary?.trim())}
+            previewHeight={480}
+          />
         </div>
 
         <div className="flex items-center gap-4">

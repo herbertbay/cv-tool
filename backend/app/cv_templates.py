@@ -1,6 +1,7 @@
 """CV PDF template registry and accent color helpers for Jinja / WeasyPrint."""
 from __future__ import annotations
 
+import colorsys
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -49,6 +50,21 @@ def coerce_template(name: str | None, default: str = "cv_base.html") -> str:
     return n if is_allowed_template(n) else default
 
 
+def clamp_accent_for_white_background(hex_color: str) -> str:
+    """
+    Keep accent colors readable on white: cap HSL lightness (~18–52%)
+    so fills and text stay distinguishable from the page background.
+    """
+    h = normalize_accent_color(hex_color).lstrip("#")
+    if len(h) != 6:
+        return normalize_accent_color(hex_color)
+    r, g, b = int(h[0:2], 16) / 255.0, int(h[2:4], 16) / 255.0, int(h[4:6], 16) / 255.0
+    hue, light, sat = colorsys.rgb_to_hls(r, g, b)
+    light = max(0.18, min(light, 0.52))
+    r2, g2, b2 = colorsys.hls_to_rgb(hue, light, sat)
+    return f"#{int(max(0, min(1, r2)) * 255):02x}{int(max(0, min(1, g2)) * 255):02x}{int(max(0, min(1, b2)) * 255):02x}"
+
+
 def normalize_accent_color(raw: str | None, default: str = _DEFAULT_ACCENT) -> str:
     """Return #rrggbb or default. Accepts #RGB or #RRGGBB."""
     if not raw or not isinstance(raw, str):
@@ -85,7 +101,7 @@ def mix_hex(a: str, b: str, t: float) -> str:
 
 def accent_palette(accent_hex: str) -> dict[str, str]:
     """CSS-friendly variants for templates."""
-    a = normalize_accent_color(accent_hex)
+    a = clamp_accent_for_white_background(accent_hex)
     return {
         "accent_hex": a,
         "accent_soft": mix_hex(a, "#ffffff", 0.9),

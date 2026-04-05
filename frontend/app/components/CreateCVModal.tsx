@@ -1,13 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { GenerateCVResponse } from '../lib/api';
-import {
-  CV_TEMPLATE_BASELINE,
-  CV_TEMPLATE_THEMES,
-  DEFAULT_CV_ACCENT,
-  normalizeClientAccentHex,
-} from '../lib/cv-templates';
+import type { GenerateCVResponse, Profile } from '../lib/api';
+import { CvThemePicker } from './CvThemePicker';
 
 function ShareOptimalCV() {
   const [copied, setCopied] = useState(false);
@@ -38,6 +33,8 @@ export function CreateCVModal({
   setTemplate,
   templateAccent,
   setTemplateAccent,
+  previewProfile,
+  additionalUrls,
   progress,
   error,
   result,
@@ -55,6 +52,9 @@ export function CreateCVModal({
   setTemplate: (v: string) => void;
   templateAccent: string;
   setTemplateAccent: (v: string) => void;
+  /** Optional: live CV preview in the modal. */
+  previewProfile?: Profile | null;
+  additionalUrls?: string[];
   progress: string;
   error: string | null;
   result: GenerateCVResponse | null;
@@ -99,48 +99,16 @@ export function CreateCVModal({
 
           {/* Language dropdown hidden for now; default language is English ('en'). */}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Resume template</label>
-              <select
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              >
-                <optgroup label="Baseline">
-                  {CV_TEMPLATE_BASELINE.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Creative themes">
-                  {CV_TEMPLATE_THEMES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Accent color</label>
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="color"
-                  aria-label="Resume accent color"
-                  value={normalizeClientAccentHex(templateAccent || DEFAULT_CV_ACCENT)}
-                  onChange={(e) => setTemplateAccent(e.target.value)}
-                  className="h-10 w-16 cursor-pointer rounded border border-slate-300 bg-white p-1"
-                />
-                <input
-                  type="text"
-                  value={templateAccent}
-                  onChange={(e) => setTemplateAccent(e.target.value)}
-                  spellCheck={false}
-                  className="min-w-0 flex-1 rounded-lg border border-slate-300 px-2 py-2 text-sm font-mono"
-                  placeholder="#2563eb"
-                />
-              </div>
-              <p className="mt-1 text-xs text-slate-500">Used for headings, links, and highlights in the PDF.</p>
-            </div>
-          </div>
+          <CvThemePicker
+            template={template}
+            onTemplateChange={setTemplate}
+            accent={templateAccent}
+            onAccentChange={setTemplateAccent}
+            previewProfile={previewProfile}
+            additionalUrls={additionalUrls}
+            showPreview={Boolean(previewProfile)}
+          />
+          <p className="text-xs text-slate-500 -mt-2">Used for headings, links, and highlights in the PDF.</p>
 
           {progress && <p className="text-sm text-blue-600">{progress}</p>}
           {error && <p className="text-sm text-red-600">{error}</p>}
